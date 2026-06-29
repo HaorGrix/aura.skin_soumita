@@ -1,0 +1,269 @@
+@import "tailwindcss";
+
+/* ------------------------------------------------------------------ *
+ * aura.skin — K/J-Beauty Design System (Tailwind v4 theme tokens)
+ * Glass-skin clean · high contrast · pink/magenta · cyan glow · gold
+ * ------------------------------------------------------------------ */
+
+/* Enable class-based dark mode: <html class="dark"> */
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  /* — Core neutrals — */
+  --color-ink: #0a0a0b;        /* near-black: text + deep sections */
+  --color-ink-soft: #5b5b62;   /* secondary text */
+  --color-line: #ececef;       /* hairlines on light */
+  --color-white: #ffffff;
+  --color-snow: #fbf9fa;       /* off-white background */
+  --color-snow-deep: #f4eef1;  /* slightly warmer off-white */
+
+  /* — Pink family (signature accent) — */
+  --color-petal: #ffeef4;      /* softest pink wash */
+  --color-rose: #ff8fa8;       /* soft rose */
+  --color-magenta: #e1306c;    /* bold primary accent */
+  --color-magenta-deep: #b81e54;
+
+  /* — Glow accents — */
+  --color-cyan: #00c4b4;       /* teal/cyan glass glow */
+  --color-cyan-soft: #7fe3da;
+  --color-gold: #d4af37;
+  --color-gold-soft: #ecd58a;
+
+  /* — Typography — */
+  --font-serif: "Instrument Serif", ui-serif, Georgia, serif;
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+
+  /* — Fluid type scale — */
+  --text-display: clamp(2.85rem, 8.5vw, 7.5rem);
+  --text-display--line-height: 0.92;
+  --text-hero: clamp(2.25rem, 6vw, 5rem);
+  --text-hero--line-height: 1.02;
+
+  /* — Easing & motion — */
+  --ease-aura: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-soft: cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* ------------------------------------------------------------------ *
+   * Z-index scale — single source of truth for layering across the app.
+   * Defined once here, consumed via Tailwind's arbitrary-value syntax:
+   *     className="z-[var(--z-dropdown)]"
+   * Layers (low → high). Every overlay/dropdown/modal should map to one.
+   *   card     — hovered card lift, badges over media
+   *   sticky   — sticky toolbars, filter aside header
+   *   dropdown — predictive search panel, sort menu, popovers
+   *   modal    — NotifyMe / QuickView / WriteReview / mobile filter sheet
+   *   toast    — transient notifications (always on top)
+   * ------------------------------------------------------------------ */
+  --z-card: 1;
+  --z-sticky: 30;
+  --z-dropdown: 70;
+  --z-modal: 150;
+  --z-toast: 200;
+
+  /* — Shadows (clean, high-end, with glow) — */
+  --shadow-soft: 0 8px 30px -12px rgb(10 10 11 / 0.18);
+  --shadow-lift: 0 26px 60px -22px rgb(10 10 11 / 0.30);
+  --shadow-glow-pink: 0 0 44px -8px rgb(225 48 108 / 0.45);
+  --shadow-glow-cyan: 0 0 44px -8px rgb(0 196 180 / 0.40);
+}
+
+/* Subtle, theme-consistent scrollbar for isolated scroll containers
+ * (e.g. the desktop filter sidebar). WebKit + Firefox. */
+@utility scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-line) transparent;
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  &::-webkit-scrollbar-thumb {
+    background-color: var(--color-line);
+    border-radius: 9999px;
+  }
+  &:hover::-webkit-scrollbar-thumb {
+    background-color: var(--color-rose);
+  }
+}
+.dark .scrollbar-thin {
+  scrollbar-color: rgb(255 255 255 / 0.18) transparent;
+}
+.dark .scrollbar-thin::-webkit-scrollbar-thumb {
+  background-color: rgb(255 255 255 / 0.18);
+}
+
+/* ------------------------------------------------------------------ *
+ * Base
+ * ------------------------------------------------------------------ */
+@layer base {
+  :root {
+    --bg: var(--color-snow);
+    --fg: var(--color-ink);
+  }
+
+  .dark {
+    --bg: #050506;
+    --fg: #f6f4f5;
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  body {
+    margin: 0;
+    background-color: var(--bg);
+    color: var(--fg);
+    font-family: var(--font-sans);
+    font-weight: 400;
+    line-height: 1.6;
+    overflow-x: hidden;
+    transition: background-color 0.6s var(--ease-aura), color 0.6s var(--ease-aura);
+  }
+
+  h1, h2, h3, h4 {
+    font-family: var(--font-serif);
+    font-weight: 400;
+    letter-spacing: -0.015em;
+  }
+
+  /* When Lenis is active it adds .lenis to <html> */
+  html.lenis,
+  html.lenis body {
+    height: auto;
+  }
+  .lenis.lenis-smooth {
+    scroll-behavior: auto !important;
+  }
+  .lenis.lenis-stopped {
+    overflow: hidden;
+  }
+
+  ::selection {
+    background: var(--color-magenta);
+    color: var(--color-white);
+  }
+
+  /* Elegant, slim scrollbar */
+  ::-webkit-scrollbar { width: 10px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb {
+    background: color-mix(in oklab, var(--color-rose) 70%, transparent);
+    border-radius: 999px;
+    border: 3px solid transparent;
+    background-clip: padding-box;
+  }
+}
+
+/* ------------------------------------------------------------------ *
+ * Utilities & flourishes
+ * ------------------------------------------------------------------ */
+@layer utilities {
+  .font-serif { font-family: var(--font-serif); }
+  .font-sans  { font-family: var(--font-sans); }
+
+  /* Frosted glass surface — light + dark */
+  .glass {
+    background: color-mix(in oklab, var(--color-white) 66%, transparent);
+    backdrop-filter: blur(18px) saturate(170%);
+    -webkit-backdrop-filter: blur(18px) saturate(170%);
+    border: 1px solid color-mix(in oklab, var(--color-white) 60%, transparent);
+  }
+  .dark .glass {
+    background: color-mix(in oklab, #0a0a0b 58%, transparent);
+    border: 1px solid color-mix(in oklab, var(--color-white) 10%, transparent);
+  }
+
+  /* Pink → magenta gradient text (the signature) */
+  .text-gradient-rose {
+    background: linear-gradient(100deg, var(--color-rose) 0%, var(--color-magenta) 55%, var(--color-magenta-deep) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  /* Cyan↔magenta "glass skin" gradient text */
+  .text-gradient-glow {
+    background: linear-gradient(100deg, var(--color-cyan) 0%, var(--color-magenta) 60%, var(--color-gold) 110%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .text-balance { text-wrap: balance; }
+  .text-pretty  { text-wrap: pretty; }
+
+  .will-change-transform { will-change: transform; }
+
+  /* Loading skeleton shimmer */
+  .shimmer {
+    position: relative;
+    overflow: hidden;
+    background: color-mix(in oklab, var(--color-rose) 14%, transparent);
+  }
+  .dark .shimmer {
+    background: color-mix(in oklab, var(--color-white) 7%, transparent);
+  }
+  .shimmer::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    transform: translateX(-100%);
+    background: linear-gradient(
+      90deg,
+      transparent,
+      color-mix(in oklab, var(--color-white) 45%, transparent),
+      transparent
+    );
+    animation: aura-shimmer 1.6s var(--ease-soft) infinite;
+  }
+  .dark .shimmer::after {
+    background: linear-gradient(
+      90deg,
+      transparent,
+      color-mix(in oklab, var(--color-white) 10%, transparent),
+      transparent
+    );
+  }
+}
+
+@keyframes aura-shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/* Marquee (affirmations strip) */
+@layer utilities {
+  .animate-marquee {
+    animation: aura-marquee 38s linear infinite;
+  }
+  .marquee-pause:hover .animate-marquee {
+    animation-play-state: paused;
+  }
+}
+@keyframes aura-marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+/* ------------------------------------------------------------------ *
+ * Reduced motion — honor the user's wish
+ * ------------------------------------------------------------------ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}

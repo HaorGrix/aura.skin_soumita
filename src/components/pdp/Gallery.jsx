@@ -1,0 +1,256 @@
+import { useState } from "react";
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
+import { ZoomIn, X, ChevronLeft, ChevronRight, Play, Images } from "lucide-react";
+import Badge from "../ui/Badge.jsx";
+
+/* Gradient artwork for each gallery "angle" (swap in real images via item.image) */
+function tile(item) {
+  const overlays = [
+    "radial-gradient(120% 100% at 50% 0%, #ffffff 0%, TONE 70%, #ffe1ec 100%)",
+    "linear-gradient(135deg, #ffffff 0%, TONE 60%, #ffd9e4 100%)",
+    "radial-gradient(90% 90% at 30% 30%, TONE 0%, #ffffff 60%, #e9defb 100%)",
+    "linear-gradient(200deg, TONE 0%, #ffffff 55%, #d6f5ec 100%)",
+  ];
+  return overlays[item.hue % overlays.length].replaceAll("TONE", item.tone);
+}
+
+export default function Gallery({ product }) {
+  const reduce = useReducedMotion();
+  const { gallery, hasVideo, badge, brand, name } = product;
+
+  const [tab, setTab] = useState("photos"); // photos | video
+  const [active, setActive] = useState(0);
+  const [zoom, setZoom] = useState({ on: false, x: 50, y: 50 });
+  const [lightbox, setLightbox] = useState(false);
+
+  const onMove = (e) => {
+    if (reduce) return;
+    const r = e.currentTarget.getBoundingClientRect();
+    setZoom({
+      on: true,
+      x: ((e.clientX - r.left) / r.width) * 100,
+      y: ((e.clientY - r.top) / r.height) * 100,
+    });
+  };
+
+  const go = (dir) =>
+    setActive((i) => (i + dir + gallery.length) % gallery.length);
+
+  const current = gallery[active];
+
+  return (
+    <div className="lg:flex lg:gap-4">
+      {/* Thumbnails (left on desktop, below on mobile) */}
+      <div className="order-2 mt-3 flex gap-3 lg:order-1 lg:mt-0 lg:flex-col">
+        {gallery.map((g, i) => (
+          <button
+            key={g.id}
+            onClick={() => {
+              setTab("photos");
+              setActive(i);
+            }}
+            aria-label={g.label}
+            className={`relative h-16 w-16 shrink-0 overflow-hidden rounded-xl ring-2 transition-all lg:h-20 lg:w-20 ${
+              tab === "photos" && active === i
+                ? "ring-magenta"
+                : "ring-transparent hover:ring-rose/50"
+            }`}
+          >
+            <span className="absolute inset-0" style={{ background: tile(g) }} />
+            <span className="absolute inset-x-0 bottom-0 bg-black/30 py-0.5 text-[8px] font-medium text-white">
+              {g.label}
+            </span>
+          </button>
+        ))}
+        {hasVideo && (
+          <button
+            onClick={() => setTab("video")}
+            aria-label="Watch video"
+            className={`relative grid h-16 w-16 shrink-0 place-items-center overflow-hidden rounded-xl bg-ink text-white ring-2 transition-all lg:h-20 lg:w-20 ${
+              tab === "video" ? "ring-magenta" : "ring-transparent hover:ring-rose/50"
+            }`}
+          >
+            <Play className="h-5 w-5" fill="currentColor" strokeWidth={0} />
+          </button>
+        )}
+      </div>
+
+      {/* Stage — aspect-square on desktop; capped on portrait mobile so the
+          image never swallows the fold (key polish for small phones). The
+          `mx-auto + max-w` keeps it centered if the cap shrinks the width. */}
+      <div className="order-1 flex-1 lg:order-2">
+        <div className="relative mx-auto aspect-[4/5] w-full max-w-[28rem] overflow-hidden rounded-2xl ring-1 ring-line sm:aspect-square sm:max-w-md lg:max-w-none lg:rounded-[1.5rem] dark:ring-white/10">
+          {/* Tab pills */}
+          <div className="absolute left-3 top-3 z-20 flex gap-1.5">
+            <button
+              onClick={() => setTab("photos")}
+              className={`inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-xs font-semibold backdrop-blur transition-colors ${
+                tab === "photos" ? "bg-ink text-white" : "bg-white/80 text-ink"
+              }`}
+            >
+              <Images className="h-3.5 w-3.5" strokeWidth={1.8} /> Photos
+            </button>
+            {hasVideo && (
+              <button
+                onClick={() => setTab("video")}
+                className={`inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-xs font-semibold backdrop-blur transition-colors ${
+                  tab === "video" ? "bg-ink text-white" : "bg-white/80 text-ink"
+                }`}
+              >
+                <Play className="h-3 w-3" fill="currentColor" strokeWidth={0} /> Video
+              </button>
+            )}
+          </div>
+
+          {badge && (
+            <div className="absolute right-3 top-3 z-20">
+              <Badge variant={badge.variant}>{badge.label}</Badge>
+            </div>
+          )}
+
+          <AnimatePresence mode="wait">
+            {tab === "photos" ? (
+              <motion.div
+                key={current.id}
+                initial={{ opacity: 0, scale: 1.02 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+                className="group absolute inset-0 cursor-zoom-in"
+                onMouseMove={onMove}
+                onMouseLeave={() => setZoom((z) => ({ ...z, on: false }))}
+                onClick={() => setLightbox(true)}
+              >
+                <div
+                  className="absolute inset-0 transition-transform duration-200"
+                  style={{
+                    background: tile(current),
+                    transform: zoom.on ? "scale(1.8)" : "scale(1)",
+                    transformOrigin: `${zoom.x}% ${zoom.y}%`,
+                  }}
+                />
+                {current.image && (
+                  <img
+                    src={current.image}
+                    alt={`${brand} ${name}`}
+                    className="absolute inset-0 h-full w-full object-cover transition-transform duration-200"
+                    style={{
+                      transform: zoom.on ? "scale(1.8)" : "scale(1)",
+                      transformOrigin: `${zoom.x}% ${zoom.y}%`,
+                    }}
+                  />
+                )}
+                {/* Floating label + zoom hint */}
+                <span className="absolute bottom-3 left-3 rounded-full bg-white/85 px-3 py-1 text-xs font-medium text-ink backdrop-blur">
+                  {current.label}
+                </span>
+                <span className="absolute bottom-3 right-3 grid h-9 w-9 place-items-center rounded-full bg-white/85 text-ink backdrop-blur opacity-0 transition-opacity group-hover:opacity-100">
+                  <ZoomIn className="h-4 w-4" strokeWidth={1.8} />
+                </span>
+              </motion.div>
+            ) : (
+              <motion.div
+                key="video"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="absolute inset-0 grid place-items-center bg-ink"
+              >
+                <div
+                  className="absolute inset-0 opacity-60"
+                  style={{ background: tile({ ...current, hue: 3 }) }}
+                />
+                <motion.button
+                  whileHover={{ scale: 1.08 }}
+                  whileTap={{ scale: 0.95 }}
+                  className="relative grid h-20 w-20 place-items-center rounded-full bg-white/90 text-magenta shadow-lift"
+                  aria-label="Play product video"
+                >
+                  <Play className="ml-1 h-7 w-7" fill="currentColor" strokeWidth={0} />
+                  <span className="absolute inset-0 animate-ping rounded-full bg-white/40" />
+                </motion.button>
+                <span className="absolute bottom-4 left-1/2 -translate-x-1/2 text-sm text-white/80">
+                  60s ritual demo ✨
+                </span>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Prev / next (photos) */}
+          {tab === "photos" && (
+            <>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  go(-1);
+                }}
+                aria-label="Previous image"
+                className="absolute left-3 top-1/2 z-20 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full bg-white/85 text-ink backdrop-blur transition-colors hover:text-magenta"
+              >
+                <ChevronLeft className="h-5 w-5" strokeWidth={1.8} />
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  go(1);
+                }}
+                aria-label="Next image"
+                className="absolute right-3 top-1/2 z-20 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full bg-white/85 text-ink backdrop-blur transition-colors hover:text-magenta"
+              >
+                <ChevronRight className="h-5 w-5" strokeWidth={1.8} />
+              </button>
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* Lightbox */}
+      <AnimatePresence>
+        {lightbox && (
+          <motion.div
+            className="fixed inset-0 z-[160] flex items-center justify-center bg-ink/85 p-4 backdrop-blur"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setLightbox(false)}
+          >
+            <button
+              onClick={() => setLightbox(false)}
+              aria-label="Close"
+              className="absolute right-5 top-5 grid h-11 w-11 place-items-center rounded-full bg-white/10 text-white hover:bg-white/20"
+            >
+              <X className="h-5 w-5" />
+            </button>
+            <motion.div
+              key={current.id}
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              transition={{ type: "spring", stiffness: 260, damping: 28 }}
+              className="relative aspect-square w-full max-w-2xl overflow-hidden rounded-[1.5rem]"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="absolute inset-0" style={{ background: tile(current) }} />
+              {current.image && (
+                <img src={current.image} alt="" className="absolute inset-0 h-full w-full object-cover" />
+              )}
+            </motion.div>
+
+            {/* Lightbox thumbnails */}
+            <div className="absolute bottom-6 left-1/2 flex -translate-x-1/2 gap-2" onClick={(e) => e.stopPropagation()}>
+              {gallery.map((g, i) => (
+                <button
+                  key={g.id}
+                  onClick={() => setActive(i)}
+                  className={`h-12 w-12 overflow-hidden rounded-lg ring-2 ${active === i ? "ring-white" : "ring-white/30"}`}
+                >
+                  <span className="absolute inset-0" style={{ background: tile(g) }} />
+                </button>
+              ))}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}

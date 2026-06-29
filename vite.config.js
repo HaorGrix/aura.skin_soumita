@@ -1,0 +1,11 @@
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
+import tailwindcss from "@tailwindcss/vite";
+
+// https://vite.dev/config/
+export default defineConfig({
+  plugins: [react(), tailwindcss()],
+  // `.jfif` (JPEG with the older extension) isn't in Vite's default asset list
+  // — opting it in so Shop by Concern's locally-added images get bundled.
+  assetsInclude: ["**/*.jfif"],
+});

@@ -6,7 +6,6 @@ export const TAX_RATE = 0; // mock store — taxes shown as included
 
 /* Mock promo codes */
 export const PROMOS = {
-  GLOW10: { type: "percent", value: 10, label: "10% off — welcome glow ✨", firstOrderOnly: true },
   BLOOM5: { type: "flat", value: 5,   label: "$5 off your ritual 🌸",       firstOrderOnly: true },
 };
 

@@ -32,21 +32,41 @@ export function WishlistProvider({ children }) {
     }
   }, [ids]);
 
+  useEffect(() => {
+    const handleLogin = (e) => {
+      const { email } = e.detail;
+      const key = `wishlist_${email}`;
+      const saved = localStorage.getItem(key);
+      if (saved) {
+        setIds(JSON.parse(saved));
+      } else {
+        setIds([]);
+      }
+    };
+    const handleLogout = (e) => {
+      const { email } = e.detail;
+      const key = `wishlist_${email}`;
+      // Read current ids from storage key at logout time, not from stale closure.
+      setIds((current) => {
+        try { localStorage.setItem(key, JSON.stringify(current)); } catch { /* non-fatal */ }
+        return [];
+      });
+    };
+    window.addEventListener("auth_login", handleLogin);
+    window.addEventListener("auth_logout", handleLogout);
+    return () => {
+      window.removeEventListener("auth_login", handleLogin);
+      window.removeEventListener("auth_logout", handleLogout);
+    };
+  }, []);
+
   const value = useMemo(
     () => ({
       items: ids,
       count: ids.length,
       has: (id) => ids.includes(id),
-      /** Returns the new state (`true` = now wished, `false` = removed) so
-       *  callers can fire the right toast without a follow-up read. */
       toggle: (id) => {
-        let nowWished = false;
-        setIds((prev) => {
-          if (prev.includes(id)) return prev.filter((x) => x !== id);
-          nowWished = true;
-          return [...prev, id];
-        });
-        return nowWished;
+        setIds((prev) => (prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]));
       },
       clear: () => setIds([]),
     }),

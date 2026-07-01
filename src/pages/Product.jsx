@@ -99,6 +99,7 @@ export default function Product({ id }) {
             onChange={setTab}
             onWriteReview={goReviews}
           />
+          <p className="text-sm text-ink-lift italic mt-2 text-center">Verified purchases only: Please sign in to your account to share your glow ritual.</p>
         </div>
 
         {/* Complete your ritual */}

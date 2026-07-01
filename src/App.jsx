@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useState, useMemo } from "react";
+import { lazy, Suspense, useEffect, useState, useMemo, useCallback } from "react";
 import { ReactLenis } from "lenis/react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X } from "lucide-react";
@@ -38,7 +38,7 @@ function RouteFallback() {
 
 // Minimal hash router — keeps the SPA tiny while we add pages.
 function useRoute() {
-  const parse = () => {
+  const parse = useCallback(() => {
     const h = window.location.hash;
     if (h === "" || h === "#/" || h.startsWith("#/?")) return { name: "home" };
     if (h.startsWith("#/product/"))
@@ -56,13 +56,13 @@ function useRoute() {
     // in <App> then scrolls to the matching section after React finishes painting.
     if (h.startsWith("#") && !h.startsWith("#/")) return { name: "home" };
     return { name: "404" };
-  };
+  }, []);
   const [route, setRoute] = useState(parse);
   useEffect(() => {
     const onChange = () => setRoute(parse());
     window.addEventListener("hashchange", onChange);
     return () => window.removeEventListener("hashchange", onChange);
-  }, []);
+  }, [parse]);
   return route;
 }
 

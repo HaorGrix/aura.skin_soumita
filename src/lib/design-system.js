@@ -185,6 +185,21 @@ export const surface = {
     "bg-snow ring-1 ring-line dark:bg-[#16161a] dark:ring-white/10",
 };
 
+const TONE_SURFACES = new Map([
+  ["#ffeef4", "bg-gradient-to-br from-white via-petal to-rose/25"],
+  ["#ffd9e4", "bg-gradient-to-br from-white via-rose/20 to-magenta/10"],
+  ["#d6f5ec", "bg-gradient-to-br from-white via-cyan-soft/30 to-cyan/15"],
+  ["#dbeffb", "bg-gradient-to-br from-white via-cyan-soft/25 to-cyan/10"],
+  ["#f6eccf", "bg-gradient-to-br from-white via-gold-soft/35 to-gold/15"],
+  ["#ffe6d6", "bg-gradient-to-br from-white via-petal to-gold/10"],
+  ["#ece4fb", "bg-gradient-to-br from-white via-petal to-magenta/10"],
+  ["#e3efe0", "bg-gradient-to-br from-white via-cyan-soft/20 to-cyan/8"],
+]);
+
+export function toneSurfaceClass(tone) {
+  return TONE_SURFACES.get(tone) ?? "bg-gradient-to-br from-white via-petal to-cyan-soft/20";
+}
+
 export const radius = {
   sm: "rounded-lg",
   md: "rounded-[0.875rem]",

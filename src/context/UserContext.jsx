@@ -1,13 +1,14 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
-import { MILESTONES, POINTS_PER_REVIEW, SEED_ORDERS } from "../data/reviews.js";
+import { POINTS_PER_REVIEW, SEED_ORDERS } from "../data/reviews.js";
+import { MILESTONES, couponForPoints } from "../lib/rewards-config.js";
 
 const UserContext = createContext(null);
 const SESSION_KEY = "aura-session";
 const STORE_KEY = "aura_users_store";
 
-const MOCK_USER = { id: "usr_bd_8842", initial: "T" };
-const DEFAULT_PROFILE = { name: "Tahsin", email: "tahsin@example.com", phone: "+1 (555) 123-4567", address: "123 Aura Street, Seoul, South Korea" };
-const SEED_POINTS = 87;
+const MOCK_USER = { id: null, initial: "" };
+const DEFAULT_PROFILE = {};
+const SEED_POINTS = 0;
 
 function loadStore() {
   try {
@@ -34,28 +35,37 @@ function loadSession() {
 }
 
 export function couponsFor(points) {
-  return MILESTONES.filter((m) => points >= m.points);
+  return couponForPoints(points);
 }
 export function nextMilestoneFor(points) {
   return MILESTONES.find((m) => points < m.points) ?? null;
 }
 
 export function UserProvider({ children }) {
-  const session = loadSession();
-  const savedEmail = session?.email?.toLowerCase();
-  const savedAuthed = session?.authed ?? false;
-  
-  const store = loadStore();
-  const savedUserData = savedAuthed && savedEmail ? store[savedEmail] : null;
+  const [initialUserState] = useState(() => {
+    const session = loadSession();
+    const savedEmail = session?.email?.toLowerCase();
+    const savedAuthed = session?.authed ?? false;
+    const savedUser = savedAuthed && savedEmail ? loadStore()[savedEmail] : null;
 
-  const [profile, setProfile] = useState(savedUserData?.profile ?? DEFAULT_PROFILE);
-  const [points, setPoints] = useState(savedUserData ? savedUserData.points : SEED_POINTS);
-  const [myReviews, setMyReviews] = useState(savedUserData?.myReviews ?? []);
-  const [reviewedIds, setReviewedIds] = useState(savedUserData?.reviewedIds ?? []);
-  const [orders, setOrders] = useState(savedUserData ? savedUserData.orders : SEED_ORDERS);
-  const [usedCoupons, setUsedCoupons] = useState(savedUserData?.usedCoupons ?? []);
+    return {
+      profile: savedUser?.profile ?? {},
+      points: savedUser?.points ?? 0,
+      myReviews: savedUser?.myReviews ?? [],
+      reviewedIds: savedUser?.reviewedIds ?? [],
+      orders: savedUser?.orders ?? [],
+      usedCoupons: savedUser?.usedCoupons ?? [],
+      authed: savedAuthed,
+    };
+  });
 
-  const [authed, setAuthed] = useState(savedAuthed);
+  const [profile, setProfile] = useState(() => initialUserState.profile);
+  const [points, setPoints] = useState(() => initialUserState.points);
+  const [myReviews, setMyReviews] = useState(() => initialUserState.myReviews);
+  const [reviewedIds, setReviewedIds] = useState(() => initialUserState.reviewedIds);
+  const [orders, setOrders] = useState(() => initialUserState.orders);
+  const [usedCoupons, setUsedCoupons] = useState(() => initialUserState.usedCoupons);
+  const [authed, setAuthed] = useState(() => initialUserState.authed);
   const [auth, setAuth] = useState({ open: false, mode: "login", onSuccess: null });
 
   const openAuth = useCallback((mode = "login", onSuccess = null) => {
@@ -78,7 +88,7 @@ export function UserProvider({ children }) {
       setOrders(existingUser.orders || []);
       setUsedCoupons(existingUser.usedCoupons || []);
     } else {
-      const newProfile = { ...DEFAULT_PROFILE, email, name: name || email.split("@")[0] };
+      const newProfile = { email, name: name || email.split("@")[0] };
       setProfile(newProfile);
       setPoints(0);
       setMyReviews([]);
@@ -88,7 +98,12 @@ export function UserProvider({ children }) {
     }
     
     setAuthed(true);
-    localStorage.setItem(SESSION_KEY, JSON.stringify({ email: emailKey, authed: true }));
+    try {
+      localStorage.setItem(SESSION_KEY, JSON.stringify({ email: emailKey, authed: true }));
+    } catch {
+      /* non-fatal */
+    }
+    window.dispatchEvent(new CustomEvent("auth_login", { detail: { email: emailKey } }));
   }, []);
 
   const login = useCallback(({ email, name } = {}) => {
@@ -100,15 +115,22 @@ export function UserProvider({ children }) {
   }, [handleAuth]);
 
   const logout = useCallback(() => {
+    const currentEmail = profile.email?.toLowerCase();
+    window.dispatchEvent(new CustomEvent("auth_logout", { detail: { email: currentEmail } }));
+
     setAuthed(false);
-    localStorage.removeItem(SESSION_KEY);
-    setProfile(DEFAULT_PROFILE);
-    setPoints(SEED_POINTS);
+    try {
+      localStorage.removeItem(SESSION_KEY);
+    } catch {
+      /* non-fatal */
+    }
+    setProfile({});
+    setPoints(0);
     setMyReviews([]);
     setReviewedIds([]);
-    setOrders(SEED_ORDERS);
+    setOrders([]);
     setUsedCoupons([]);
-  }, []);
+  }, [profile.email]);
 
   const purchasedIds = useMemo(
     () => new Set(orders.flatMap((o) => o.items)),
@@ -128,9 +150,8 @@ export function UserProvider({ children }) {
     const hasReviewed = (id) => reviewedIds.includes(id);
 
     return {
-      ...MOCK_USER,
-      id: authed ? `usr_${profile.email}` : MOCK_USER.id,
-      initial: authed ? profile.name.charAt(0).toUpperCase() : MOCK_USER.initial,
+      id: authed ? `usr_${profile.email}` : null,
+      initial: authed && profile.name ? profile.name.charAt(0).toUpperCase() : "",
       ...profile,
       authed,
       auth,

@@ -23,8 +23,8 @@ const COLUMNS = [
   {
     title: "Help",
     links: [
-      { label: "Shipping & Returns", href: "#" },
-      { label: "Track Order", href: "#" },
+      { label: "Shipping & Returns", href: "#/about" },
+      { label: "Track Order", href: "#/about" },
       { label: "FAQs", href: "#/contact" },
       { label: "Contact", href: "#/contact" },
     ],
@@ -125,7 +125,7 @@ export default function Footer() {
               {SOCIALS.map((Icon, i) => (
                 <a
                   key={i}
-                  href="#"
+                  href="#/about"
                   aria-label="Social link"
                   className="grid h-10 w-10 place-items-center rounded-full bg-white text-ink-soft ring-1 ring-line transition-colors hover:text-magenta hover:ring-magenta/40 dark:bg-white/5 dark:text-white/60 dark:ring-white/10"
                 >
@@ -155,9 +155,9 @@ export default function Footer() {
         <div className="mt-12 flex flex-col items-center justify-between gap-4 border-t border-line pt-6 text-xs text-ink-soft dark:border-white/10 dark:text-white/45 sm:flex-row">
           <p>© {new Date().getFullYear()} aura.skin — Glow within, bloom daily. 🌸</p>
           <div className="flex gap-5">
-            <a href="#" className="hover:text-magenta">Privacy</a>
-            <a href="#" className="hover:text-magenta">Terms</a>
-            <a href="#" className="hover:text-magenta">Cookies</a>
+            <a href="#/about" className="hover:text-magenta">Privacy</a>
+            <a href="#/about" className="hover:text-magenta">Terms</a>
+            <a href="#/about" className="hover:text-magenta">Cookies</a>
           </div>
         </div>
       </div>

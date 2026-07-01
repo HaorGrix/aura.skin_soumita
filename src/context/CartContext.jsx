@@ -6,7 +6,7 @@ import {
   useReducer,
   useState,
 } from "react";
-import { PROMOS } from "../lib/shop-config.js";
+import { validate } from "../lib/coupons.js";
 
 /**
  * Cart store — line items with quantity, localStorage persistence, and the
@@ -56,6 +56,8 @@ function reducer(state, action) {
       return { items: state.items.filter((i) => i.id !== action.id) };
     case "CLEAR":
       return { items: [] };
+    case "LOAD":
+      return { items: action.items };
     default:
       return state;
   }
@@ -80,6 +82,39 @@ export function CartProvider({ children }) {
     if (state.items.length === 0) setAppliedCoupon(null);
   }, [state.items]);
 
+  useEffect(() => {
+    const handleLogin = (e) => {
+      try {
+        const { email } = e.detail;
+        const key = `cart_${email}`;
+        const saved = localStorage.getItem(key);
+        if (saved) {
+          dispatch({ type: "LOAD", items: JSON.parse(saved) });
+        } else {
+          dispatch({ type: "CLEAR" });
+        }
+      } catch {
+        dispatch({ type: "CLEAR" });
+      }
+    };
+    const handleLogout = (e) => {
+      try {
+        const { email } = e.detail;
+        const key = `cart_${email}`;
+        localStorage.setItem(key, JSON.stringify(state.items));
+      } catch {
+        /* non-fatal */
+      }
+      dispatch({ type: "CLEAR" });
+    };
+    window.addEventListener("auth_login", handleLogin);
+    window.addEventListener("auth_logout", handleLogout);
+    return () => {
+      window.removeEventListener("auth_login", handleLogin);
+      window.removeEventListener("auth_logout", handleLogout);
+    };
+  }, [state.items]);
+
   const value = useMemo(() => {
     const count = state.items.reduce((sum, i) => sum + i.qty, 0);
     const subtotal = state.items.reduce((sum, i) => sum + i.qty * (i.price ?? 0), 0);
@@ -89,7 +124,7 @@ export function CartProvider({ children }) {
     const discountAmount = appliedCoupon
       ? appliedCoupon.type === "flat"
         ? Math.min(appliedCoupon.value, subtotal)
-        : Math.round((subtotal * appliedCoupon.value) / 100 * 100) / 100
+        : Math.round(((subtotal * appliedCoupon.value) / 100) * 100) / 100
       : 0;
     const promoCode = appliedCoupon?.code ?? null;
     const discountPercentage = appliedCoupon?.type === "percent" ? appliedCoupon.value : 0;
@@ -103,28 +138,23 @@ export function CartProvider({ children }) {
       discountAmount,
       promoCode,
       discountPercentage,
-      // Verifies code against general PROMOS (shop-config) and optionally
-      // against user loyalty coupons passed in by the caller (Checkout).
-      // Returns { success, label } on match, null on miss.
-      applyPromo: (code, extraCoupons = [], usedCoupons = [], orders = []) => {
-        const normalized = code?.trim().toUpperCase();
-        if (!normalized) return null;
-        if (usedCoupons.includes(normalized)) return { success: false, alreadyUsed: true };
-        const promo = PROMOS[normalized];
-        if (promo) {
-          if (promo.firstOrderOnly && orders.length > 0) {
-            return { success: false, firstOrderOnly: true };
-          }
-          setAppliedCoupon({ code: normalized, type: promo.type, value: promo.value, label: promo.label });
-          return { success: true, label: promo.label };
-        }
-        const loyalty = extraCoupons.find((c) => c.code?.toUpperCase() === normalized);
-        if (loyalty) {
-          const value = parseInt(normalized.replace(/[^\d]/g, ""), 10) || 0;
-          setAppliedCoupon({ code: normalized, type: "percent", value, label: loyalty.reward });
-          return { success: true, label: loyalty.reward };
-        }
-        return null;
+      // Validate every coupon through the unified registry.
+      applyPromo: (code, userOrCoupons = [], usedCoupons = [], orders = [], points = 0) => {
+        const user = Array.isArray(userOrCoupons)
+          ? { coupons: userOrCoupons, usedCoupons, orders, points }
+          : userOrCoupons ?? {};
+        const result = validate(code, user);
+        if (!result?.success) return result;
+
+        const coupon = result.coupon;
+        setAppliedCoupon({
+          code: result.code,
+          type: coupon.type,
+          value: coupon.value,
+          label: coupon.label ?? coupon.reward ?? coupon.short ?? result.code,
+          freeShipping: !!coupon.freeShipping,
+        });
+        return { success: true, label: result.label };
       },
       removeCoupon: () => setAppliedCoupon(null),
       // --- Cart actions ---

@@ -280,7 +280,7 @@ export function buildPdp(product) {
     ratingBreakdown: ratingBreakdown(product, rand),
     shipping: {
       ships: "Ships within 24 hours from our climate-controlled warehouse.",
-      delivery: "Free standard delivery on orders over $50 (3–5 business days).",
+      delivery: "Free standard delivery on orders over ৳6000 (3–5 business days).",
       returns: "Loved-it-or-not 30-day returns. Empties welcome — we recycle. ♻️",
     },
   };

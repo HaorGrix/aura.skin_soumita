@@ -14,6 +14,7 @@ import Button from "../components/ui/Button.jsx";
 import Footer from "../components/Footer.jsx";
 import { useToast } from "../components/ui/Toast.jsx";
 import { Input } from "../components/ui/index.js";
+import PhoneInput from "../components/ui/PhoneInput.jsx";
 
 const FAQS = [
   {
@@ -46,10 +47,12 @@ export default function Contact() {
   const [form, setForm] = useState({
     name: "",
     email: "",
+    phone: "",
     topic: "Routine help",
     message: "",
   });
   const [errors, setErrors] = useState({});
+  const [isPhoneValid, setIsPhoneValid] = useState(false);
 
   function update(field, value) {
     setForm((current) => ({ ...current, [field]: value }));
@@ -62,17 +65,22 @@ export default function Contact() {
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) next.email = "Enter a valid email";
     if (form.message.trim().length < 12) next.message = "Tell us a little more";
     setErrors(next);
-    return Object.keys(next).length === 0;
+    return Object.keys(next).length === 0 && isPhoneValid;
   }
 
   function submit(e) {
     e.preventDefault();
+    const phoneRegex = /^(?:\+8801|8801|01)[3-9]\d{8}$/;
+    if (!phoneRegex.test(form.phone?.replace(/\s+/g, ''))) {
+      toast.error("Invalid number!");
+      return;
+    }
     if (!validate()) {
       toast.error("Please check the highlighted fields", "Form needs care");
       return;
     }
     toast.success("We will reply within one business day.", "Message sent");
-    setForm({ name: "", email: "", topic: "Routine help", message: "" });
+    setForm({ name: "", email: "", phone: "", topic: "Routine help", message: "" });
   }
 
   return (
@@ -147,6 +155,14 @@ export default function Contact() {
                   placeholder="you@email.com"
                 />
               </Field>
+              <Field label="Phone">
+                <PhoneInput
+                  value={form.phone}
+                  onChange={(val) => update("phone", val)}
+                  onValidityChange={setIsPhoneValid}
+                  required
+                />
+              </Field>
             </div>
 
             <Field label="Topic">
@@ -171,7 +187,7 @@ export default function Contact() {
               />
             </Field>
 
-            <Button type="submit" size="lg" className="mt-2 w-full sm:w-auto">
+            <Button type="submit" size="lg" className="mt-2 w-full sm:w-auto" disabled={!isPhoneValid}>
               Send message
               <Send className="h-4 w-4" strokeWidth={1.8} />
             </Button>

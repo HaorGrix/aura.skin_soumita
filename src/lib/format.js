@@ -1,10 +1,12 @@
 /* Centralized money formatting — change CURRENCY in ONE place to re-denominate
  * the entire store (e.g. switch to BDT ৳). Keeps every price consistent. */
-export const CURRENCY = { code: "USD", symbol: "$", locale: "en-US", fractionDigits: 2 };
+export const CURRENCY = { code: "BDT", symbol: "৳", locale: "en-BD", fractionDigits: 0 };
+export const CONVERSION_RATE = 120; // 1 USD = 120 BDT
 
 export function formatPrice(amount) {
   const n = Number(amount) || 0;
-  return `${CURRENCY.symbol}${n.toFixed(CURRENCY.fractionDigits)}`;
+  const bdt = n * CONVERSION_RATE;
+  return `${CURRENCY.symbol}${bdt.toFixed(CURRENCY.fractionDigits)}`;
 }
 
 export function discountPct(price, compareAt) {

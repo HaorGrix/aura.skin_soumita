@@ -4,13 +4,17 @@ import { useUser } from "../../context/UserContext.jsx";
 import { useToast } from "../../components/ui/Toast.jsx";
 import Button from "../../components/ui/Button.jsx";
 import { Input } from "../../components/ui/index.js";
-import { User, Mail, Phone, MapPin } from "lucide-react";
+import PhoneInput, { BD_PHONE_REGEX } from "../../components/ui/PhoneInput.jsx";
+import { User, Mail, MapPin } from "lucide-react";
 
 export default function ProfileTab() {
   const { name, email, phone, address, updateProfile } = useUser();
   const { toast } = useToast();
-  const [formData, setFormData] = useState({ name, email, phone, address });
+  const [formData, setFormData] = useState({ name, email, phone: phone || "", address });
   const [isSaving, setIsSaving] = useState(false);
+  const [isPhoneValid, setIsPhoneValid] = useState(
+    phone ? BD_PHONE_REGEX.test(phone.replace(/\s+/g, "")) : false
+  );
 
   const handleChange = (e) => {
     setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
@@ -18,6 +22,12 @@ export default function ProfileTab() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    const phoneRegex = BD_PHONE_REGEX;
+    if (!phoneRegex.test(formData.phone?.replace(/\s+/g, ""))) {
+      toast.error("Invalid number! Enter a valid BD phone number.");
+      return;
+    }
+    if (!isPhoneValid) return;
     setIsSaving(true);
     // Simulate network delay
     setTimeout(() => {
@@ -83,22 +93,16 @@ export default function ProfileTab() {
         </div>
 
         <div className="space-y-1.5">
-          <label htmlFor="phone" className="text-sm font-semibold text-ink dark:text-white">
+          <label className="text-sm font-semibold text-ink dark:text-white">
             Phone Number
           </label>
-          <div className="relative">
-            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-ink-soft dark:text-white/40">
-              <Phone className="h-4 w-4" />
-            </span>
-            <Input
-              id="phone"
-              name="phone"
-              type="tel"
-              value={formData.phone}
-              onChange={handleChange}
-              className="pl-11"
-            />
-          </div>
+          <PhoneInput
+            value={formData.phone}
+            onChange={(val) => setFormData((prev) => ({ ...prev, phone: val }))}
+            onValidityChange={setIsPhoneValid}
+            placeholder="01XXXXXXXXX"
+            required
+          />
         </div>
 
         <div className="space-y-1.5">
@@ -120,7 +124,7 @@ export default function ProfileTab() {
           </div>
         </div>
 
-        <Button type="submit" variant="primary" disabled={isSaving} className="w-full sm:w-auto">
+        <Button type="submit" variant="primary" disabled={isSaving || !isPhoneValid} className="w-full sm:w-auto">
           {isSaving ? "Saving..." : "Save Changes"}
         </Button>
       </form>

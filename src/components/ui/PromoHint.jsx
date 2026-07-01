@@ -1,6 +1,6 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { Gift, Sparkles } from "lucide-react";
-import { FIRST_ORDER_CODES } from "../../lib/shop-config.js";
+import { FIRST_ORDER_CODES } from "../../lib/rewards-config.js";
 
 /**
  * PromoHint — contextual nudge beneath the coupon input.

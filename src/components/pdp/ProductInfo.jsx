@@ -292,7 +292,7 @@ export default function ProductInfo({ product, related = [], onWriteReview }) {
         {product.inStock ? (
           <>
             <span className="inline-block h-2 w-2 rounded-full bg-success" />
-            In stock · <Truck className="h-4 w-4" strokeWidth={1.7} /> Free shipping over $50
+            In stock · <Truck className="h-4 w-4" strokeWidth={1.7} /> Free shipping over ৳6000
           </>
         ) : (
           <>

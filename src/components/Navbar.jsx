@@ -77,7 +77,7 @@ export default function Navbar({ onToggleTheme, isDark, onOpenSearch }) {
   }, [open]);
 
   const iconBtn =
-    "relative grid h-10 w-10 place-items-center rounded-full text-ink/75 " +
+    "relative grid h-11 w-11 place-items-center rounded-full p-2 text-ink/75 " +
     "transition-colors hover:bg-petal hover:text-magenta " +
     "dark:text-white/80 dark:hover:bg-white/10 dark:hover:text-rose";
 

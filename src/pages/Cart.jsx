@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { AnimatePresence } from "framer-motion";
 import { ChevronLeft, Tag, ArrowRight, Lock, ShieldCheck, Truck } from "lucide-react";
 import { useCart } from "../context/CartContext.jsx";
+import { useUser } from "../context/UserContext.jsx";
 import { PRODUCTS } from "../data/products.js";
 import { FREE_SHIPPING_THRESHOLD, STANDARD_SHIPPING } from "../lib/shop-config.js";
 import LineItem from "../components/cart/LineItem.jsx";
@@ -16,6 +17,7 @@ import { Input } from "../components/ui/index.js";
 
 export default function Cart() {
   const { items, subtotal, count, clear, discountAmount, appliedCoupon, applyPromo } = useCart();
+  const { points, orders, usedCoupons, coupons } = useUser();
   const { toast } = useToast();
   const [promoInput, setPromoInput] = useState("");
   const [quickView, setQuickView] = useState(null);
@@ -34,7 +36,7 @@ export default function Cart() {
 
   function handlePromo(e) {
     e.preventDefault();
-    const res = applyPromo(promoInput);
+    const res = applyPromo(promoInput, { points, orders, usedCoupons, coupons });
     if (res) {
       setPromoInput("");
       toast.success(res.label, "Promo applied");

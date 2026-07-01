@@ -10,16 +10,10 @@
  * appear here are eligible for a "verified review + 1 point".
  * =================================================================== */
 import { PRODUCTS } from "./products.js";
+import { MILESTONES } from "../lib/rewards-config.js";
 
 /* Fast id → product lookup for order history / thumbnails. */
 export const productById = Object.fromEntries(PRODUCTS.map((p) => [p.id, p]));
-
-/* Loyalty milestones (single source of truth for points → rewards). */
-export const MILESTONES = [
-  { points: 50, code: "AURA3", reward: "3% discount coupon", short: "3% off" },
-  { points: 100, code: "AURA5", reward: "5% discount coupon", short: "5% off" },
-  { points: 200, code: "AURA8FS", reward: "Free shipping + 8% discount", short: "8% off + free shipping" },
-];
 
 export const POINTS_PER_REVIEW = 1;
 

@@ -23,11 +23,13 @@ import Button from "../components/ui/Button.jsx";
 import { Field, OptionCard, Input } from "../components/ui/index.js";
 import { FREE_SHIPPING_THRESHOLD, STANDARD_SHIPPING, EXPRESS_SHIPPING } from "../lib/shop-config.js";
 import { formatPrice } from "../lib/format.js";
+import { surface } from "../lib/design-system.js";
 import LineItem from "../components/cart/LineItem.jsx";
 import OrderSummary from "../components/cart/OrderSummary.jsx";
 import EmptyState from "../components/ui/EmptyState.jsx";
 import TrackingModal from "../components/TrackingModal.jsx";
 import PromoHint from "../components/ui/PromoHint.jsx";
+import PhoneInput from "../components/ui/PhoneInput.jsx";
 
 const STEPS = [
   { id: "info", label: "Information" },
@@ -36,24 +38,40 @@ const STEPS = [
 ];
 
 const emailOk = (v) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+const postcodeOk = (v) => /^[0-9]{4}$/.test(v.trim());
+const CHECKOUT_KEY = "aura_checkout_state";
+
+function loadCheckoutState() {
+  try {
+    const raw = localStorage.getItem(CHECKOUT_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+function saveCheckoutState(state) {
+  try {
+    localStorage.setItem(CHECKOUT_KEY, JSON.stringify(state));
+  } catch {
+    /* non-fatal */
+  }
+}
 
 export default function Checkout() {
   const { items, subtotal, count, clear, discountAmount, appliedCoupon, applyPromo, removeCoupon: cartRemoveCoupon } = useCart();
   const { authed, openAuth, email: userEmail, name: userName, coupons, addOrder, usedCoupons, markCouponUsed, orders } = useUser();
   const { toast } = useToast();
+  const savedCheckout = loadCheckoutState();
 
   // Login is only required here. Signed-in shoppers skip the gate; everyone
   // else can sign in/up or breeze through as a guest.
-  const [guest, setGuest] = useState(false);
+  const [guest, setGuest] = useState(() => savedCheckout?.guest ?? false);
   const [couponInput, setCouponInput] = useState("");
 
-  const [step, setStep] = useState(0);
+  const [step, setStep] = useState(() => savedCheckout?.step ?? 0);
   const [form, setForm] = useState(() => {
-    try {
-      const saved = sessionStorage.getItem("aura_checkout_form");
-      if (saved) return JSON.parse(saved);
-    } catch (e) {}
-    return {
+    const base = {
       email: authed ? userEmail || "" : "",
       firstName: authed ? userName || "" : "",
       lastName: "",
@@ -63,21 +81,18 @@ export default function Checkout() {
       country: "Bangladesh",
       phone: "",
     };
+    return { ...base, ...(savedCheckout?.form ?? {}) };
   });
-
-  // Persist to sessionStorage whenever form changes
-  useEffect(() => {
-    sessionStorage.setItem("aura_checkout_form", JSON.stringify(form));
-  }, [form]);
-
-  // Clear storage when navigating away (but keep it on page reload)
-  useEffect(() => {
-    return () => {
-      if (window.location.hash !== "#/checkout") {
-        sessionStorage.removeItem("aura_checkout_form");
-      }
-    };
-  }, []);
+  const [delivery, setDelivery] = useState(() => savedCheckout?.delivery ?? "standard");
+  const [payMethod, setPayMethod] = useState(() => savedCheckout?.payMethod ?? "card");
+  const [isPhoneValid, setIsPhoneValid] = useState(false); // "card" | "cod"
+  const [pay, setPay] = useState(() => savedCheckout?.pay ?? { name: "", number: "", expiry: "", cvc: "" });
+  const [processing, setProcessing] = useState(false);
+  const [order, setOrder] = useState(null); // success snapshot
+  const [summaryOpen, setSummaryOpen] = useState(false);
+  const [errors, setErrors] = useState({});
+  const [resumeAvailable, setResumeAvailable] = useState(Boolean(savedCheckout));
+  const [resumeSnapshot, setResumeSnapshot] = useState(() => savedCheckout);
 
   // Prefill from the account when the shopper signs in via the gate.
   useEffect(() => {
@@ -89,13 +104,18 @@ export default function Checkout() {
       }));
     }
   }, [authed, userEmail, userName]);
-  const [delivery, setDelivery] = useState("standard");
-  const [payMethod, setPayMethod] = useState("card"); // "card" | "cod"
-  const [pay, setPay] = useState({ name: "", number: "", expiry: "", cvc: "" });
-  const [processing, setProcessing] = useState(false);
-  const [order, setOrder] = useState(null); // success snapshot
-  const [summaryOpen, setSummaryOpen] = useState(false);
-  const [errors, setErrors] = useState({});
+  useEffect(() => {
+    const snapshot = {
+      step,
+      form,
+      delivery,
+      payMethod,
+      pay,
+      guest,
+    };
+    saveCheckoutState(snapshot);
+    setResumeSnapshot(snapshot);
+  }, [step, form, delivery, payMethod, pay, guest]);
 
   const set = (k) => (e) => {
     setForm((f) => ({ ...f, [k]: e.target.value }));
@@ -146,8 +166,8 @@ export default function Checkout() {
       if (!form.lastName.trim()) next.lastName = "Last name is required.";
       if (!form.address.trim()) next.address = "Address is required.";
       if (!form.city.trim()) next.city = "City is required.";
-      if (!form.postal.trim()) next.postal = "Postal code is required.";
-      if (!form.phone.trim()) next.phone = "Phone number is required.";
+      if (!postcodeOk(form.postal)) next.postal = "Postal code must be exactly 4 digits.";
+      if (!isPhoneValid) next.phone = "Enter a valid BD number.";
       if (Object.keys(next).length) {
         setErrors(next);
         toast.error("Please fix the highlighted fields.", "Check your details");
@@ -204,6 +224,7 @@ export default function Checkout() {
         email: form.email,
         payMethod,
         itemIds,
+        couponCode: appliedCoupon?.code || null,
       });
 
       setProcessing(false);
@@ -333,7 +354,7 @@ export default function Checkout() {
                   exit={{ opacity: 0, x: -16 }}
                   transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
                 >
-                  {step === 0 && <InfoStep form={form} set={set} errors={errors} />}
+                  {step === 0 && <InfoStep form={form} set={set} setForm={setForm} setIsPhoneValid={setIsPhoneValid} errors={errors} />}
                   {step === 1 && (
                     <DeliveryStep
                       delivery={delivery}
@@ -362,7 +383,7 @@ export default function Checkout() {
               )}
               <button
                 onClick={next}
-                disabled={processing}
+                disabled={(step === 0 && !isPhoneValid) || processing}
                 className={`inline-flex items-center justify-center gap-2 rounded-full px-8 py-3.5 text-sm font-semibold text-white transition-all ${
                   processing
                     ? "cursor-not-allowed bg-ink/20 dark:bg-white/15"
@@ -463,7 +484,7 @@ function AuthGate({ onGuest, openAuth }) {
 
 /* ---------- Steps ---------- */
 
-function InfoStep({ form, set, errors }) {
+function InfoStep({ form, set, setForm, setIsPhoneValid, errors }) {
   return (
     <div>
       <h2 className="font-serif text-2xl text-ink dark:text-white">Contact & shipping</h2>
@@ -484,13 +505,18 @@ function InfoStep({ form, set, errors }) {
           <Input value={form.city} onChange={set("city")} placeholder="Dhaka" />
         </Field>
         <Field label="Postal code" error={errors.postal}>
-          <Input value={form.postal} onChange={set("postal")} placeholder="1207" />
+          <Input value={form.postal} onChange={set("postal")} placeholder="1207" inputMode="numeric" maxLength={4} />
         </Field>
         <Field label="Country">
           <Input value={form.country} onChange={set("country")} />
         </Field>
-        <Field label="Phone" error={errors.phone}>
-          <Input value={form.phone} onChange={set("phone")} placeholder="+880" />
+        <Field label="Phone">
+          <PhoneInput
+            value={form.phone}
+            onChange={(val) => setForm((f) => ({ ...f, phone: val }))}
+            onValidityChange={setIsPhoneValid}
+            required
+          />
         </Field>
       </div>
     </div>

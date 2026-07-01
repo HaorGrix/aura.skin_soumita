@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Package, Check, PenLine } from "lucide-react";
+import { Package, Check, PenLine, Truck } from "lucide-react";
 import { useUser } from "../../context/UserContext.jsx";
 import { productById } from "../../data/reviews.js";
 import { formatPrice } from "../../lib/format.js";
@@ -8,11 +8,13 @@ import EmptyState from "../../components/ui/EmptyState.jsx";
 import Button from "../../components/ui/Button.jsx";
 import WriteReviewModal from "../../components/reviews/WriteReviewModal.jsx";
 import OrderDetailsModal from "./OrderDetailsModal.jsx";
+import TrackingModal from "../TrackingModal.jsx";
 
 export default function OrdersTab() {
   const { orders, hasReviewed } = useUser();
   const [review, setReview] = useState(null); // product being reviewed
-  const [activeOrder, setActiveOrder] = useState(null); // order for modal
+  const [activeOrder, setActiveOrder] = useState(null); // order details modal
+  const [trackingOrder, setTrackingOrder] = useState(null); // order for tracking modal
 
   return (
     <motion.div
@@ -43,7 +45,7 @@ export default function OrdersTab() {
               className="overflow-hidden rounded-[1.25rem] bg-snow ring-1 ring-line dark:bg-white/[0.03] dark:ring-white/10"
             >
               {/* Order header */}
-              <div className="flex flex-wrap items-center justify-between gap-4 border-b border-line px-5 py-4 dark:border-white/10">
+              <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line px-5 py-4 dark:border-white/10 sm:gap-4">
                 <div>
                   <div className="flex items-center gap-3 text-sm">
                     <span className="font-semibold text-ink dark:text-white">#{order.orderId}</span>
@@ -60,9 +62,23 @@ export default function OrdersTab() {
                     })}
                   </span>
                 </div>
-                <Button variant="ghost" className="text-xs" onClick={() => setActiveOrder(order)}>
-                  View Details
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="ghost"
+                    className="text-xs inline-flex items-center gap-1.5"
+                    onClick={() => setTrackingOrder(order)}
+                  >
+                    <Truck className="h-3.5 w-3.5" strokeWidth={2} />
+                    <span className="hidden sm:inline">Track</span>
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    className="text-xs"
+                    onClick={() => setActiveOrder(order)}
+                  >
+                    Details
+                  </Button>
+                </div>
               </div>
 
               {/* Items preview */}
@@ -117,6 +133,20 @@ export default function OrdersTab() {
 
       <WriteReviewModal product={review} open={!!review} onClose={() => setReview(null)} />
       {activeOrder && <OrderDetailsModal order={activeOrder} onClose={() => setActiveOrder(null)} />}
+      {trackingOrder && (
+        <TrackingModal
+          isOpen={!!trackingOrder}
+          onClose={() => setTrackingOrder(null)}
+          orderData={{
+            number: trackingOrder.orderId,
+            count: trackingOrder.items.length,
+            total: trackingOrder.total,
+            date: trackingOrder.date,
+            timestamp: trackingOrder.timestamp,
+            trackingNumber: trackingOrder.trackingNumber,
+          }}
+        />
+      )}
     </motion.div>
   );
 }

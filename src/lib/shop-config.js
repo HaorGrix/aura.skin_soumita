@@ -6,9 +6,19 @@ export const TAX_RATE = 0; // mock store — taxes shown as included
 
 /* Mock promo codes */
 export const PROMOS = {
-  GLOW10: { type: "percent", value: 10, label: "10% off — welcome glow ✨" },
-  BLOOM5: { type: "flat", value: 5, label: "$5 off your ritual 🌸" },
+  GLOW10: { type: "percent", value: 10, label: "10% off — welcome glow ✨", firstOrderOnly: true },
+  BLOOM5: { type: "flat", value: 5,   label: "$5 off your ritual 🌸",       firstOrderOnly: true },
 };
+
+/* Codes restricted to shoppers with zero completed orders.
+ * Derived from PROMOS so adding a future first-order code is a one-line change. */
+export const FIRST_ORDER_CODES = new Set(
+  Object.entries(PROMOS)
+    .filter(([, p]) => p.firstOrderOnly)
+    .map(([code]) => code)
+);
+
+// Loyalty codes are defined in src/data/reviews.js
 
 export function applyPromo(code, subtotal) {
   const promo = PROMOS[code?.trim().toUpperCase()];

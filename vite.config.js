@@ -8,4 +8,15 @@ export default defineConfig({
   // `.jfif` (JPEG with the older extension) isn't in Vite's default asset list
   // — opting it in so Shop by Concern's locally-added images get bundled.
   assetsInclude: ["**/*.jfif"],
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'framer-motion': ['framer-motion'],
+          'lenis': ['lenis', 'lenis/react'],
+          'lucide-react': ['lucide-react'],
+        }
+      }
+    }
+  }
 });

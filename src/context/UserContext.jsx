@@ -1,25 +1,32 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { MILESTONES, POINTS_PER_REVIEW, SEED_ORDERS } from "../data/reviews.js";
 
-/**
- * UserContext — the mock signed-in shopper: loyalty points, order history,
- * and the reviews they've written. One hook (`useUser`) powers the navbar
- * points pill, the Account page, the PDP "verified review" gating, and the
- * public review list (their reviews appear instantly after submitting).
- *
- * Designed to scale: points/reviews are derived + persisted; swapping the
- * seed for a real API (per real user id) is a drop-in change.
- */
 const UserContext = createContext(null);
-const STORAGE_KEY = "aura-user";
+const SESSION_KEY = "aura-session";
+const STORE_KEY = "aura_users_store";
 
 const MOCK_USER = { id: "usr_bd_8842", initial: "T" };
 const DEFAULT_PROFILE = { name: "Tahsin", email: "tahsin@example.com", phone: "+1 (555) 123-4567", address: "123 Aura Street, Seoul, South Korea" };
-const SEED_POINTS = 87; // lifetime points already earned
+const SEED_POINTS = 87;
 
-function load() {
+function loadStore() {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(STORE_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch {
+    return {};
+  }
+}
+
+function saveStore(store) {
+  try {
+    localStorage.setItem(STORE_KEY, JSON.stringify(store));
+  } catch {}
+}
+
+function loadSession() {
+  try {
+    const raw = localStorage.getItem(SESSION_KEY);
     return raw ? JSON.parse(raw) : null;
   } catch {
     return null;
@@ -34,18 +41,21 @@ export function nextMilestoneFor(points) {
 }
 
 export function UserProvider({ children }) {
-  const saved = load();
-  const [points, setPoints] = useState(saved?.points ?? SEED_POINTS);
-  const [myReviews, setMyReviews] = useState(saved?.myReviews ?? []);
-  const [reviewedIds, setReviewedIds] = useState(saved?.reviewedIds ?? []);
+  const session = loadSession();
+  const savedEmail = session?.email?.toLowerCase();
+  const savedAuthed = session?.authed ?? false;
+  
+  const store = loadStore();
+  const savedUserData = savedAuthed && savedEmail ? store[savedEmail] : null;
 
-  const [profile, setProfile] = useState(saved?.profile ?? DEFAULT_PROFILE);
+  const [profile, setProfile] = useState(savedUserData?.profile ?? DEFAULT_PROFILE);
+  const [points, setPoints] = useState(savedUserData ? savedUserData.points : SEED_POINTS);
+  const [myReviews, setMyReviews] = useState(savedUserData?.myReviews ?? []);
+  const [reviewedIds, setReviewedIds] = useState(savedUserData?.reviewedIds ?? []);
+  const [orders, setOrders] = useState(savedUserData ? savedUserData.orders : SEED_ORDERS);
+  const [usedCoupons, setUsedCoupons] = useState(savedUserData?.usedCoupons ?? []);
 
-  // —— Auth —— browsing is open to everyone; this only gates checkout.
-  // `authed` persists so a returning shopper stays signed in. The modal
-  // state (open/mode/onSuccess) is ephemeral UI, controlled from anywhere
-  // via openAuth()/closeAuth() so the navbar and checkout can share one flow.
-  const [authed, setAuthed] = useState(saved?.authed ?? false);
+  const [authed, setAuthed] = useState(savedAuthed);
   const [auth, setAuth] = useState({ open: false, mode: "login", onSuccess: null });
 
   const openAuth = useCallback((mode = "login", onSuccess = null) => {
@@ -55,30 +65,63 @@ export function UserProvider({ children }) {
     setAuth((a) => ({ ...a, open: false, onSuccess: null }));
   }, []);
 
-  const login = useCallback(({ email, name } = {}) => {
-    setAuthed(true);
-    setProfile((p) => ({ ...p, email: email || p.email, name: name || p.name }));
-  }, []);
-  const signup = useCallback(({ name, email } = {}) => {
-    setAuthed(true);
-    setProfile((p) => ({ ...p, name: name || p.name, email: email || p.email }));
-  }, []);
-  const logout = useCallback(() => setAuthed(false), []);
+  const handleAuth = useCallback((email, name) => {
+    const emailKey = email.toLowerCase();
+    const currentStore = loadStore();
+    const existingUser = currentStore[emailKey];
 
-  // Order history is static seed data (a real app would fetch it per user).
-  const orders = SEED_ORDERS;
+    if (existingUser) {
+      setProfile(existingUser.profile);
+      setPoints(existingUser.points);
+      setMyReviews(existingUser.myReviews || []);
+      setReviewedIds(existingUser.reviewedIds || []);
+      setOrders(existingUser.orders || []);
+      setUsedCoupons(existingUser.usedCoupons || []);
+    } else {
+      const newProfile = { ...DEFAULT_PROFILE, email, name: name || email.split("@")[0] };
+      setProfile(newProfile);
+      setPoints(0);
+      setMyReviews([]);
+      setReviewedIds([]);
+      setOrders([]);
+      setUsedCoupons([]);
+    }
+    
+    setAuthed(true);
+    localStorage.setItem(SESSION_KEY, JSON.stringify({ email: emailKey, authed: true }));
+  }, []);
+
+  const login = useCallback(({ email, name } = {}) => {
+    handleAuth(email, name);
+  }, [handleAuth]);
+
+  const signup = useCallback(({ name, email } = {}) => {
+    handleAuth(email, name);
+  }, [handleAuth]);
+
+  const logout = useCallback(() => {
+    setAuthed(false);
+    localStorage.removeItem(SESSION_KEY);
+    setProfile(DEFAULT_PROFILE);
+    setPoints(SEED_POINTS);
+    setMyReviews([]);
+    setReviewedIds([]);
+    setOrders(SEED_ORDERS);
+    setUsedCoupons([]);
+  }, []);
+
   const purchasedIds = useMemo(
     () => new Set(orders.flatMap((o) => o.items)),
     [orders]
   );
 
   useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({ points, myReviews, reviewedIds, profile, authed }));
-    } catch {
-      /* non-fatal */
-    }
-  }, [points, myReviews, reviewedIds, profile, authed]);
+    if (!authed || !profile.email) return;
+    const emailKey = profile.email.toLowerCase();
+    const currentStore = loadStore();
+    currentStore[emailKey] = { points, myReviews, reviewedIds, profile, orders, usedCoupons };
+    saveStore(currentStore);
+  }, [points, myReviews, reviewedIds, profile, authed, orders, usedCoupons]);
 
   const value = useMemo(() => {
     const hasPurchased = (id) => purchasedIds.has(id);
@@ -86,8 +129,9 @@ export function UserProvider({ children }) {
 
     return {
       ...MOCK_USER,
+      id: authed ? `usr_${profile.email}` : MOCK_USER.id,
+      initial: authed ? profile.name.charAt(0).toUpperCase() : MOCK_USER.initial,
       ...profile,
-      // Auth surface
       authed,
       auth,
       openAuth,
@@ -103,15 +147,13 @@ export function UserProvider({ children }) {
       milestones: MILESTONES,
       hasPurchased,
       hasReviewed,
-      // Reviews this user wrote for a given product (shown publicly on the PDP).
       myReviewsFor: (productId) => myReviews.filter((r) => r.productId === productId),
-      // Verified review → publishes the review + awards a point. No double-dipping.
       addReview: ({ productId, stars, title, body }) => {
         if (!hasPurchased(productId) || hasReviewed(productId)) return false;
         const review = {
           id: `usr-${productId}-${Date.now()}`,
           productId,
-          name: `${MOCK_USER.name} (You)`,
+          name: `${profile.name} (You)`,
           stars,
           title: title.trim() || "Verified review",
           body: body.trim(),
@@ -129,8 +171,27 @@ export function UserProvider({ children }) {
       updateProfile: (updates) => {
         setProfile((prev) => ({ ...prev, ...updates }));
       },
+      usedCoupons,
+      markCouponUsed: (code) => {
+        const normalized = code?.trim().toUpperCase();
+        if (!normalized) return;
+        setUsedCoupons((prev) => (prev.includes(normalized) ? prev : [...prev, normalized]));
+      },
+      addOrder: (orderData) => {
+        const newOrder = {
+          orderId: orderData.number,
+          date: new Date().toISOString().split('T')[0],
+          status: "Confirmed",
+          items: orderData.itemIds || [],
+          total: orderData.total,
+          email: orderData.email,
+          payMethod: orderData.payMethod,
+          timestamp: new Date().toISOString(),
+        };
+        setOrders((prev) => [newOrder, ...prev]);
+      },
     };
-  }, [points, myReviews, reviewedIds, orders, purchasedIds, profile, authed, auth, openAuth, closeAuth, login, signup, logout]);
+  }, [points, myReviews, reviewedIds, orders, purchasedIds, profile, authed, auth, openAuth, closeAuth, login, signup, logout, usedCoupons]);
 
   return <UserContext.Provider value={value}>{children}</UserContext.Provider>;
 }

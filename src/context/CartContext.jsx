@@ -106,11 +106,15 @@ export function CartProvider({ children }) {
       // Verifies code against general PROMOS (shop-config) and optionally
       // against user loyalty coupons passed in by the caller (Checkout).
       // Returns { success, label } on match, null on miss.
-      applyPromo: (code, extraCoupons = []) => {
+      applyPromo: (code, extraCoupons = [], usedCoupons = [], orders = []) => {
         const normalized = code?.trim().toUpperCase();
         if (!normalized) return null;
+        if (usedCoupons.includes(normalized)) return { success: false, alreadyUsed: true };
         const promo = PROMOS[normalized];
         if (promo) {
+          if (promo.firstOrderOnly && orders.length > 0) {
+            return { success: false, firstOrderOnly: true };
+          }
           setAppliedCoupon({ code: normalized, type: promo.type, value: promo.value, label: promo.label });
           return { success: true, label: promo.label };
         }

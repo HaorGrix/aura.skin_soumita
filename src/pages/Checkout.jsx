@@ -14,6 +14,7 @@ import {
   LogIn,
   UserPlus,
   Tag,
+  Truck as TrackIcon,
 } from "lucide-react";
 import { useCart } from "../context/CartContext.jsx";
 import { useUser } from "../context/UserContext.jsx";
@@ -25,6 +26,8 @@ import { formatPrice } from "../lib/format.js";
 import LineItem from "../components/cart/LineItem.jsx";
 import OrderSummary from "../components/cart/OrderSummary.jsx";
 import EmptyState from "../components/ui/EmptyState.jsx";
+import TrackingModal from "../components/TrackingModal.jsx";
+import PromoHint from "../components/ui/PromoHint.jsx";
 
 const STEPS = [
   { id: "info", label: "Information" },
@@ -36,7 +39,7 @@ const emailOk = (v) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
 
 export default function Checkout() {
   const { items, subtotal, count, clear, discountAmount, appliedCoupon, applyPromo, removeCoupon: cartRemoveCoupon } = useCart();
-  const { authed, openAuth, email: userEmail, name: userName, coupons } = useUser();
+  const { authed, openAuth, email: userEmail, name: userName, coupons, addOrder, usedCoupons, markCouponUsed, orders } = useUser();
   const { toast } = useToast();
 
   // Login is only required here. Signed-in shoppers skip the gate; everyone
@@ -117,8 +120,12 @@ export default function Checkout() {
     if (!code) return;
     // applyPromo checks general PROMOS; coupons (loyalty) passed as extra so
     // context can verify both types without importing UserContext itself.
-    const result = applyPromo(code, coupons);
-    if (result) {
+    const result = applyPromo(code, coupons, usedCoupons, orders);
+    if (result?.alreadyUsed) {
+      toast.error("This coupon has already been used on a previous order.", "Already redeemed");
+    } else if (result?.firstOrderOnly) {
+      toast.error("These codes are exclusive to your first order.", "First order only");
+    } else if (result?.success) {
       setCouponInput("");
       toast.success(result.label, "Coupon applied");
     } else {
@@ -172,13 +179,33 @@ export default function Checkout() {
   function placeOrder() {
     setProcessing(true);
     setTimeout(() => {
-      setOrder({
-        number: "AUR-" + Math.floor(100000 + Math.random() * 900000),
+      const orderNumber = "AUR-" + Math.floor(100000 + Math.random() * 900000);
+      const itemIds = items.map((item) => item.id); // Extract product IDs from cart
+
+      const orderData = {
+        number: orderNumber,
         email: form.email,
         total,
         count,
         payMethod,
+        itemIds, // Product IDs for order history
+        timestamp: new Date().toISOString(), // For tracking status
+      };
+
+      setOrder(orderData);
+
+      // Lock the coupon so it cannot be reused on future orders.
+      if (appliedCoupon) markCouponUsed(appliedCoupon.code);
+
+      // Persist to global order history (UserContext)
+      addOrder({
+        number: orderNumber,
+        total,
+        email: form.email,
+        payMethod,
+        itemIds,
       });
+
       setProcessing(false);
       sessionStorage.removeItem("aura_checkout_form");
       clear();
@@ -250,6 +277,7 @@ export default function Checkout() {
                     couponInput={couponInput} setCouponInput={setCouponInput}
                     applyCoupon={applyCoupon} removeCoupon={removeCoupon}
                     authed={authed} openAuth={openAuth}
+                    orders={orders} coupons={coupons} usedCoupons={usedCoupons}
                   />
                 </div>
               </motion.div>
@@ -370,6 +398,7 @@ export default function Checkout() {
               couponInput={couponInput} setCouponInput={setCouponInput}
               applyCoupon={applyCoupon} removeCoupon={removeCoupon}
               authed={authed} openAuth={openAuth}
+              orders={orders} coupons={coupons} usedCoupons={usedCoupons}
             />
           </div>
         </div>
@@ -614,7 +643,7 @@ function PaymentStep({ pay, setPay, payMethod, total, errors, setErrors }) {
 }
 
 /* ---------- Summary panel (items + totals) ---------- */
-function SummaryPanel({ items, subtotal, shipping, total, discountAmount, appliedCoupon, couponInput, setCouponInput, applyCoupon, removeCoupon, authed, openAuth }) {
+function SummaryPanel({ items, subtotal, shipping, total, discountAmount, appliedCoupon, couponInput, setCouponInput, applyCoupon, removeCoupon, authed, openAuth, orders, coupons, usedCoupons }) {
   return (
     <div className="space-y-4">
       <div className="max-h-72 space-y-4 overflow-y-auto rounded-[1.5rem] bg-snow p-5 ring-1 ring-line dark:bg-white/[0.03] dark:ring-white/10">
@@ -647,6 +676,12 @@ function SummaryPanel({ items, subtotal, shipping, total, discountAmount, applie
             </div>
           </form>
         )}
+        <PromoHint
+          orders={orders}
+          coupons={coupons}
+          usedCoupons={usedCoupons}
+          appliedCoupon={appliedCoupon}
+        />
         {!authed && !appliedCoupon && (
           <p className="mt-3 text-center text-xs text-ink-soft dark:text-white/50">
             Have an account?{" "}
@@ -669,7 +704,15 @@ function SummaryPanel({ items, subtotal, shipping, total, discountAmount, applie
 
 /* ---------- Success ---------- */
 function Success({ order }) {
+  const [trackingOpen, setTrackingOpen] = useState(false);
   const SPARKLES = ["🌸", "✨", "💖", "🌟", "🌺", "💗"];
+
+  // Add timestamp to order for tracking status calculation
+  const orderWithTimestamp = {
+    ...order,
+    timestamp: order.timestamp || new Date().toISOString(),
+  };
+
   return (
     <div className="relative flex min-h-screen items-center justify-center overflow-hidden px-5 pt-28">
       {SPARKLES.map((s, i) => (
@@ -732,9 +775,16 @@ function Success({ order }) {
         </div>
 
         <div className="mt-7 flex flex-col gap-3 sm:flex-row">
+          <button
+            onClick={() => setTrackingOpen(true)}
+            className="flex-1 inline-flex items-center justify-center gap-2 rounded-full bg-magenta py-3.5 text-sm font-semibold text-white shadow-soft transition-shadow hover:shadow-[var(--shadow-glow-pink)]"
+          >
+            <TrackIcon className="h-4 w-4" strokeWidth={2} />
+            Track Order
+          </button>
           <a
             href="#/shop"
-            className="flex-1 rounded-full bg-magenta py-3.5 text-sm font-semibold text-white shadow-soft transition-shadow hover:shadow-[var(--shadow-glow-pink)]"
+            className="flex-1 rounded-full border border-ink/15 py-3.5 text-sm font-semibold text-ink transition-colors hover:border-magenta/50 dark:border-white/15 dark:text-white"
           >
             Continue shopping
           </a>
@@ -745,6 +795,13 @@ function Success({ order }) {
             Back home
           </a>
         </div>
+
+        {/* Tracking Modal */}
+        <TrackingModal
+          isOpen={trackingOpen}
+          onClose={() => setTrackingOpen(false)}
+          orderData={orderWithTimestamp}
+        />
       </motion.div>
     </div>
   );

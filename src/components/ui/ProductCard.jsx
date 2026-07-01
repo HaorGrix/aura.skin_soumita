@@ -104,7 +104,8 @@ export default function ProductCard({ product, onQuickView }) {
               -{discountPercent}%
             </span>
           )}
-          {badge && <Badge variant={badge.variant}>{badge.label}</Badge>}
+          {product.isNew && <Badge variant="new">New</Badge>}
+          {badge && badge.variant !== "new" && <Badge variant={badge.variant}>{badge.label}</Badge>}
         </div>
 
         {/* Out-of-stock overlay */}

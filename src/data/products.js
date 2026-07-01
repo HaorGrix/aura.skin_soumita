@@ -114,11 +114,11 @@ function p(brand, name, opts) {
 export const PRODUCTS = [
   // —— Beauty of Joseon ——
   p("Beauty of Joseon", "Relief Sun: Rice + Probiotics SPF50+", { category: "Sunscreen", skinType: ["Dry", "Combination", "Sensitive"], concern: ["Sun Protection", "Hydration"], price: 18, badge: "best", tone: "gold", ingredients: ["Rice", "Niacinamide"], popularity: 99, image: "Relief-Sun-Duo-Original-Aqua-Fresh_Beauty-of-Joseon_8190145-52106365010292.jpg" }),
-  p("Beauty of Joseon", "Glow Serum: Propolis + Niacinamide", { category: "Serum", skinType: ["Oily", "Combination"], concern: ["Brightening", "Pores"], price: 17, badge: "dewy", tone: "gold", ingredients: ["Propolis", "Niacinamide"], popularity: 95 }),
+//   p("Beauty of Joseon", "Glow Serum: Propolis + Niacinamide", { category: "Serum", skinType: ["Oily", "Combination"], concern: ["Brightening", "Pores"], price: 17, badge: "dewy", tone: "gold", ingredients: ["Propolis", "Niacinamide"], popularity: 95 }),
   p("Beauty of Joseon", "Dynasty Cream", { category: "Moisturizer", skinType: ["Dry", "Normal"], concern: ["Hydration", "Anti-Aging"], price: 24, tone: "peach", ingredients: ["Rice", "Ginseng"], popularity: 88, image: "30ml_121dcc02-3503-478c-8a5a-90d071553381.jpg" }),
-  p("Beauty of Joseon", "Ginseng Essence Water", { category: "Essence", skinType: ["Dry", "Normal", "Combination"], concern: ["Hydration", "Anti-Aging"], price: 20, badge: "dewy", tone: "gold", ingredients: ["Ginseng"], popularity: 84 }),
+//   p("Beauty of Joseon", "Ginseng Essence Water", { category: "Essence", skinType: ["Dry", "Normal", "Combination"], concern: ["Hydration", "Anti-Aging"], price: 20, badge: "dewy", tone: "gold", ingredients: ["Ginseng"], popularity: 84 }),
   p("Beauty of Joseon", "Revive Eye Serum: Ginseng + Retinal", { category: "Eye Care", skinType: ["Normal", "Dry"], concern: ["Anti-Aging"], price: 22, tone: "lilac", ingredients: ["Ginseng", "Retinal"], isNew: true, badge: "new", popularity: 80, image: "15_0420__50ml__v2_b09abffc-c810-4633-998e-d1ae98c36f9d.jpg" }),
-  p("Beauty of Joseon", "Glow Deep Serum: Rice + Alpha Arbutin", { category: "Serum", skinType: ["Combination", "Oily"], concern: ["Brightening"], price: 18, tone: "rose", ingredients: ["Rice", "Alpha Arbutin"], popularity: 86 }),
+//   p("Beauty of Joseon", "Glow Deep Serum: Rice + Alpha Arbutin", { category: "Serum", skinType: ["Combination", "Oily"], concern: ["Brightening"], price: 18, tone: "rose", ingredients: ["Rice", "Alpha Arbutin"], popularity: 86 }),
   // New Beauty of Joseon (real bottle photography)
   p("Beauty of Joseon", "Calming Barrier Serum: Green Tea-HA + Panthenol", { category: "Serum", skinType: ["Sensitive", "Dry", "Combination"], concern: ["Soothing", "Barrier Repair"], price: 17, badge: "dewy", tone: "sage", ingredients: ["Green Tea", "Panthenol"], isNew: true, popularity: 83, image: "001_61356454-461b-424d-8ef7-32589fb88d92.png" }),
   p("Beauty of Joseon", "Dayscreen Moisturizer SPF30: Green Tea-HA + Ceramide", { category: "Sunscreen", skinType: ["Normal", "Combination", "Dry"], concern: ["Sun Protection", "Hydration"], price: 18, tone: "sage", ingredients: ["Green Tea", "Ceramides"], popularity: 80, image: "01_0409__-Global.jpg" }),
@@ -132,7 +132,7 @@ export const PRODUCTS = [
   p("COSRX", "Advanced Snail 92 All-in-One Cream", { category: "Moisturizer", skinType: ["Dry", "Normal"], concern: ["Hydration", "Barrier Repair"], price: 23, tone: "cyan", ingredients: ["Snail Mucin"], popularity: 85, image: "NyPtX5dZn4iZVRVaKax3VsHngZNmPzjOWCfX3N0c.png" }),
   p("COSRX", "Low pH Good Morning Gel Cleanser", { category: "Cleanser", skinType: ["Oily", "Combination", "Sensitive"], concern: ["Pores", "Soothing"], price: 13, badge: "best", tone: "sage", ingredients: ["BHA", "Tea Tree"], popularity: 90, image: "oCqZwi7VTHOHugVbrBElW7IvENExXflbjsSRmgHg.png" }),
   p("COSRX", "AHA/BHA Clarifying Treatment Toner", { category: "Toner", skinType: ["Oily", "Combination"], concern: ["Exfoliation", "Pores"], price: 16, badge: "exfoliation", tone: "sky", ingredients: ["AHA", "BHA"], popularity: 78, image: "COSRX-AHABHA-Clarifying-Treatment-Toner-150ml-thumbnail.webp" }),
-  p("COSRX", "The Vitamin C 23 Serum", { category: "Serum", skinType: ["Normal", "Combination"], concern: ["Brightening", "Anti-Aging"], price: 27, tone: "gold", ingredients: ["Vitamin C"], popularity: 82 }),
+//   p("COSRX", "The Vitamin C 23 Serum", { category: "Serum", skinType: ["Normal", "Combination"], concern: ["Brightening", "Anti-Aging"], price: 27, tone: "gold", ingredients: ["Vitamin C"], popularity: 82 }),
   p("COSRX", "Acne Pimple Master Patch", { category: "Treatment", skinType: ["Oily", "Combination"], concern: ["Acne & Blemishes"], price: 6, compareAt: 8, badge: "sale", tone: "sky", ingredients: ["Hydrocolloid"], popularity: 91, image: "fkjkbWBlsrynF3yixdWgXB05XGNOz9Y620QStIy3.png" }),
   p("COSRX", "Centella Blemish Cream", { category: "Treatment", skinType: ["Sensitive", "Oily"], concern: ["Acne & Blemishes", "Soothing"], price: 15, tone: "sage", ingredients: ["Centella"], popularity: 74, image: "aiM6b9wOY1exy3utP29CGFvHhk6W375V1ORT0ENy.png" }),
   // New COSRX (real bottle photography)
@@ -153,8 +153,8 @@ export const PRODUCTS = [
   p("Anua", "Heartleaf 77% Soothing Toner", { category: "Toner", skinType: ["Sensitive", "Oily", "Combination"], concern: ["Soothing", "Pores"], price: 19, badge: "best", tone: "sage", ingredients: ["Heartleaf"], popularity: 97, img: "toner-heartleaf-77-soothing-toner", front: "Anua-Heartleaf-77-Soothing-Toner-250ml.png" }),
   p("Anua", "Heartleaf Pore Control Cleansing Oil", { category: "Cleanser", skinType: ["Oily", "Combination"], concern: ["Pores"], price: 21, badge: "best", tone: "sage", ingredients: ["Heartleaf"], popularity: 93, img: "cleanser-heartleaf-pore-control-cleansing-oil", front: "Anua-Heartleaf-Pore-Control-Cleansing-Oil-200ml.png" }),
   p("Anua", "Peach 70% Niacinamide Serum", { category: "Serum", skinType: ["Combination", "Normal"], concern: ["Brightening", "Pores"], price: 22, badge: "dewy", tone: "peach", ingredients: ["Niacinamide", "Peach"], popularity: 87, img: "Anua-Peach-70-Niacinamide-Serum" }),
-  p("Anua", "Birch 70% Moisture Sleeping Mask", { category: "Mask", skinType: ["Dry", "Normal"], concern: ["Hydration"], price: 23, tone: "lilac", ingredients: ["Birch Sap"], isNew: true, badge: "new", popularity: 79 }),
-  p("Anua", "Rice 70% Glow Milky Toner", { category: "Toner", skinType: ["Dry", "Normal"], concern: ["Brightening", "Hydration"], price: 20, badge: "dewy", tone: "pink", ingredients: ["Rice"], popularity: 83 }),
+//   p("Anua", "Birch 70% Moisture Sleeping Mask", { category: "Mask", skinType: ["Dry", "Normal"], concern: ["Hydration"], price: 23, tone: "lilac", ingredients: ["Birch Sap"], isNew: true, badge: "new", popularity: 79 }),
+//   p("Anua", "Rice 70% Glow Milky Toner", { category: "Toner", skinType: ["Dry", "Normal"], concern: ["Brightening", "Hydration"], price: 20, badge: "dewy", tone: "pink", ingredients: ["Rice"], popularity: 83 }),
   p("Anua", "Heartleaf 80% Moisture Soothing Ampoule", { category: "Serum", skinType: ["Sensitive", "Dry", "Combination"], concern: ["Soothing", "Hydration"], price: 22, badge: "dewy", tone: "sage", ingredients: ["Heartleaf"], popularity: 90, img: "heartleaf-80-moisture-soothing-ampoule", front: "anua-global-ampoule-serum-heartleaf-80-moisture-soothing-ampoule-1239193699.jpg" }),
   p("Anua", "Niacinamide 10% + TXA 4% Serum", { category: "Serum", skinType: ["Combination", "Normal", "Oily"], concern: ["Brightening"], price: 24, badge: "dewy", tone: "gold", ingredients: ["Niacinamide", "Tranexamic Acid"], popularity: 86, img: "niacinamide-10-txa-4-serum", front: "Anua-Niacinamide-10-TXA-4-Dark-spot-correcting-Serum.png" }),
   p("Anua", "Heartleaf LHA Moisture Peeling Gel", { category: "Treatment", skinType: ["Oily", "Combination"], concern: ["Exfoliation", "Pores"], price: 20, badge: "exfoliation", tone: "sky", ingredients: ["LHA", "Heartleaf"], popularity: 78, img: "heartleaf-lha-moisture-peeling-gel", front: "anua-global-cleanser-heartleaf-lha-moisture-peeling-gel-1239193740.jpg" }),
@@ -179,10 +179,10 @@ export const PRODUCTS = [
   // —— The Ordinary —— (real product photography from /assests/ordinary)
   p("The Ordinary", "Niacinamide 10% + Zinc 1%", { category: "Serum", skinType: ["Oily", "Combination"], concern: ["Pores", "Acne & Blemishes"], price: 6, badge: "best", tone: "sky", ingredients: ["Niacinamide", "Zinc"], popularity: 96, image: "rdn-niacinamide-10pct-zinc-1pct-30ml.png" }),
   p("The Ordinary", "Hyaluronic Acid 2% + B5", { category: "Serum", skinType: ["Dry", "Normal", "Sensitive"], concern: ["Hydration"], price: 9, badge: "best", tone: "sky", ingredients: ["Hyaluronic Acid"], popularity: 92, image: "ord-hyaluronic-acid-2pct-B5-30ml-Clr-Acu.png" }),
-  p("The Ordinary", "Granactive Retinoid 2% Emulsion", { category: "Serum", skinType: ["Normal", "Combination"], concern: ["Anti-Aging"], price: 10, tone: "lilac", ingredients: ["Retinoid"], popularity: 81 }),
-  p("The Ordinary", "AHA 30% + BHA 2% Peeling Solution", { category: "Treatment", skinType: ["Oily", "Combination"], concern: ["Exfoliation", "Brightening"], price: 8, badge: "exfoliation", tone: "rose", ingredients: ["AHA", "BHA"], popularity: 89 }),
+//   p("The Ordinary", "Granactive Retinoid 2% Emulsion", { category: "Serum", skinType: ["Normal", "Combination"], concern: ["Anti-Aging"], price: 10, tone: "lilac", ingredients: ["Retinoid"], popularity: 81 }),
+//   p("The Ordinary", "AHA 30% + BHA 2% Peeling Solution", { category: "Treatment", skinType: ["Oily", "Combination"], concern: ["Exfoliation", "Brightening"], price: 8, badge: "exfoliation", tone: "rose", ingredients: ["AHA", "BHA"], popularity: 89 }),
   p("The Ordinary", "Natural Moisturizing Factors + HA", { category: "Moisturizer", skinType: ["Dry", "Sensitive", "Normal"], concern: ["Hydration", "Barrier Repair"], price: 8, tone: "sky", ingredients: ["Hyaluronic Acid", "Amino Acids"], popularity: 84, image: "rdn-natural-moisturizing-factors-ha-30ml.png" }),
-  p("The Ordinary", "Caffeine Solution 5% + EGCG", { category: "Eye Care", skinType: ["Normal", "Combination"], concern: ["Anti-Aging"], price: 8, tone: "sage", ingredients: ["Caffeine"], popularity: 77 }),
+//   p("The Ordinary", "Caffeine Solution 5% + EGCG", { category: "Eye Care", skinType: ["Normal", "Combination"], concern: ["Anti-Aging"], price: 8, tone: "sage", ingredients: ["Caffeine"], popularity: 77 }),
   // New The Ordinary (real bottle photography)
   p("The Ordinary", "Glycolic Acid 7% Exfoliating Toner", { category: "Toner", skinType: ["Oily", "Combination"], concern: ["Exfoliation", "Brightening"], price: 13, badge: "exfoliation", tone: "rose", ingredients: ["AHA"], popularity: 85, image: "ord-glyc-acid-7pct-100ml-Aug-UPC.png" }),
   p("The Ordinary", "Salicylic Acid 2% Solution", { category: "Treatment", skinType: ["Oily", "Combination"], concern: ["Acne & Blemishes", "Pores"], price: 7, tone: "sky", ingredients: ["BHA"], popularity: 83, image: "rdn-salicylic-acid-2pct-solution-30ml.png" }),
@@ -193,14 +193,14 @@ export const PRODUCTS = [
   p("The Ordinary", "Multi-Peptide Eye Serum", { category: "Eye Care", skinType: ["Normal", "Combination"], concern: ["Anti-Aging"], price: 12, tone: "lilac", ingredients: ["Peptide", "Caffeine"], popularity: 79, image: "FY25-D41247-ORD-Web-PDP-Mlt-Pptd-Eye-1x1-EN-1.jpg" }),
 
   // —— The Body Shop ——
-  p("The Body Shop", "Vitamin E Moisture Cream", { category: "Moisturizer", skinType: ["Normal", "Dry"], concern: ["Hydration"], price: 19, tone: "lilac", ingredients: ["Vitamin E"], popularity: 70 }),
-  p("The Body Shop", "Tea Tree Skin Clearing Facial Wash", { category: "Cleanser", skinType: ["Oily", "Combination"], concern: ["Acne & Blemishes", "Pores"], price: 12, tone: "sage", ingredients: ["Tea Tree"], popularity: 72 }),
-  p("The Body Shop", "Drops of Youth Concentrate", { category: "Serum", skinType: ["Normal", "Combination"], concern: ["Anti-Aging"], price: 30, tone: "sage", ingredients: ["Edelweiss"], popularity: 66 }),
-  p("The Body Shop", "Aloe Soothing Day Cream", { category: "Moisturizer", skinType: ["Sensitive", "Normal"], concern: ["Soothing", "Hydration"], price: 18, tone: "sage", ingredients: ["Aloe"], popularity: 68 }),
+//   p("The Body Shop", "Vitamin E Moisture Cream", { category: "Moisturizer", skinType: ["Normal", "Dry"], concern: ["Hydration"], price: 19, tone: "lilac", ingredients: ["Vitamin E"], popularity: 70 }),
+//   p("The Body Shop", "Tea Tree Skin Clearing Facial Wash", { category: "Cleanser", skinType: ["Oily", "Combination"], concern: ["Acne & Blemishes", "Pores"], price: 12, tone: "sage", ingredients: ["Tea Tree"], popularity: 72 }),
+//   p("The Body Shop", "Drops of Youth Concentrate", { category: "Serum", skinType: ["Normal", "Combination"], concern: ["Anti-Aging"], price: 30, tone: "sage", ingredients: ["Edelweiss"], popularity: 66 }),
+//   p("The Body Shop", "Aloe Soothing Day Cream", { category: "Moisturizer", skinType: ["Sensitive", "Normal"], concern: ["Soothing", "Hydration"], price: 18, tone: "sage", ingredients: ["Aloe"], popularity: 68 }),
 
   // —— SKIN1004 (Centella) —— (real photography from /assests/centella)
   p("SKIN1004", "Madagascar Centella Ampoule", { category: "Serum", skinType: ["Sensitive", "Oily", "Combination"], concern: ["Soothing", "Acne & Blemishes"], price: 20, badge: "best", tone: "sage", ingredients: ["Centella"], popularity: 90, img: "ampoule-serum-centella-ampoule" }),
-  p("SKIN1004", "Centella Hyalu-Cica Water-Fit Sun Serum SPF50+", { category: "Sunscreen", skinType: ["Sensitive", "Combination"], concern: ["Sun Protection", "Soothing"], price: 19, badge: "dewy", tone: "cyan", ingredients: ["Centella", "Hyaluronic Acid"], popularity: 85 }),
+//   p("SKIN1004", "Centella Hyalu-Cica Water-Fit Sun Serum SPF50+", { category: "Sunscreen", skinType: ["Sensitive", "Combination"], concern: ["Sun Protection", "Soothing"], price: 19, badge: "dewy", tone: "cyan", ingredients: ["Centella", "Hyaluronic Acid"], popularity: 85 }),
   p("SKIN1004", "Centella Tone Brightening Capsule Ampoule", { category: "Serum", skinType: ["Combination", "Normal"], concern: ["Brightening"], price: 22, tone: "gold", ingredients: ["Centella", "Niacinamide"], isNew: true, badge: "new", popularity: 76, img: "brightening-capsule-ampoule" }),
   p("SKIN1004", "Centella Teca Soothing Toner", { category: "Toner", skinType: ["Sensitive", "Combination", "Normal"], concern: ["Soothing", "Hydration"], price: 20, badge: "barrier", tone: "sage", ingredients: ["Centella", "TECA"], popularity: 84, img: "centella-teca-soothing-toner", front: "skin1004-210ml-centella-teca-soothing-toner-1217895427.png" }),
   p("SKIN1004", "Centella Teca Ampoule", { category: "Serum", skinType: ["Sensitive", "Combination"], concern: ["Soothing", "Barrier Repair"], price: 24, badge: "barrier", tone: "sage", ingredients: ["Centella", "TECA"], popularity: 83, img: "centella-teca-ampoule", front: "skin1004-50ml-centella-teca-ampoule-1217895426.png" }),
@@ -217,46 +217,46 @@ export const PRODUCTS = [
   p("SKIN1004", "Retinol 0.2% Boosting Shot Ampoule", { category: "Serum", skinType: ["Normal", "Combination"], concern: ["Anti-Aging"], price: 26, tone: "lilac", ingredients: ["Retinol", "Centella"], popularity: 77, img: "retinol-0-2-boosting-shot-ampoule" }),
 
   // —— Simple ——
-  p("Simple", "Kind to Skin Moisturizer", { category: "Moisturizer", skinType: ["Sensitive", "Normal"], concern: ["Hydration", "Soothing"], price: 11, tone: "sky", ingredients: ["Pro-Vitamin B5"], popularity: 65 }),
-  p("Simple", "Micellar Cleansing Water", { category: "Cleanser", skinType: ["Sensitive", "Normal", "Combination"], concern: ["Soothing"], price: 9, tone: "sky", ingredients: ["Triple Purified Water"], popularity: 71 }),
-  p("Simple", "Refreshing Facial Wash Gel", { category: "Cleanser", skinType: ["Normal", "Combination"], concern: ["Soothing"], price: 8, tone: "sage", ingredients: ["Pro-Vitamin B5"], popularity: 60 }),
+//   p("Simple", "Kind to Skin Moisturizer", { category: "Moisturizer", skinType: ["Sensitive", "Normal"], concern: ["Hydration", "Soothing"], price: 11, tone: "sky", ingredients: ["Pro-Vitamin B5"], popularity: 65 }),
+//   p("Simple", "Micellar Cleansing Water", { category: "Cleanser", skinType: ["Sensitive", "Normal", "Combination"], concern: ["Soothing"], price: 9, tone: "sky", ingredients: ["Triple Purified Water"], popularity: 71 }),
+//   p("Simple", "Refreshing Facial Wash Gel", { category: "Cleanser", skinType: ["Normal", "Combination"], concern: ["Soothing"], price: 8, tone: "sage", ingredients: ["Pro-Vitamin B5"], popularity: 60 }),
 
   // —— Round Lab ——
-  p("Round Lab", "1025 Dokdo Toner", { category: "Toner", skinType: ["Sensitive", "Dry", "Normal"], concern: ["Hydration", "Barrier Repair"], price: 21, badge: "barrier", tone: "sky", ingredients: ["Deep Sea Water"], popularity: 86 }),
-  p("Round Lab", "Birch Juice Moisturizing Sunscreen SPF50+", { category: "Sunscreen", skinType: ["Dry", "Normal"], concern: ["Sun Protection", "Hydration"], price: 22, badge: "dewy", tone: "sage", ingredients: ["Birch Sap"], popularity: 82 }),
-  p("Round Lab", "Soybean Nourishing Cream", { category: "Moisturizer", skinType: ["Dry", "Normal"], concern: ["Hydration", "Barrier Repair"], price: 24, tone: "gold", ingredients: ["Soybean"], popularity: 73 }),
+//   p("Round Lab", "1025 Dokdo Toner", { category: "Toner", skinType: ["Sensitive", "Dry", "Normal"], concern: ["Hydration", "Barrier Repair"], price: 21, badge: "barrier", tone: "sky", ingredients: ["Deep Sea Water"], popularity: 86 }),
+//   p("Round Lab", "Birch Juice Moisturizing Sunscreen SPF50+", { category: "Sunscreen", skinType: ["Dry", "Normal"], concern: ["Sun Protection", "Hydration"], price: 22, badge: "dewy", tone: "sage", ingredients: ["Birch Sap"], popularity: 82 }),
+//   p("Round Lab", "Soybean Nourishing Cream", { category: "Moisturizer", skinType: ["Dry", "Normal"], concern: ["Hydration", "Barrier Repair"], price: 24, tone: "gold", ingredients: ["Soybean"], popularity: 73 }),
 
   // —— Torriden ——
-  p("Torriden", "DIVE-IN Low Molecular Hyaluronic Acid Serum", { category: "Serum", skinType: ["Dry", "Sensitive", "Combination"], concern: ["Hydration", "Barrier Repair"], price: 18, badge: "best", tone: "sky", ingredients: ["Hyaluronic Acid"], popularity: 88 }),
-  p("Torriden", "Balanceful Cica Toner", { category: "Toner", skinType: ["Sensitive", "Combination"], concern: ["Soothing", "Hydration"], price: 17, tone: "sage", ingredients: ["Centella"], popularity: 75 }),
-  p("Torriden", "DIVE-IN Cleansing Foam", { category: "Cleanser", skinType: ["Normal", "Sensitive"], concern: ["Hydration"], price: 14, tone: "cyan", ingredients: ["Hyaluronic Acid"], popularity: 67 }),
+//   p("Torriden", "DIVE-IN Low Molecular Hyaluronic Acid Serum", { category: "Serum", skinType: ["Dry", "Sensitive", "Combination"], concern: ["Hydration", "Barrier Repair"], price: 18, badge: "best", tone: "sky", ingredients: ["Hyaluronic Acid"], popularity: 88 }),
+//   p("Torriden", "Balanceful Cica Toner", { category: "Toner", skinType: ["Sensitive", "Combination"], concern: ["Soothing", "Hydration"], price: 17, tone: "sage", ingredients: ["Centella"], popularity: 75 }),
+//   p("Torriden", "DIVE-IN Cleansing Foam", { category: "Cleanser", skinType: ["Normal", "Sensitive"], concern: ["Hydration"], price: 14, tone: "cyan", ingredients: ["Hyaluronic Acid"], popularity: 67 }),
 
   // —— Some By Mi ——
-  p("Some By Mi", "AHA BHA PHA 30 Days Miracle Toner", { category: "Toner", skinType: ["Oily", "Combination"], concern: ["Exfoliation", "Acne & Blemishes"], price: 16, badge: "exfoliation", tone: "rose", ingredients: ["AHA", "BHA", "PHA"], popularity: 84 }),
-  p("Some By Mi", "Snail Truecica Miracle Repair Serum", { category: "Serum", skinType: ["Sensitive", "Combination"], concern: ["Barrier Repair", "Acne & Blemishes"], price: 21, badge: "barrier", tone: "cyan", ingredients: ["Snail Mucin", "Centella"], popularity: 80 }),
-  p("Some By Mi", "Yuja Niacin Brightening Sleeping Mask", { category: "Mask", skinType: ["Normal", "Combination"], concern: ["Brightening"], price: 19, tone: "gold", ingredients: ["Yuja", "Niacinamide"], popularity: 72 }),
+//   p("Some By Mi", "AHA BHA PHA 30 Days Miracle Toner", { category: "Toner", skinType: ["Oily", "Combination"], concern: ["Exfoliation", "Acne & Blemishes"], price: 16, badge: "exfoliation", tone: "rose", ingredients: ["AHA", "BHA", "PHA"], popularity: 84 }),
+//   p("Some By Mi", "Snail Truecica Miracle Repair Serum", { category: "Serum", skinType: ["Sensitive", "Combination"], concern: ["Barrier Repair", "Acne & Blemishes"], price: 21, badge: "barrier", tone: "cyan", ingredients: ["Snail Mucin", "Centella"], popularity: 80 }),
+//   p("Some By Mi", "Yuja Niacin Brightening Sleeping Mask", { category: "Mask", skinType: ["Normal", "Combination"], concern: ["Brightening"], price: 19, tone: "gold", ingredients: ["Yuja", "Niacinamide"], popularity: 72 }),
 
   // —— Laneige ——
-  p("Laneige", "Water Sleeping Mask", { category: "Mask", skinType: ["Dry", "Normal", "Combination"], concern: ["Hydration"], price: 29, badge: "best", tone: "sky", ingredients: ["Probiotics"], popularity: 89 }),
-  p("Laneige", "Cream Skin Toner & Moisturizer", { category: "Toner", skinType: ["Dry", "Sensitive"], concern: ["Hydration", "Barrier Repair"], price: 28, tone: "pink", ingredients: ["Ceramides"], popularity: 81 }),
-  p("Laneige", "Lip Sleeping Mask", { category: "Treatment", skinType: ["Dry", "Normal"], concern: ["Hydration"], price: 24, badge: "best", tone: "rose", ingredients: ["Berry Complex"], popularity: 94 }),
+//   p("Laneige", "Water Sleeping Mask", { category: "Mask", skinType: ["Dry", "Normal", "Combination"], concern: ["Hydration"], price: 29, badge: "best", tone: "sky", ingredients: ["Probiotics"], popularity: 89 }),
+//   p("Laneige", "Cream Skin Toner & Moisturizer", { category: "Toner", skinType: ["Dry", "Sensitive"], concern: ["Hydration", "Barrier Repair"], price: 28, tone: "pink", ingredients: ["Ceramides"], popularity: 81 }),
+//   p("Laneige", "Lip Sleeping Mask", { category: "Treatment", skinType: ["Dry", "Normal"], concern: ["Hydration"], price: 24, badge: "best", tone: "rose", ingredients: ["Berry Complex"], popularity: 94 }),
 
   // —— Innisfree ——
-  p("Innisfree", "Green Tea Seed Hyaluronic Serum", { category: "Serum", skinType: ["Combination", "Normal"], concern: ["Hydration"], price: 27, tone: "sage", ingredients: ["Green Tea"], popularity: 78 }),
-  p("Innisfree", "Black Tea Youth Enhancing Ampoule", { category: "Serum", skinType: ["Normal", "Dry"], concern: ["Anti-Aging"], price: 39, tone: "gold", ingredients: ["Black Tea"], popularity: 70 }),
-  p("Innisfree", "Volcanic Pore Cleansing Foam", { category: "Cleanser", skinType: ["Oily", "Combination"], concern: ["Pores"], price: 12, tone: "sage", ingredients: ["Volcanic Clay"], popularity: 69 }),
+//   p("Innisfree", "Green Tea Seed Hyaluronic Serum", { category: "Serum", skinType: ["Combination", "Normal"], concern: ["Hydration"], price: 27, tone: "sage", ingredients: ["Green Tea"], popularity: 78 }),
+//   p("Innisfree", "Black Tea Youth Enhancing Ampoule", { category: "Serum", skinType: ["Normal", "Dry"], concern: ["Anti-Aging"], price: 39, tone: "gold", ingredients: ["Black Tea"], popularity: 70 }),
+//   p("Innisfree", "Volcanic Pore Cleansing Foam", { category: "Cleanser", skinType: ["Oily", "Combination"], concern: ["Pores"], price: 12, tone: "sage", ingredients: ["Volcanic Clay"], popularity: 69 }),
 
   // —— Medicube / Mixsoon-style extras for depth ——
-  p("Medicube", "Zero Pore Pad 2.0", { category: "Treatment", skinType: ["Oily", "Combination"], concern: ["Pores", "Exfoliation"], price: 30, badge: "exfoliation", tone: "sky", ingredients: ["BHA", "PHA"], popularity: 83 }),
-  p("Medicube", "Collagen Niacinamide Jelly Cream", { category: "Moisturizer", skinType: ["Normal", "Dry"], concern: ["Anti-Aging", "Brightening"], price: 34, tone: "peach", ingredients: ["Collagen", "Niacinamide"], isNew: true, badge: "new", popularity: 79 }),
-  p("Mixsoon", "Bean Essence", { category: "Essence", skinType: ["Sensitive", "Combination"], concern: ["Hydration", "Barrier Repair"], price: 22, badge: "barrier", tone: "sage", ingredients: ["Soybean"], popularity: 77 }),
-  p("Mixsoon", "Glacier Water Cream", { category: "Moisturizer", skinType: ["Oily", "Combination"], concern: ["Hydration", "Soothing"], price: 24, tone: "cyan", ingredients: ["Glacier Water"], popularity: 71 }),
-  p("Numbuzin", "No.3 Skin Softening Serum", { category: "Serum", skinType: ["Dry", "Normal"], concern: ["Brightening", "Hydration"], price: 26, badge: "dewy", tone: "pink", ingredients: ["Niacinamide", "Galactomyces"], popularity: 85 }),
-  p("Numbuzin", "No.5 Vitamin-Niacinamide Concentrated Serum", { category: "Serum", skinType: ["Combination", "Normal"], concern: ["Brightening"], price: 28, tone: "gold", ingredients: ["Vitamin C", "Niacinamide"], popularity: 80 }),
+//   p("Medicube", "Zero Pore Pad 2.0", { category: "Treatment", skinType: ["Oily", "Combination"], concern: ["Pores", "Exfoliation"], price: 30, badge: "exfoliation", tone: "sky", ingredients: ["BHA", "PHA"], popularity: 83 }),
+//   p("Medicube", "Collagen Niacinamide Jelly Cream", { category: "Moisturizer", skinType: ["Normal", "Dry"], concern: ["Anti-Aging", "Brightening"], price: 34, tone: "peach", ingredients: ["Collagen", "Niacinamide"], isNew: true, badge: "new", popularity: 79 }),
+//   p("Mixsoon", "Bean Essence", { category: "Essence", skinType: ["Sensitive", "Combination"], concern: ["Hydration", "Barrier Repair"], price: 22, badge: "barrier", tone: "sage", ingredients: ["Soybean"], popularity: 77 }),
+//   p("Mixsoon", "Glacier Water Cream", { category: "Moisturizer", skinType: ["Oily", "Combination"], concern: ["Hydration", "Soothing"], price: 24, tone: "cyan", ingredients: ["Glacier Water"], popularity: 71 }),
+//   p("Numbuzin", "No.3 Skin Softening Serum", { category: "Serum", skinType: ["Dry", "Normal"], concern: ["Brightening", "Hydration"], price: 26, badge: "dewy", tone: "pink", ingredients: ["Niacinamide", "Galactomyces"], popularity: 85 }),
+//   p("Numbuzin", "No.5 Vitamin-Niacinamide Concentrated Serum", { category: "Serum", skinType: ["Combination", "Normal"], concern: ["Brightening"], price: 28, tone: "gold", ingredients: ["Vitamin C", "Niacinamide"], popularity: 80 }),
   p("Dr. Althea", "345 Relief Cream", { category: "Moisturizer", skinType: ["Sensitive", "Dry"], concern: ["Barrier Repair", "Soothing"], price: 25, badge: "barrier", tone: "lilac", ingredients: ["Ceramides", "Madecassoside"], popularity: 76, image: "dr-althea-345-relief-cream-50ml-1.jpg" }),
   p("Isntree", "Hyaluronic Acid Toner Plus", { category: "Toner", skinType: ["Dry", "Sensitive", "Normal"], concern: ["Hydration"], price: 18, tone: "sky", ingredients: ["Hyaluronic Acid"], popularity: 82, image: "isntree-hyaluronic-acid-toner-plus-200ml.jpg" }),
-  p("Isntree", "Onion Newpair Spot Serum", { category: "Serum", skinType: ["Oily", "Combination"], concern: ["Acne & Blemishes"], price: 23, tone: "rose", ingredients: ["Onion Extract"], popularity: 70 }),
-  p("Purito", "Daily Go-To Sunscreen SPF50+", { category: "Sunscreen", skinType: ["Sensitive", "Combination"], concern: ["Sun Protection"], price: 16, badge: "best", tone: "sky", ingredients: ["Centella"], popularity: 86 }),
+//   p("Isntree", "Onion Newpair Spot Serum", { category: "Serum", skinType: ["Oily", "Combination"], concern: ["Acne & Blemishes"], price: 23, tone: "rose", ingredients: ["Onion Extract"], popularity: 70 }),
+//   p("Purito", "Daily Go-To Sunscreen SPF50+", { category: "Sunscreen", skinType: ["Sensitive", "Combination"], concern: ["Sun Protection"], price: 16, badge: "best", tone: "sky", ingredients: ["Centella"], popularity: 86 }),
 
   // —— NEW (asset-driven sync) ——
   p("CeraVe", "Hydrating Facial Cleanser", { category: "Cleanser", skinType: ["Dry", "Normal", "Sensitive"], concern: ["Hydration", "Barrier Repair"], price: 14, tone: "sky", ingredients: ["Ceramides", "Hyaluronic Acid"], popularity: 74, image: "cerave-hydrating-cleanser-normal-to-dry-236ml-1.jpg" }),
@@ -341,10 +341,13 @@ const PROMO = {
   "missha-time-revolution-the-first-treatment-essence": 35,
 };
 const OUT_OF_STOCK = new Set([
-  "laneige-water-sleeping-mask",
-  "laneige-lip-sleeping-mask",
-  "torriden-dive-in-low-molecular-hyaluronic-acid-serum",
-  "the-body-shop-drops-of-youth-concentrate",
+  "beauty-of-joseon-dynasty-cream",
+  "beauty-of-joseon-revive-eye-serum-ginseng-retinal",
+  "beauty-of-joseon-matte-sun-stick-mugwort-camelia-spf50",
+  "cosrx-advanced-snail-92-all-in-one-cream",
+  "cosrx-aha-bha-clarifying-treatment-toner",
+  "cosrx-centella-blemish-cream",
+  "cosrx-bha-blackhead-power-liquid",
 ]);
 
 /* ------------------------------------------------------------------ *
@@ -421,6 +424,7 @@ for (const item of PRODUCTS) {
 export const AVAILABILITY = [
   { id: "inStock", label: "In Stock" },
   { id: "onSale", label: "On Sale" },
+  { id: "isNew", label: "New Arrivals" },
 ];
 export const SKIN_TYPES = ["Dry", "Oily", "Combination", "Sensitive", "Normal"];
 
@@ -492,6 +496,7 @@ export function queryProducts(all, { search = "", filters = {}, sort = "featured
   const passesFilters = (item) => {
     if (availability.includes("inStock") && item.inStock === false) return false;
     if (availability.includes("onSale") && !item.isOnSale) return false;
+    if (availability.includes("isNew") && !item.isNew) return false;
     if (skinType.length && !item.skinType.some((s) => skinType.includes(s))) return false;
     if (concern.length && !item.concern.some((c) => concern.includes(c))) return false;
     if (brand.length && !brand.includes(item.brand)) return false;

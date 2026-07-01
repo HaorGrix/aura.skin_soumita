@@ -2,6 +2,7 @@
 
 /* ------------------------------------------------------------------ *
  * aura.skin — K/J-Beauty Design System (Tailwind v4 theme tokens)
+
  * Glass-skin clean · high contrast · pink/magenta · cyan glow · gold
  * ------------------------------------------------------------------ */
 
@@ -10,24 +11,36 @@
 
 @theme {
   /* — Core neutrals — */
-  --color-ink: #0a0a0b;        /* near-black: text + deep sections */
-  --color-ink-deep: #0f0f12;   /* slightly lighter ink for elevated surfaces */
-  --color-ink-lift: #16161a;   /* light ink for floating overlays (dropdowns, modals) */
-  --color-ink-soft: #5b5b62;   /* secondary text */
-  --color-line: #ececef;       /* hairlines on light */
+  --color-ink: #0a0a0b;
+  /* near-black: text + deep sections */
+  --color-ink-deep: #0f0f12;
+  /* slightly lighter ink for elevated surfaces */
+  --color-ink-lift: #16161a;
+  /* light ink for floating overlays (dropdowns, modals) */
+  --color-ink-soft: #5b5b62;
+  /* secondary text */
+  --color-line: #ececef;
+  /* hairlines on light */
   --color-white: #ffffff;
-  --color-snow: #fbf9fa;       /* off-white background */
-  --color-snow-deep: #f4eef1;  /* slightly warmer off-white */
+  --color-snow: #fbf9fa;
+  /* off-white background */
+  --color-snow-deep: #f4eef1;
+  /* slightly warmer off-white */
 
   /* — Pink family (signature accent) — */
-  --color-petal: #ffeef4;      /* softest pink wash */
-  --color-petal-deep: #ffe1ec; /* slightly deeper pink for gradients */
-  --color-rose: #ff8fa8;       /* soft rose */
-  --color-magenta: #e1306c;    /* bold primary accent */
+  --color-petal: #ffeef4;
+  /* softest pink wash */
+  --color-petal-deep: #ffe1ec;
+  /* slightly deeper pink for gradients */
+  --color-rose: #ff8fa8;
+  /* soft rose */
+  --color-magenta: #e1306c;
+  /* bold primary accent */
   --color-magenta-deep: #b81e54;
 
   /* — Glow accents — */
-  --color-cyan: #00c4b4;       /* teal/cyan glass glow */
+  --color-cyan: #00c4b4;
+  /* teal/cyan glass glow */
   --color-cyan-soft: #7fe3da;
   --color-gold: #d4af37;
   --color-gold-soft: #ecd58a;
@@ -75,23 +88,29 @@
 @utility scrollbar-thin {
   scrollbar-width: thin;
   scrollbar-color: var(--color-line) transparent;
+
   &::-webkit-scrollbar {
     width: 6px;
   }
+
   &::-webkit-scrollbar-track {
     background: transparent;
   }
+
   &::-webkit-scrollbar-thumb {
     background-color: var(--color-line);
     border-radius: 9999px;
   }
+
   &:hover::-webkit-scrollbar-thumb {
     background-color: var(--color-rose);
   }
 }
+
 .dark .scrollbar-thin {
   scrollbar-color: rgb(255 255 255 / 0.18) transparent;
 }
+
 .dark .scrollbar-thin::-webkit-scrollbar-thumb {
   background-color: rgb(255 255 255 / 0.18);
 }
@@ -127,7 +146,10 @@
     transition: background-color 0.6s var(--ease-aura), color 0.6s var(--ease-aura);
   }
 
-  h1, h2, h3, h4 {
+  h1,
+  h2,
+  h3,
+  h4 {
     font-family: var(--font-serif);
     font-weight: 400;
     letter-spacing: -0.015em;
@@ -138,9 +160,11 @@
   html.lenis body {
     height: auto;
   }
+
   .lenis.lenis-smooth {
     scroll-behavior: auto !important;
   }
+
   .lenis.lenis-stopped {
     overflow: hidden;
   }
@@ -151,8 +175,14 @@
   }
 
   /* Elegant, slim scrollbar */
-  ::-webkit-scrollbar { width: 10px; }
-  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar {
+    width: 10px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
   ::-webkit-scrollbar-thumb {
     background: color-mix(in oklab, var(--color-rose) 70%, transparent);
     border-radius: 999px;
@@ -165,8 +195,13 @@
  * Utilities & flourishes
  * ------------------------------------------------------------------ */
 @layer utilities {
-  .font-serif { font-family: var(--font-serif); }
-  .font-sans  { font-family: var(--font-sans); }
+  .font-serif {
+    font-family: var(--font-serif);
+  }
+
+  .font-sans {
+    font-family: var(--font-sans);
+  }
 
   /* Frosted glass surface — light + dark */
   .glass {
@@ -175,6 +210,7 @@
     -webkit-backdrop-filter: blur(18px) saturate(170%);
     border: 1px solid color-mix(in oklab, var(--color-white) 60%, transparent);
   }
+
   .dark .glass {
     background: color-mix(in oklab, #0a0a0b 58%, transparent);
     border: 1px solid color-mix(in oklab, var(--color-white) 10%, transparent);
@@ -196,10 +232,17 @@
     color: transparent;
   }
 
-  .text-balance { text-wrap: balance; }
-  .text-pretty  { text-wrap: pretty; }
+  .text-balance {
+    text-wrap: balance;
+  }
 
-  .will-change-transform { will-change: transform; }
+  .text-pretty {
+    text-wrap: pretty;
+  }
+
+  .will-change-transform {
+    will-change: transform;
+  }
 
   /* Loading skeleton shimmer */
   .shimmer {
@@ -207,29 +250,28 @@
     overflow: hidden;
     background: color-mix(in oklab, var(--color-rose) 14%, transparent);
   }
+
   .dark .shimmer {
     background: color-mix(in oklab, var(--color-white) 7%, transparent);
   }
+
   .shimmer::after {
     content: "";
     position: absolute;
     inset: 0;
     transform: translateX(-100%);
-    background: linear-gradient(
-      90deg,
-      transparent,
-      color-mix(in oklab, var(--color-white) 45%, transparent),
-      transparent
-    );
+    background: linear-gradient(90deg,
+        transparent,
+        color-mix(in oklab, var(--color-white) 45%, transparent),
+        transparent);
     animation: aura-shimmer 1.6s var(--ease-soft) infinite;
   }
+
   .dark .shimmer::after {
-    background: linear-gradient(
-      90deg,
-      transparent,
-      color-mix(in oklab, var(--color-white) 10%, transparent),
-      transparent
-    );
+    background: linear-gradient(90deg,
+        transparent,
+        color-mix(in oklab, var(--color-white) 10%, transparent),
+        transparent);
   }
 }
 
@@ -244,14 +286,17 @@
   .animate-marquee {
     animation: aura-marquee 38s linear infinite;
   }
+
   .marquee-pause:hover .animate-marquee {
     animation-play-state: paused;
   }
 }
+
 @keyframes aura-marquee {
   from {
     transform: translateX(0);
   }
+
   to {
     transform: translateX(-50%);
   }
@@ -261,6 +306,7 @@
  * Reduced motion — honor the user's wish
  * ------------------------------------------------------------------ */
 @media (prefers-reduced-motion: reduce) {
+
   *,
   *::before,
   *::after {

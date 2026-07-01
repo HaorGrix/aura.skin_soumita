@@ -1,5 +1,9 @@
-import { lazy, Suspense, useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useState, useMemo } from "react";
 import { ReactLenis } from "lenis/react";
+import { motion, AnimatePresence } from "framer-motion";
+import { X } from "lucide-react";
+import { PRODUCTS, BRANDS, CATEGORIES } from "./data/products.js";
+import PredictiveSearch from "./components/shop/PredictiveSearch.jsx";
 import { CartProvider } from "./context/CartContext.jsx";
 import { UserProvider } from "./context/UserContext.jsx";
 import { WishlistProvider } from "./context/WishlistContext.jsx";
@@ -8,6 +12,7 @@ import Loader from "./components/Loader.jsx";
 import Navbar from "./components/Navbar.jsx";
 import Home from "./pages/Home.jsx";
 import CartDrawer from "./components/cart/CartDrawer.jsx";
+import AuthModal from "./components/auth/AuthModal.jsx";
 import FloatingCart from "./components/FloatingCart.jsx";
 
 // Route-level code splitting — the home page loads eagerly; the rest lazy-load.
@@ -17,8 +22,11 @@ const Cart = lazy(() => import("./pages/Cart.jsx"));
 const Checkout = lazy(() => import("./pages/Checkout.jsx"));
 const Account = lazy(() => import("./pages/Account.jsx"));
 const Wishlist = lazy(() => import("./pages/Wishlist.jsx"));
-const About = lazy(() => import("./pages/About.jsx"));
 const Contact = lazy(() => import("./pages/Contact.jsx"));
+const About = lazy(() => import("./pages/About.jsx"));
+const Rewards = lazy(() => import("./pages/Rewards.jsx"));
+const NotFound = lazy(() => import("./pages/NotFound.jsx"));
+import ErrorBoundary from "./components/ui/ErrorBoundary.jsx";
 
 function RouteFallback() {
   return (
@@ -32,6 +40,7 @@ function RouteFallback() {
 function useRoute() {
   const parse = () => {
     const h = window.location.hash;
+    if (h === "" || h === "#/" || h.startsWith("#/?")) return { name: "home" };
     if (h.startsWith("#/product/"))
       return { name: "product", id: decodeURIComponent(h.slice("#/product/".length)) };
     if (h.startsWith("#/shop")) return { name: "shop" };
@@ -39,9 +48,14 @@ function useRoute() {
     if (h.startsWith("#/checkout")) return { name: "checkout" };
     if (h.startsWith("#/account")) return { name: "account" };
     if (h.startsWith("#/wishlist")) return { name: "wishlist" };
-    if (h.startsWith("#/about")) return { name: "about" };
     if (h.startsWith("#/contact")) return { name: "contact" };
-    return { name: "home" };
+    if (h.startsWith("#/about")) return { name: "about" };
+    if (h.startsWith("#/rewards")) return { name: "rewards" };
+    // Plain anchor (e.g. #offers, #rituals, #journal) — not a SPA route.
+    // Return "home" so the home page stays/mounts; the scroll-to-id useEffect
+    // in <App> then scrolls to the matching section after React finishes painting.
+    if (h.startsWith("#") && !h.startsWith("#/")) return { name: "home" };
+    return { name: "404" };
   };
   const [route, setRoute] = useState(parse);
   useEffect(() => {
@@ -57,6 +71,9 @@ export default function App() {
   const route = useRoute();
   // Dark-mode dominant: default to dark unless the user has opted into light.
   const [isDark, setIsDark] = useState(true);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  
+  const trending = useMemo(() => [...PRODUCTS].sort((a, b) => b.popularity - a.popularity).slice(0, 3), []);
 
   // Sync the dark class on <html>.
   useEffect(() => {
@@ -74,6 +91,20 @@ export default function App() {
       localStorage.setItem("aura-theme", !d ? "dark" : "light");
       return !d;
     });
+
+  // When a plain anchor (e.g. #offers, #rituals) routes back to "home", scroll
+  // to the matching section after React finishes painting. rAF gives one frame
+  // for the DOM to settle before querying the element.
+  useEffect(() => {
+    if (route.name !== "home") return;
+    const h = window.location.hash;
+    if (!h.startsWith("#") || h.startsWith("#/") || h.length <= 1) return;
+    const id = h.slice(1);
+    const raf = requestAnimationFrame(() => {
+      document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+    return () => cancelAnimationFrame(raf);
+  }, [route]);
 
   return (
     <ReactLenis
@@ -93,35 +124,78 @@ export default function App() {
           {/* Entry ritual */}
           <Loader onComplete={() => setLoaded(true)} />
 
-          <Navbar onToggleTheme={toggleTheme} isDark={isDark} />
+          <Navbar onToggleTheme={toggleTheme} isDark={isDark} onOpenSearch={() => setIsSearchOpen(true)} />
+
+          <AnimatePresence>
+            {isSearchOpen && (
+              <motion.div
+                className="fixed inset-0 z-[var(--z-modal)] bg-ink/60 backdrop-blur-sm p-4 sm:p-10 flex flex-col items-center pt-24"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => setIsSearchOpen(false)}
+              >
+                <motion.div 
+                  initial={{ opacity: 0, scale: 0.95, y: -20 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.95, y: -20 }}
+                  className="w-full max-w-2xl relative"
+                  onClick={e => e.stopPropagation()}
+                >
+                  <button onClick={() => setIsSearchOpen(false)} className="absolute -right-2 -top-12 sm:-right-4 sm:-top-4 text-white/80 hover:text-white p-2">
+                    <X className="h-6 w-6" strokeWidth={1.5} />
+                  </button>
+                  <div className="bg-white dark:bg-[#16161a] rounded-2xl shadow-lift w-full relative z-[var(--z-dropdown)]">
+                    <PredictiveSearch 
+                      products={PRODUCTS} brands={BRANDS} categories={CATEGORIES} trending={trending}
+                      onQueryChange={() => {}} onApplyFilter={(key, val) => {
+                        window.location.hash = `#/shop?${key}=${val}`;
+                        setIsSearchOpen(false);
+                      }} 
+                    />
+                  </div>
+                </motion.div>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           <CartDrawer />
 
+          {/* Login / sign-up — global, opened on demand (navbar, checkout) */}
+          <AuthModal />
+
           {/* Floating cart FAB — sits above the loader (z-140 > z-100), so gate
-              it on the splash finishing. Hidden while the loader is active,
-              visible everywhere else (it self-hides when the cart is empty). */}
-          {loaded && <FloatingCart />}
+              it on the splash finishing. Also hidden on the cart/checkout pages,
+              where opening the cart drawer is redundant — consistent behaviour
+              everywhere else (it self-hides when the cart is empty). */}
+          {loaded && route.name !== "cart" && route.name !== "checkout" && (
+            <FloatingCart />
+          )}
 
           <main>
             <Suspense fallback={<RouteFallback />}>
               {route.name === "product" ? (
-                <Product id={route.id} />
+                <ErrorBoundary><Product id={route.id} /></ErrorBoundary>
               ) : route.name === "shop" ? (
-                <Shop />
+                <ErrorBoundary><Shop /></ErrorBoundary>
               ) : route.name === "cart" ? (
-                <Cart />
+                <ErrorBoundary><Cart /></ErrorBoundary>
               ) : route.name === "checkout" ? (
-                <Checkout />
+                <ErrorBoundary><Checkout /></ErrorBoundary>
               ) : route.name === "account" ? (
-                <Account />
+                <ErrorBoundary><Account /></ErrorBoundary>
               ) : route.name === "wishlist" ? (
-                <Wishlist />
-              ) : route.name === "about" ? (
-                <About />
+                <ErrorBoundary><Wishlist /></ErrorBoundary>
               ) : route.name === "contact" ? (
-                <Contact />
+                <ErrorBoundary><Contact /></ErrorBoundary>
+              ) : route.name === "about" ? (
+                <ErrorBoundary><About /></ErrorBoundary>
+              ) : route.name === "rewards" ? (
+                <ErrorBoundary><Rewards /></ErrorBoundary>
+              ) : route.name === "home" ? (
+                <ErrorBoundary><Home /></ErrorBoundary>
               ) : (
-                <Home />
+                <ErrorBoundary><NotFound /></ErrorBoundary>
               )}
             </Suspense>
           </main>

@@ -45,6 +45,7 @@ function FacetGroup({ group, selected, onToggle, defaultOpen }) {
         onClick={() => setOpen((v) => !v)}
         className="flex w-full items-center justify-between text-left"
         aria-expanded={open}
+        aria-controls={`facet-${group.key}`}
       >
         <span className="text-sm font-semibold text-ink dark:text-white">
           {group.label}
@@ -63,6 +64,7 @@ function FacetGroup({ group, selected, onToggle, defaultOpen }) {
       <AnimatePresence initial={false}>
         {open && (
           <motion.ul
+            id={`facet-${group.key}`}
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
@@ -119,6 +121,7 @@ function SortFacet({ value, onChange }) {
         onClick={() => setOpen((v) => !v)}
         className="flex w-full items-center justify-between text-left"
         aria-expanded={open}
+        aria-controls="sort-facet-options"
       >
         <span className="text-sm font-semibold text-ink dark:text-white">
           Sort by
@@ -135,6 +138,7 @@ function SortFacet({ value, onChange }) {
       <AnimatePresence initial={false}>
         {open && (
           <motion.ul
+            id="sort-facet-options"
             role="radiogroup"
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: "auto", opacity: 1 }}
@@ -230,6 +234,7 @@ export function ActiveChips({ filters, onToggle, onClear }) {
         <button
           key={`${key}-${id}`}
           onClick={() => onToggle(key, id)}
+          aria-label={`Remove ${labelFor(key, id)} filter`}
           className="inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1.5 text-xs font-medium text-ink ring-1 ring-line transition-colors hover:ring-magenta dark:bg-white/5 dark:text-white dark:ring-white/10"
         >
           {labelFor(key, id)}

@@ -79,7 +79,7 @@ export default function WishlistTab() {
               >
                 <div
                   className="absolute inset-0"
-                  style={{ background: `radial-gradient(120% 100% at 50% 0%, #fff 0%, ${p.tone} 75%, #ffe1ec 100%)` }}
+                  style={{ background: `radial-gradient(120% 100% at 50% 0%, var(--color-white) 0%, ${p.tone} 75%, var(--color-petal-deep) 100%)` }}
                 />
                 {p.image && <img src={p.image} alt={p.name} className="absolute inset-0 h-full w-full object-contain p-2 mix-blend-multiply dark:mix-blend-normal" />}
               </a>

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import {
   Search,
@@ -15,10 +15,12 @@ import {
 import { useCart } from "../context/CartContext.jsx";
 import { useUser } from "../context/UserContext.jsx";
 import { useWishlist } from "../context/WishlistContext.jsx";
+import { useFocusTrap } from "../lib/useFocusTrap.js";
 
 const LINKS = [
   { label: "Shop", href: "#/shop" },
-  { label: "Rewards", href: "#/account" },
+  { label: "Offers", href: "#offers" },
+  { label: "Rewards", href: "#/rewards" },
   { label: "Rituals", href: "#rituals" },
   { label: "Journal", href: "#journal" },
   { label: "About", href: "#/about" },
@@ -49,13 +51,16 @@ const PILLS = [
 
 const MOBILE_QUOTE = "Glass skin is a daily ritual — and you’re already glowing. 🌸";
 
-export default function Navbar({ onToggleTheme, isDark }) {
+export default function Navbar({ onToggleTheme, isDark, onOpenSearch }) {
   const reduce = useReducedMotion();
-  const { count, openCart } = useCart();
-  const { points } = useUser();
+  const { count, openCart, isOpen: cartOpen } = useCart();
+  const { points, authed, openAuth } = useUser();
   const { count: wishCount } = useWishlist();
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
+  
+  const drawerRef = useRef(null);
+  useFocusTrap(drawerRef, open);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 24);
@@ -128,7 +133,7 @@ export default function Navbar({ onToggleTheme, isDark }) {
 
           {/* Right cluster */}
           <div className="flex items-center gap-0.5 sm:gap-1">
-            <button className={iconBtn} aria-label="Search">
+            <button className={iconBtn} aria-label="Search" onClick={onOpenSearch}>
               <Search className="h-[18px] w-[18px]" strokeWidth={1.7} />
             </button>
             {/* Wishlist — navigates to the dedicated wishlist page */}
@@ -155,7 +160,8 @@ export default function Navbar({ onToggleTheme, isDark }) {
                 toggle. Tablet+ has room, so it stays in the header there. */}
             <button
               className={`${iconBtn} hidden sm:grid`}
-              aria-label="Cart"
+              aria-label={count > 0 ? `Open shopping bag, ${count} item${count > 1 ? "s" : ""}` : "Open shopping bag"}
+              aria-expanded={cartOpen}
               onClick={openCart}
             >
               <ShoppingBag className="h-[18px] w-[18px]" strokeWidth={1.7} />
@@ -175,9 +181,9 @@ export default function Navbar({ onToggleTheme, isDark }) {
               </AnimatePresence>
             </button>
 
-            {/* Loyalty points pill — global, links to the Rewards/Account page */}
+            {/* Loyalty points pill — global, links to the Rewards page */}
             <a
-              href="#/account"
+              href="#/rewards"
               aria-label={`You have ${points} loyalty points`}
               className="hidden items-center gap-1.5 rounded-full bg-petal px-3 py-1.5 text-xs font-semibold text-magenta transition-colors hover:bg-rose/30 sm:inline-flex dark:bg-white/10 dark:text-rose dark:hover:bg-white/15"
             >
@@ -185,7 +191,19 @@ export default function Navbar({ onToggleTheme, isDark }) {
               {points} pts
             </a>
 
-            <a href="#/account" className={`${iconBtn} hidden sm:grid`} aria-label="Account">
+            {/* Logged out → open the login modal; logged in → go to account.
+                Browsing never forces auth, so this is just a friendly entry. */}
+            <a
+              href="#/account"
+              onClick={(e) => {
+                if (!authed) {
+                  e.preventDefault();
+                  openAuth("login");
+                }
+              }}
+              className={`${iconBtn} hidden sm:grid`}
+              aria-label={authed ? "Account" : "Log in"}
+            >
               <User className="h-[18px] w-[18px]" strokeWidth={1.7} />
             </a>
 
@@ -200,6 +218,8 @@ export default function Navbar({ onToggleTheme, isDark }) {
             <button
               className={`${iconBtn} lg:hidden`}
               aria-label="Open menu"
+              aria-expanded={open}
+              aria-controls="mobile-nav"
               onClick={() => setOpen(true)}
             >
               <Menu className="h-5 w-5" strokeWidth={1.7} />
@@ -224,7 +244,12 @@ export default function Navbar({ onToggleTheme, isDark }) {
               onClick={() => setOpen(false)}
             />
             <motion.aside
-              className="fixed inset-y-0 right-0 z-[var(--z-modal)] flex w-[86%] max-w-sm flex-col bg-white px-7 pb-10 pt-6 shadow-lift dark:bg-[#0a0a0b] lg:hidden"
+              id="mobile-nav"
+              ref={drawerRef}
+              role="dialog"
+              aria-modal="true"
+              aria-label="Navigation menu"
+              className="fixed inset-y-0 right-0 z-[var(--z-modal)] flex w-[86%] max-w-sm flex-col bg-white px-7 pb-10 pt-6 shadow-lift dark:bg-[var(--color-ink)] lg:hidden"
               initial={{ x: reduce ? 0 : "100%" }}
               animate={{ x: 0 }}
               exit={{ x: reduce ? 0 : "100%" }}
@@ -270,6 +295,7 @@ export default function Navbar({ onToggleTheme, isDark }) {
                     the badge animates on count change via AnimatePresence. */}
                 <button
                   onClick={() => { setOpen(false); openCart(); }}
+                  aria-label={count > 0 ? `Open shopping bag, ${count} item${count > 1 ? "s" : ""}` : "Open shopping bag"}
                   className="flex w-full items-center justify-between rounded-2xl bg-gradient-to-r from-magenta to-magenta-deep px-4 py-4 text-white shadow-glow-pink transition-transform active:scale-[0.98]"
                 >
                   <span className="inline-flex items-center gap-2.5 text-sm font-semibold">
@@ -297,7 +323,7 @@ export default function Navbar({ onToggleTheme, isDark }) {
 
                 {/* Aura Rewards — full-width accent row */}
                 <a
-                  href="#/account"
+                  href="#/rewards"
                   onClick={() => setOpen(false)}
                   className="flex items-center justify-between rounded-2xl bg-petal px-4 py-3.5 transition-colors hover:bg-rose/25 dark:bg-white/10 dark:hover:bg-white/15"
                 >
@@ -324,16 +350,23 @@ export default function Navbar({ onToggleTheme, isDark }) {
                     },
                     {
                       icon: User,
-                      label: "Account",
-                      hint: "Profile & orders",
+                      label: authed ? "Account" : "Log in",
+                      hint: authed ? "Profile & orders" : "Sign in or sign up",
                       href: "#/account",
                       active: false,
+                      auth: true,
                     },
                   ].map((tile) => (
                     <a
                       key={tile.label}
                       href={tile.href}
-                      onClick={() => setOpen(false)}
+                      onClick={(e) => {
+                        setOpen(false);
+                        if (tile.auth && !authed) {
+                          e.preventDefault();
+                          openAuth("login");
+                        }
+                      }}
                       className="flex flex-col gap-3 rounded-2xl bg-white px-4 py-4 ring-1 ring-line transition-all hover:-translate-y-0.5 hover:ring-magenta/40 dark:bg-white/5 dark:ring-white/10"
                     >
                       <span className="grid h-9 w-9 place-items-center rounded-full bg-petal text-magenta dark:bg-white/10 dark:text-rose">

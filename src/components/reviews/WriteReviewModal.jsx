@@ -4,6 +4,7 @@ import { Star, X, Sparkles } from "lucide-react";
 import { useUser } from "../../context/UserContext.jsx";
 import { useToast } from "../ui/Toast.jsx";
 import Button from "../ui/Button.jsx";
+import { Input } from "../ui/index.js";
 
 /**
  * WriteReviewModal — verified-buyer review composer. Reused by the PDP and the
@@ -74,7 +75,7 @@ export default function WriteReviewModal({ product, open, onClose }) {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 30, scale: 0.97 }}
             transition={{ type: "spring", stiffness: 280, damping: 30 }}
-            className="relative z-10 w-full max-w-lg overflow-hidden rounded-t-[1.75rem] bg-white p-6 shadow-lift ring-1 ring-line sm:rounded-[1.75rem] sm:p-8 dark:bg-[#0f0f12] dark:ring-white/10"
+            className="relative z-10 w-full max-w-lg overflow-hidden rounded-t-[1.75rem] bg-white p-6 shadow-lift ring-1 ring-line sm:rounded-[1.75rem] sm:p-8 dark:bg-[var(--color-ink-deep)] dark:ring-white/10"
           >
             <button
               onClick={onClose}
@@ -124,12 +125,12 @@ export default function WriteReviewModal({ product, open, onClose }) {
             {/* Title */}
             <div className="mt-4">
               <label className="text-sm font-semibold text-ink dark:text-white">Title <span className="font-normal text-ink-soft">(optional)</span></label>
-              <input
+              <Input
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 maxLength={70}
                 placeholder="Sum it up in a few words"
-                className="mt-2 w-full rounded-xl bg-snow px-4 py-2.5 text-sm text-ink ring-1 ring-line outline-none focus:ring-2 focus:ring-magenta/50 dark:bg-white/5 dark:text-white dark:ring-white/10"
+                className="mt-2 py-2.5"
               />
             </div>
 

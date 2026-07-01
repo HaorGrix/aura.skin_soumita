@@ -17,7 +17,7 @@ const STATS = [
 
 export default function WhyAura() {
   return (
-    <section id="about" className="py-14 sm:py-20">
+    <section id="about" className="py-10 sm:py-14">
       <div className="mx-auto max-w-7xl px-5 sm:px-8">
         <div className="mx-auto max-w-2xl text-center">
           <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-magenta">
@@ -47,8 +47,10 @@ export default function WhyAura() {
           ))}
         </div>
 
-        {/* Stats bar */}
-        <div className="mt-10 grid grid-cols-2 gap-6 rounded-[1.5rem] bg-ink px-6 py-8 text-center text-white sm:grid-cols-4 dark:bg-white/[0.04]">
+        {/* Stats bar — vibrant hot-pink (the signature magenta used on button
+            hover), white text for contrast, and the pink glow for a premium,
+            on-brand feel. */}
+        <div className="mt-10 grid grid-cols-2 gap-6 rounded-[1.5rem] bg-magenta px-6 py-8 text-center text-white shadow-[var(--shadow-glow-pink)] ring-1 ring-magenta-deep/30 sm:grid-cols-4">
           {STATS.map((s, i) => (
             <motion.div
               key={s.l}
@@ -57,8 +59,8 @@ export default function WhyAura() {
               viewport={{ once: true }}
               transition={{ duration: 0.5, delay: i * 0.08 }}
             >
-              <p className="font-serif text-3xl text-gold sm:text-4xl">{s.n}</p>
-              <p className="mt-1 text-xs uppercase tracking-wide text-white/60">{s.l}</p>
+              <p className="font-serif text-3xl text-white sm:text-4xl">{s.n}</p>
+              <p className="mt-1 text-xs uppercase tracking-wide text-white/75">{s.l}</p>
             </motion.div>
           ))}
         </div>

@@ -47,7 +47,7 @@ export default function SortMenu({ value, onChange }) {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -6, scale: 0.97 }}
             transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
-            className="absolute right-0 z-30 mt-2 w-56 overflow-hidden rounded-[1rem] bg-white p-1.5 shadow-lift ring-1 ring-line dark:bg-[#16161a] dark:ring-white/10"
+            className="absolute right-0 z-30 mt-2 w-56 overflow-hidden rounded-[1rem] bg-white p-1.5 shadow-lift ring-1 ring-line dark:bg-[var(--color-ink-lift)] dark:ring-white/10"
           >
             {SORTS.map((s) => {
               const active = s.id === value;

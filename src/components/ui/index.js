@@ -6,3 +6,7 @@ export { default as ProductCard } from "./ProductCard.jsx";
 export { default as Skeleton, ProductCardSkeleton } from "./Skeleton.jsx";
 export { default as EmptyState } from "./EmptyState.jsx";
 export { ToastProvider, useToast } from "./Toast.jsx";
+export { default as ErrorBoundary } from "./ErrorBoundary.jsx";
+export { default as Field } from "./Field.jsx";
+export { default as Input } from "./Input.jsx";
+export { default as OptionCard } from "./OptionCard.jsx";

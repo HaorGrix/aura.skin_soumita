@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { useUser } from "../../context/UserContext.jsx";
 import { useToast } from "../../components/ui/Toast.jsx";
 import Button from "../../components/ui/Button.jsx";
+import { Input } from "../../components/ui/index.js";
 import { User, Mail, Phone, MapPin } from "lucide-react";
 
 export default function ProfileTab() {
@@ -49,14 +50,14 @@ export default function ProfileTab() {
             <span className="absolute left-4 top-1/2 -translate-y-1/2 text-ink-soft dark:text-white/40">
               <User className="h-4 w-4" />
             </span>
-            <input
+            <Input
               id="name"
               name="name"
               type="text"
               required
               value={formData.name}
               onChange={handleChange}
-              className="w-full rounded-xl border border-line bg-snow py-3 pl-11 pr-4 text-sm text-ink outline-none transition-colors focus:border-magenta focus:ring-1 focus:ring-magenta dark:border-white/10 dark:bg-white/[0.03] dark:text-white dark:focus:border-magenta"
+              className="pl-11"
             />
           </div>
         </div>
@@ -69,14 +70,14 @@ export default function ProfileTab() {
             <span className="absolute left-4 top-1/2 -translate-y-1/2 text-ink-soft dark:text-white/40">
               <Mail className="h-4 w-4" />
             </span>
-            <input
+            <Input
               id="email"
               name="email"
               type="email"
               required
               value={formData.email}
               onChange={handleChange}
-              className="w-full rounded-xl border border-line bg-snow py-3 pl-11 pr-4 text-sm text-ink outline-none transition-colors focus:border-magenta focus:ring-1 focus:ring-magenta dark:border-white/10 dark:bg-white/[0.03] dark:text-white dark:focus:border-magenta"
+              className="pl-11"
             />
           </div>
         </div>
@@ -89,13 +90,13 @@ export default function ProfileTab() {
             <span className="absolute left-4 top-1/2 -translate-y-1/2 text-ink-soft dark:text-white/40">
               <Phone className="h-4 w-4" />
             </span>
-            <input
+            <Input
               id="phone"
               name="phone"
               type="tel"
               value={formData.phone}
               onChange={handleChange}
-              className="w-full rounded-xl border border-line bg-snow py-3 pl-11 pr-4 text-sm text-ink outline-none transition-colors focus:border-magenta focus:ring-1 focus:ring-magenta dark:border-white/10 dark:bg-white/[0.03] dark:text-white dark:focus:border-magenta"
+              className="pl-11"
             />
           </div>
         </div>

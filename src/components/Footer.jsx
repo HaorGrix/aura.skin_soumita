@@ -9,7 +9,6 @@ const COLUMNS = [
       { label: "All Products", href: "#/shop" },
       { label: "Best Sellers", href: "#/shop" },
       { label: "New Arrivals", href: "#/shop" },
-      { label: "Skin Quiz", href: "#quiz" },
     ],
   },
       {
@@ -51,7 +50,7 @@ export default function Footer() {
   }
 
   return (
-    <footer className="border-t border-line bg-snow dark:border-white/10 dark:bg-[#0a0a0b]">
+    <footer className="border-t border-line bg-snow dark:border-white/10 dark:bg-[var(--color-ink)]">
       {/* Newsletter */}
       <div className="mx-auto max-w-7xl px-5 py-16 sm:px-8">
         <div className="grid gap-8 rounded-[1.75rem] bg-gradient-to-br from-petal via-white to-cyan-soft/40 p-8 ring-1 ring-line dark:from-white/[0.05] dark:via-transparent dark:to-white/[0.02] dark:ring-white/10 sm:p-12 lg:grid-cols-2 lg:items-center">

@@ -42,7 +42,7 @@ export default function QuickViewModal({ product, onClose }) {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 30, scale: 0.97 }}
             transition={{ type: "spring", stiffness: 280, damping: 30 }}
-            className="relative z-10 grid w-full max-w-3xl grid-cols-1 overflow-hidden rounded-t-[1.75rem] bg-white shadow-lift ring-1 ring-line sm:grid-cols-2 sm:rounded-[1.75rem] dark:bg-[#0f0f12] dark:ring-white/10"
+            className="relative z-10 grid w-full max-w-3xl grid-cols-1 overflow-hidden rounded-t-[1.75rem] bg-white shadow-lift ring-1 ring-line sm:grid-cols-2 sm:rounded-[1.75rem] dark:bg-[var(--color-ink-deep)] dark:ring-white/10"
           >
             {/* Media */}
             <div className="relative aspect-square sm:aspect-auto">
@@ -50,7 +50,7 @@ export default function QuickViewModal({ product, onClose }) {
                 aria-hidden
                 className="absolute inset-0"
                 style={{
-                  background: `radial-gradient(120% 100% at 50% 0%, #ffffff 0%, ${product.tone} 70%, #ffe1ec 100%)`,
+                  background: `radial-gradient(120% 100% at 50% 0%, var(--color-white) 0%, ${product.tone} 70%, var(--color-petal-deep) 100%)`,
                 }}
               />
               {product.image && (

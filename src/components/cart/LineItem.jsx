@@ -24,7 +24,7 @@ export default function LineItem({ item, compact = false, readOnly = false }) {
         href={`#/product/${item.id}`}
         className={`${thumb} shrink-0 overflow-hidden rounded-xl ring-1 ring-line dark:ring-white/10`}
         style={{
-          background: `radial-gradient(120% 100% at 50% 0%, #fff 0%, ${item.tone} 75%, #ffe1ec 100%)`,
+          background: `radial-gradient(120% 100% at 50% 0%, var(--color-white) 0%, ${item.tone} 75%, var(--color-petal-deep) 100%)`,
         }}
         aria-label={item.name}
       >

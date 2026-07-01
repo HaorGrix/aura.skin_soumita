@@ -381,7 +381,7 @@ export default function ProductInfo({ product, related = [], onWriteReview }) {
 /* Fixed bottom bar on mobile only */
 function MobileAddBar({ product, price, adding, added, onAdd, onNotify }) {
   return (
-    <div className="fixed inset-x-0 bottom-0 z-[90] border-t border-line bg-white/90 px-4 py-3 backdrop-blur lg:hidden dark:border-white/10 dark:bg-[#0a0a0b]/90">
+    <div className="fixed inset-x-0 bottom-0 z-[90] border-t border-line bg-white/90 px-4 py-3 backdrop-blur lg:hidden dark:border-white/10 dark:bg-[var(--color-ink)]/90">
       <div className="flex items-center gap-3">
         <div className="min-w-0">
           <p className="truncate text-xs text-ink-soft dark:text-white/55">{product.brand}</p>

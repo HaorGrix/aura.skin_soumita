@@ -1,13 +1,9 @@
 import { useMemo, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { AnimatePresence } from "framer-motion";
 import { ChevronLeft, Tag, ArrowRight, Lock, ShieldCheck, Truck } from "lucide-react";
 import { useCart } from "../context/CartContext.jsx";
 import { PRODUCTS } from "../data/products.js";
-import {
-  FREE_SHIPPING_THRESHOLD,
-  STANDARD_SHIPPING,
-  applyPromo,
-} from "../lib/shop-config.js";
+import { FREE_SHIPPING_THRESHOLD, STANDARD_SHIPPING } from "../lib/shop-config.js";
 import LineItem from "../components/cart/LineItem.jsx";
 import FreeShippingBar from "../components/cart/FreeShippingBar.jsx";
 import OrderSummary from "../components/cart/OrderSummary.jsx";
@@ -16,16 +12,15 @@ import QuickViewModal from "../components/shop/QuickViewModal.jsx";
 import EmptyState from "../components/ui/EmptyState.jsx";
 import Button from "../components/ui/Button.jsx";
 import { useToast } from "../components/ui/Toast.jsx";
+import { Input } from "../components/ui/index.js";
 
 export default function Cart() {
-  const { items, subtotal, count, clear } = useCart();
+  const { items, subtotal, count, clear, discountAmount, appliedCoupon, applyPromo } = useCart();
   const { toast } = useToast();
   const [promoInput, setPromoInput] = useState("");
-  const [promo, setPromo] = useState(null);
   const [quickView, setQuickView] = useState(null);
 
-  const discount = promo ? promo.amount : 0;
-  const discounted = Math.max(0, subtotal - discount);
+  const discounted = Math.max(0, subtotal - discountAmount);
   const shipping = discounted >= FREE_SHIPPING_THRESHOLD || discounted === 0 ? 0 : STANDARD_SHIPPING;
   const total = discounted + shipping;
 
@@ -39,12 +34,12 @@ export default function Cart() {
 
   function handlePromo(e) {
     e.preventDefault();
-    const res = applyPromo(promoInput, subtotal);
+    const res = applyPromo(promoInput);
     if (res) {
-      setPromo(res);
+      setPromoInput("");
       toast.success(res.label, "Promo applied");
     } else {
-      toast.error("That code isn’t valid. Try GLOW10 or BLOOM5.", "Hmm");
+      toast.error("That code isn’t valid. Check your welcome email for a promo code.", "Hmm");
     }
   }
 
@@ -86,7 +81,7 @@ export default function Cart() {
             <span className="text-ink-soft dark:text-white/45">({count})</span>
           </h1>
           <button
-            onClick={clear}
+            onClick={() => { if (window.confirm('Are you sure you want to clear your bag?')) clear(); }}
             className="text-sm font-medium text-ink-soft underline-offset-2 hover:text-error hover:underline dark:text-white/55"
           >
             Clear bag
@@ -97,7 +92,7 @@ export default function Cart() {
           {/* Items */}
           <div>
             <div className="mb-5">
-              <FreeShippingBar subtotal={subtotal} />
+              <FreeShippingBar subtotal={discounted} />
             </div>
             <div className="flex flex-col divide-y divide-line dark:divide-white/10">
               <AnimatePresence initial={false}>
@@ -114,8 +109,8 @@ export default function Cart() {
           <div className="lg:sticky lg:top-32 lg:self-start">
             <OrderSummary
               subtotal={subtotal}
-              discountAmount={discount}
-              promoCode={promo?.code}
+              discountAmount={discountAmount}
+              promoCode={appliedCoupon?.code}
               shippingCost={shipping}
               total={total}
             >
@@ -123,11 +118,11 @@ export default function Cart() {
               <form onSubmit={handlePromo} className="flex gap-2">
                 <div className="relative flex-1">
                   <Tag className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-soft dark:text-white/45" strokeWidth={1.7} />
-                  <input
+                  <Input
                     value={promoInput}
                     onChange={(e) => setPromoInput(e.target.value)}
                     placeholder="Promo code"
-                    className="w-full rounded-full bg-white py-2.5 pl-10 pr-3 text-sm text-ink ring-1 ring-line outline-none focus:ring-2 focus:ring-magenta/50 dark:bg-white/5 dark:text-white dark:ring-white/10"
+                    className="pl-10 rounded-full py-2.5"
                   />
                 </div>
                 <button
@@ -156,9 +151,6 @@ export default function Cart() {
               </div>
             </OrderSummary>
 
-            <p className="mt-3 px-1 text-center text-xs text-ink-soft dark:text-white/45">
-              Try code <strong>GLOW10</strong> for 10% off your first ritual 🌸
-            </p>
           </div>
         </div>
 

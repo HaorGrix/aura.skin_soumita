@@ -70,7 +70,7 @@ export default function Hero() {
           className="absolute inset-0"
           style={{
             background:
-              "radial-gradient(130% 100% at 72% -10%, #ffffff 0%, var(--color-petal) 46%, #ffe1ec 76%, #ffd6e6 100%)",
+              "radial-gradient(130% 100% at 72% -10%, var(--color-white) 0%, var(--color-petal) 46%, var(--color-petal-deep) 76%, #ffd6e6 100%)",
           }}
         />
         <div
@@ -78,7 +78,7 @@ export default function Hero() {
           className="absolute -right-32 -top-24 h-[28rem] w-[28rem] rounded-full opacity-50 blur-3xl"
           style={{ background: "radial-gradient(circle, var(--color-cyan-soft), transparent 70%)" }}
         />
-        <div className="absolute inset-0 hidden dark:block dark:bg-gradient-to-b dark:from-[#0a0a0b] dark:via-[#140810] dark:to-[#0a0a0b]" />
+        <div className="absolute inset-0 hidden dark:block dark:bg-gradient-to-b dark:from-[var(--color-ink)] dark:via-[#140810] dark:to-[var(--color-ink)]" />
       </motion.div>
 
       {/* Sparkle particle field */}

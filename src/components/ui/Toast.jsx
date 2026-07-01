@@ -67,7 +67,7 @@ export function ToastProvider({ children }) {
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: 10, scale: 0.92 }}
                 transition={{ type: "spring", stiffness: 420, damping: 30 }}
-                className="pointer-events-auto flex w-full max-w-sm items-start gap-3 rounded-[1.25rem] bg-white p-4 shadow-lift ring-1 ring-line dark:bg-[#16161a] dark:ring-white/10"
+                className="pointer-events-auto flex w-full max-w-sm items-start gap-3 rounded-[1.25rem] bg-white p-4 shadow-lift ring-1 ring-line dark:bg-[var(--color-ink-lift)] dark:ring-white/10"
               >
                 <span
                   className={`mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-full ring-1 ${ACCENT[t.variant]}`}

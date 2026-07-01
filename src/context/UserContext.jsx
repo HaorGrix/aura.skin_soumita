@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { MILESTONES, POINTS_PER_REVIEW, SEED_ORDERS } from "../data/reviews.js";
 
 /**
@@ -41,6 +41,30 @@ export function UserProvider({ children }) {
 
   const [profile, setProfile] = useState(saved?.profile ?? DEFAULT_PROFILE);
 
+  // —— Auth —— browsing is open to everyone; this only gates checkout.
+  // `authed` persists so a returning shopper stays signed in. The modal
+  // state (open/mode/onSuccess) is ephemeral UI, controlled from anywhere
+  // via openAuth()/closeAuth() so the navbar and checkout can share one flow.
+  const [authed, setAuthed] = useState(saved?.authed ?? false);
+  const [auth, setAuth] = useState({ open: false, mode: "login", onSuccess: null });
+
+  const openAuth = useCallback((mode = "login", onSuccess = null) => {
+    setAuth({ open: true, mode, onSuccess });
+  }, []);
+  const closeAuth = useCallback(() => {
+    setAuth((a) => ({ ...a, open: false, onSuccess: null }));
+  }, []);
+
+  const login = useCallback(({ email, name } = {}) => {
+    setAuthed(true);
+    setProfile((p) => ({ ...p, email: email || p.email, name: name || p.name }));
+  }, []);
+  const signup = useCallback(({ name, email } = {}) => {
+    setAuthed(true);
+    setProfile((p) => ({ ...p, name: name || p.name, email: email || p.email }));
+  }, []);
+  const logout = useCallback(() => setAuthed(false), []);
+
   // Order history is static seed data (a real app would fetch it per user).
   const orders = SEED_ORDERS;
   const purchasedIds = useMemo(
@@ -50,11 +74,11 @@ export function UserProvider({ children }) {
 
   useEffect(() => {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({ points, myReviews, reviewedIds, profile }));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ points, myReviews, reviewedIds, profile, authed }));
     } catch {
       /* non-fatal */
     }
-  }, [points, myReviews, reviewedIds, profile]);
+  }, [points, myReviews, reviewedIds, profile, authed]);
 
   const value = useMemo(() => {
     const hasPurchased = (id) => purchasedIds.has(id);
@@ -63,6 +87,14 @@ export function UserProvider({ children }) {
     return {
       ...MOCK_USER,
       ...profile,
+      // Auth surface
+      authed,
+      auth,
+      openAuth,
+      closeAuth,
+      login,
+      signup,
+      logout,
       points,
       orders,
       myReviews,
@@ -98,7 +130,7 @@ export function UserProvider({ children }) {
         setProfile((prev) => ({ ...prev, ...updates }));
       },
     };
-  }, [points, myReviews, reviewedIds, orders, purchasedIds, profile]);
+  }, [points, myReviews, reviewedIds, orders, purchasedIds, profile, authed, auth, openAuth, closeAuth, login, signup, logout]);
 
   return <UserContext.Provider value={value}>{children}</UserContext.Provider>;
 }

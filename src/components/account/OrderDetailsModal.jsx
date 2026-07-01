@@ -21,7 +21,7 @@ export default function OrderDetailsModal({ order, onClose }) {
           exit={{ scale: 0.95, opacity: 0, y: 10 }}
           transition={{ type: "spring", stiffness: 300, damping: 30 }}
           onClick={(e) => e.stopPropagation()}
-          className="relative flex max-h-[90vh] w-full max-w-lg flex-col overflow-hidden rounded-[1.75rem] bg-white shadow-lift dark:bg-[#0f0f12] dark:ring-1 dark:ring-white/10"
+          className="relative flex max-h-[90vh] w-full max-w-lg flex-col overflow-hidden rounded-[1.75rem] bg-white shadow-lift dark:bg-[var(--color-ink-deep)] dark:ring-1 dark:ring-white/10"
         >
           {/* Header */}
           <div className="flex items-center justify-between border-b border-line px-6 py-5 dark:border-white/10">
@@ -55,7 +55,7 @@ export default function OrderDetailsModal({ order, onClose }) {
                   <li key={`${id}-${index}`} className="flex items-center gap-4">
                     <div
                       className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl ring-1 ring-line dark:ring-white/10"
-                      style={{ background: `radial-gradient(120% 100% at 50% 0%, #fff 0%, ${p.tone} 75%, #ffe1ec 100%)` }}
+                      style={{ background: `radial-gradient(120% 100% at 50% 0%, var(--color-white) 0%, ${p.tone} 75%, var(--color-petal-deep) 100%)` }}
                     >
                       {p.image && <img src={p.image} alt={p.name} className="absolute inset-0 h-full w-full object-cover" />}
                     </div>

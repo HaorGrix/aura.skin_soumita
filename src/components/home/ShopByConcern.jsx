@@ -113,7 +113,7 @@ export default function ShopByConcern() {
     "dark:bg-white/5 dark:text-white/80 dark:ring-white/10 dark:hover:bg-white/10";
 
   return (
-    <section className="py-14 sm:py-20">
+    <section className="py-10 sm:py-14">
       <div className="mx-auto max-w-7xl px-5 sm:px-8">
         {/* Heading + slider controls */}
         <div className="flex items-end justify-between gap-4">

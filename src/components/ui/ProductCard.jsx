@@ -80,6 +80,8 @@ export default function ProductCard({ product, onQuickView }) {
           <img
             src={image}
             alt={`${brand} ${name}`}
+            width="400"
+            height="500"
             loading="lazy"
             decoding="async"
             className={`absolute inset-0 h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105 ${
@@ -174,8 +176,9 @@ export default function ProductCard({ product, onQuickView }) {
           {reviews > 0 && <span>({reviews.toLocaleString()})</span>}
         </div>
 
-        {/* Price + Add */}
-        <div className="mt-4 flex items-end justify-between gap-3 pt-1">
+        {/* Price + Add — locked to the bottom via mt-auto so it aligns across
+            every card regardless of title length or rating presence. */}
+        <div className="mt-auto flex items-end justify-between gap-3 pt-4">
           <div className="flex items-baseline gap-2">
             <span
               className={`text-base font-semibold tabular-nums ${

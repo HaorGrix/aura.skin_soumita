@@ -77,7 +77,7 @@ export default function OrdersTab() {
                         href={`#/product/${id}`}
                         className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl ring-1 ring-line dark:ring-white/10"
                         style={{
-                          background: `radial-gradient(120% 100% at 50% 0%, #fff 0%, ${p.tone} 75%, #ffe1ec 100%)`,
+                          background: `radial-gradient(120% 100% at 50% 0%, var(--color-white) 0%, ${p.tone} 75%, var(--color-petal-deep) 100%)`,
                         }}
                       >
                         {p.image && (

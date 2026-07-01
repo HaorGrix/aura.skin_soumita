@@ -13,6 +13,7 @@ import {
 import Button from "../components/ui/Button.jsx";
 import Footer from "../components/Footer.jsx";
 import { useToast } from "../components/ui/Toast.jsx";
+import { Input } from "../components/ui/index.js";
 
 const FAQS = [
   {
@@ -77,7 +78,7 @@ export default function Contact() {
   return (
     <>
       <main className="min-h-screen bg-snow pt-28 text-ink dark:bg-[#050506] dark:text-white sm:pt-36">
-        <section className="mx-auto grid max-w-7xl gap-10 px-5 pb-14 sm:px-8 lg:grid-cols-[0.9fr_1.1fr] lg:items-start">
+        <section className="mx-auto mt-12 grid max-w-7xl gap-10 px-5 pb-14 sm:px-8 lg:grid-cols-[0.9fr_1.1fr] lg:items-start">
           <motion.div
             initial={{ opacity: 0, y: 18 }}
             animate={{ opacity: 1, y: 0 }}
@@ -109,13 +110,13 @@ export default function Contact() {
               ))}
             </div>
 
-            <div className="mt-6 grid gap-3 rounded-[1.25rem] bg-ink p-5 text-white ring-1 ring-white/10 dark:bg-white/[0.04]">
+            <div className="mt-6 grid gap-3 rounded-[1.25rem] bg-magenta p-5 text-white shadow-[var(--shadow-glow-pink)] ring-1 ring-magenta-deep/30">
               <p className="inline-flex items-center gap-2 text-sm">
-                <Clock className="h-4 w-4 text-gold" strokeWidth={1.8} />
+                <Clock className="h-4 w-4 text-white" strokeWidth={1.8} />
                 Saturday to Thursday, 10:00 AM - 7:00 PM
               </p>
-              <p className="inline-flex items-center gap-2 text-sm text-white/72">
-                <MapPin className="h-4 w-4 text-cyan-soft" strokeWidth={1.8} />
+              <p className="inline-flex items-center gap-2 text-sm text-white/80">
+                <MapPin className="h-4 w-4 text-white" strokeWidth={1.8} />
                 Dhaka care studio, online-first delivery across Bangladesh
               </p>
             </div>
@@ -130,19 +131,19 @@ export default function Contact() {
           >
             <div className="grid gap-4 sm:grid-cols-2">
               <Field label="Name" error={errors.name}>
-                <input
+                <Input
                   value={form.name}
                   onChange={(e) => update("name", e.target.value)}
-                  className={inputClasses(errors.name)}
+                  className={errors.name ? "ring-magenta" : ""}
                   placeholder="Your name"
                 />
               </Field>
               <Field label="Email" error={errors.email}>
-                <input
+                <Input
                   type="email"
                   value={form.email}
                   onChange={(e) => update("email", e.target.value)}
-                  className={inputClasses(errors.email)}
+                  className={errors.email ? "ring-magenta" : ""}
                   placeholder="you@email.com"
                 />
               </Field>
@@ -152,7 +153,7 @@ export default function Contact() {
               <select
                 value={form.topic}
                 onChange={(e) => update("topic", e.target.value)}
-                className={inputClasses()}
+                className="mt-1 w-full rounded-xl bg-snow px-4 py-3 text-sm text-ink ring-1 ring-line outline-none transition-shadow focus:ring-2 focus:ring-magenta/50 dark:bg-white/5 dark:text-white dark:ring-white/10"
               >
                 <option>Routine help</option>
                 <option>Order support</option>
@@ -165,7 +166,7 @@ export default function Contact() {
               <textarea
                 value={form.message}
                 onChange={(e) => update("message", e.target.value)}
-                className={`${inputClasses(errors.message)} min-h-40 resize-y`}
+                className={`w-full rounded-xl bg-snow px-4 py-3 text-sm text-ink ring-1 outline-none transition-shadow focus:ring-2 focus:ring-magenta/50 dark:bg-white/5 dark:text-white dark:ring-white/10 min-h-40 resize-y ${errors.message ? "ring-magenta" : "ring-line dark:ring-white/10"}`}
                 placeholder="Tell us your skin type, concern, order number, or question."
               />
             </Field>
@@ -265,13 +266,4 @@ function Field({ label, error, children }) {
       {error && <span className="mt-1.5 block text-xs font-semibold text-magenta">{error}</span>}
     </label>
   );
-}
-
-function inputClasses(error) {
-  return [
-    "w-full rounded-[1rem] bg-snow px-4 py-3.5 text-sm text-ink outline-none ring-1 transition",
-    "placeholder:text-ink-soft/50 focus:ring-2 focus:ring-magenta/45",
-    "dark:bg-white/[0.04] dark:text-white dark:placeholder:text-white/35",
-    error ? "ring-magenta" : "ring-line dark:ring-white/10",
-  ].join(" ");
 }

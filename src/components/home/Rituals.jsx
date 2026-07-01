@@ -30,7 +30,7 @@ export default function Rituals() {
   const ritual = RITUALS[time];
 
   return (
-    <section id="rituals" className="py-14 sm:py-20">
+    <section id="rituals" className="py-10 sm:py-14">
       <div className="mx-auto max-w-7xl px-5 sm:px-8">
         <div className="flex flex-col items-center text-center">
           <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-magenta">
@@ -81,7 +81,7 @@ export default function Rituals() {
                 initial={{ opacity: 0, y: 18 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.4, delay: i * 0.08 }}
-                className="group relative overflow-hidden rounded-[1.5rem] bg-white p-6 ring-1 ring-line transition-shadow duration-500 hover:shadow-lift dark:bg-white/[0.03] dark:ring-white/10"
+                className="group relative flex flex-col overflow-hidden rounded-[1.5rem] bg-white p-6 ring-1 ring-line transition-shadow duration-500 hover:shadow-lift dark:bg-white/[0.03] dark:ring-white/10"
               >
                 <span
                   aria-hidden
@@ -98,7 +98,7 @@ export default function Rituals() {
                 <p className="relative mt-1.5 text-sm leading-relaxed text-ink-soft dark:text-white/65">
                   {step.text}
                 </p>
-                <p className="relative mt-4 border-t border-line pt-3 text-xs font-medium text-ink-soft dark:border-white/10 dark:text-white/50">
+                <p className="relative mt-auto border-t border-line pt-3 text-xs font-medium text-ink-soft dark:border-white/10 dark:text-white/50">
                   ✨ Try: <span className="text-ink dark:text-white">{step.pick}</span>
                 </p>
               </motion.div>

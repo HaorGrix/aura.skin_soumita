@@ -15,7 +15,7 @@ const TABS = [
 ];
 
 export default function Account() {
-  const { name } = useUser();
+  const { name, logout } = useUser();
   // null means mobile menu is showing. Desktop always shows the current tab.
   const [activeTab, setActiveTab] = useState(null); 
   const currentId = activeTab || "profile";
@@ -36,14 +36,14 @@ export default function Account() {
 
   return (
     <div className="min-h-screen pb-28 pt-28 sm:pt-32">
-      <div className="mx-auto max-w-6xl px-5 sm:px-8">
+      <div className="mx-auto max-w-7xl px-5 sm:px-8">
         
         {/* Header - Hidden on mobile when a tab is active to save space */}
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-          className={`${activeTab ? "hidden lg:block" : "block"} mb-8 lg:mb-12`}
+          className={`${activeTab ? "hidden lg:block" : "block"} mt-12 mb-8 lg:mb-12`}
         >
           <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-magenta">
             Dashboard
@@ -82,7 +82,13 @@ export default function Account() {
               
               <div className="my-4 border-t border-line dark:border-white/10" />
               
-              <button className="flex items-center gap-3 rounded-2xl p-4 text-left font-medium text-ink-soft transition-colors hover:bg-rose/10 hover:text-rose dark:text-white/60 dark:hover:bg-rose/10 dark:hover:text-rose">
+              <button
+                onClick={() => {
+                  logout();
+                  window.location.hash = "#/";
+                }}
+                className="flex items-center gap-3 rounded-2xl p-4 text-left font-medium text-ink-soft transition-colors hover:bg-rose/10 hover:text-rose dark:text-white/60 dark:hover:bg-rose/10 dark:hover:text-rose"
+              >
                 <LogOut className="h-5 w-5" strokeWidth={1.8} />
                 Sign Out
               </button>
@@ -95,7 +101,7 @@ export default function Account() {
             {/* Mobile Back Button */}
             <button
               onClick={() => setActiveTab(null)}
-              className="mb-6 flex items-center gap-1.5 text-sm font-medium text-ink-soft transition-colors hover:text-magenta lg:hidden dark:text-white/60"
+              className="mt-12 mb-6 flex items-center gap-1.5 text-sm font-medium text-ink-soft transition-colors hover:text-magenta lg:hidden dark:text-white/60"
             >
               <ChevronLeft className="h-4 w-4" strokeWidth={2} /> Back to Menu
             </button>

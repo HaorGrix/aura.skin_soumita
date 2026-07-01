@@ -35,11 +35,22 @@ function parseHashQuery() {
 }
 
 export default function Shop() {
-  const initial = parseHashQuery();
   // <PredictiveSearch /> owns the input + 300ms debounce and reports the
   // committed query via onQueryChange — Shop just stores it for the grid.
-  const [search, setSearch] = useState(initial.search);
-  const [filters, setFilters] = useState(initial.filters);
+  const [search, setSearch] = useState("");
+  const [filters, setFilters] = useState(EMPTY_FILTERS);
+
+  // Sync state from URL on mount and on browser back/forward navigation
+  useEffect(() => {
+    const syncFromUrl = () => {
+      const { filters: parsedFilters, search: parsedSearch } = parseHashQuery();
+      setFilters(parsedFilters);
+      setSearch(parsedSearch);
+    };
+    syncFromUrl();
+    window.addEventListener("hashchange", syncFromUrl);
+    return () => window.removeEventListener("hashchange", syncFromUrl);
+  }, []);
   const [sort, setSort] = useState("featured");
   const [visible, setVisible] = useState(PAGE);
   const [loading, setLoading] = useState(true); // initial / re-filter
@@ -126,17 +137,42 @@ export default function Shop() {
   }, [hasMore, loadMore]);
 
   // —— filter helpers ——
-  const toggleFilter = (key, id) =>
+  const syncHash = (nextFilters, currentSearch) => {
+    const params = new URLSearchParams();
+    if (currentSearch) params.set("q", currentSearch);
+    Object.entries(nextFilters).forEach(([key, arr]) => {
+      if (arr.length > 0) params.set(key, arr.join(","));
+    });
+    const qs = params.toString();
+    // Use replaceState so filter clicks don't bloat the history stack,
+    // but the URL remains shareable.
+    window.history.replaceState(null, "", qs ? `#/shop?${qs}` : "#/shop");
+  };
+
+  const toggleFilter = (key, id) => {
     setFilters((f) => {
       const has = f[key].includes(id);
-      return { ...f, [key]: has ? f[key].filter((x) => x !== id) : [...f[key], id] };
+      const next = { ...f, [key]: has ? f[key].filter((x) => x !== id) : [...f[key], id] };
+      syncHash(next, search);
+      return next;
     });
-  const clearFilters = () => setFilters(EMPTY_FILTERS);
+  };
+
+  const clearFilters = () => {
+    setFilters(EMPTY_FILTERS);
+    syncHash(EMPTY_FILTERS, search);
+  };
   const activeCount = countActive(filters);
 
   // Stable callback for <PredictiveSearch /> — keeps its debounce effect from
   // re-firing on every Shop render.
-  const handleQueryChange = useCallback((q) => setSearch(q), []);
+  const handleQueryChange = useCallback((q) => {
+    setSearch(q);
+    setFilters((currentFilters) => {
+      syncHash(currentFilters, q);
+      return currentFilters;
+    });
+  }, []);
 
   // Trending = top 3 most-popular catalog items (drives the dropdown's empty state).
   const trending = useMemo(

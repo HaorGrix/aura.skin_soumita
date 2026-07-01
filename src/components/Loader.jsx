@@ -72,7 +72,7 @@ export default function Loader({ onComplete }) {
           className="fixed inset-0 z-[100] flex items-center justify-center overflow-hidden"
           style={{
             background:
-              "radial-gradient(120% 90% at 50% 0%, #ffffff 0%, var(--color-petal) 55%, #ffe3ee 100%)",
+              "radial-gradient(120% 90% at 50% 0%, var(--color-white) 0%, var(--color-petal) 55%, var(--color-petal-deep) 100%)",
           }}
           initial={{ opacity: 1 }}
           exit={{

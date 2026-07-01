@@ -1,6 +1,8 @@
 import { motion } from "framer-motion";
 import { ArrowUpRight } from "lucide-react";
 
+// Journal cover art lives in /assests as jounal{1,2,3}.png. Each card maps to
+// its own file; missing files fall back to the gradient wash (see onError).
 const ARTICLES = [
   {
     tag: "Routine",
@@ -8,29 +10,32 @@ const ARTICLES = [
     excerpt: "Everything you need to know about the famous K-beauty philosophy, from oil cleansing to the final layer of SPF.",
     read: "8 min read",
     tone: "var(--color-petal)",
+    img: new URL("../../../assests/jounal1.png", import.meta.url).href,
     link: "https://sokoglam.com/pages/the-korean-skin-care-routine"
   },
   {
-    tag: "Trends",
-    title: "What Is Slugging? The Viral K-Beauty Skincare Trend Explained",
-    excerpt: "Dermatologists weigh in on why sealing your face with petrolatum might be the secret to waking up with a glowing, repaired barrier.",
+    tag: "Ingredients",
+    title: "Salicylic Acid & BHA: Your Guide to Clearer Skin",
+    excerpt: "How beta-hydroxy acids unclog pores, smooth texture, and calm breakouts — plus the gentle K-beauty toners that do it best.",
     read: "5 min read",
     tone: "var(--color-cyan-soft)",
-    link: "https://www.byrdie.com/slugging-skincare-trend-5087545"
+    img: new URL("../../../assests/journal2.webp", import.meta.url).href,
+    link: "https://kbeautyworld.com/blogs/skincare-101/salicylic-acid-bha-skincare"
   },
   {
-    tag: "Glass Skin",
-    title: "How to Get the Glowing, Dewy K-Beauty Look",
-    excerpt: "Glass skin is all about a poreless, luminous complexion. Here is the step-by-step guide to achieving the ultimate hydrated glow.",
+    tag: "Hydration",
+    title: "The Best Korean Moisturizers for Dry Skin",
+    excerpt: "From rich creams to barrier-loving balms, these K-beauty picks quench thirsty skin and seal in a dewy, lasting glow.",
     read: "6 min read",
     tone: "var(--color-gold-soft)",
-    link: "https://www.allure.com/story/glass-skin-k-beauty-trend"
+    img: new URL("../../../assests/joournal3.webp", import.meta.url).href,
+    link: "https://kbeautyworld.com/blogs/skincare-101/korean-moisturizers-for-dry-skin"
   },
 ];
 
 export default function Journal() {
   return (
-    <section id="journal" className="py-14 sm:py-20">
+    <section id="journal" className="py-10 sm:py-14">
       <div className="mx-auto max-w-7xl px-5 sm:px-8">
         {/* Community story */}
         <motion.div
@@ -82,12 +87,21 @@ export default function Journal() {
               viewport={{ once: true, amount: 0.2 }}
               transition={{ duration: 0.5, delay: i * 0.1, ease: [0.22, 1, 0.36, 1] }}
               whileHover={{ y: -6 }}
-              className="group overflow-hidden rounded-[1.5rem] bg-white ring-1 ring-line transition-shadow duration-500 hover:shadow-lift dark:bg-white/[0.03] dark:ring-white/10"
+              className="group flex flex-col overflow-hidden rounded-[1.5rem] bg-white ring-1 ring-line transition-shadow duration-500 hover:shadow-lift dark:bg-white/[0.03] dark:ring-white/10"
             >
               <div
                 className="relative aspect-[16/10] overflow-hidden"
                 style={{ background: `radial-gradient(120% 100% at 30% 0%, #fff, ${a.tone})` }}
               >
+                {/* Cover image — sits over the gradient; if the file isn't
+                    present yet it hides itself, revealing the gradient wash. */}
+                <img
+                  src={a.img}
+                  alt={a.title}
+                  loading="lazy"
+                  onError={(e) => { e.currentTarget.style.display = "none"; }}
+                  className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+                />
                 <span className="absolute left-4 top-4 rounded-full bg-white/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-magenta backdrop-blur">
                   {a.tag}
                 </span>
@@ -95,14 +109,14 @@ export default function Journal() {
                   <ArrowUpRight className="h-4 w-4" strokeWidth={1.8} />
                 </span>
               </div>
-              <div className="p-5">
-                <h3 className="font-serif text-lg leading-snug text-ink transition-colors group-hover:text-magenta dark:text-white">
+              <div className="flex flex-1 flex-col p-5">
+                <h3 className="line-clamp-2 font-serif text-lg leading-snug text-ink transition-colors group-hover:text-magenta dark:text-white">
                   {a.title}
                 </h3>
                 <p className="mt-2 line-clamp-3 text-sm leading-relaxed text-ink-soft dark:text-white/65">
                   {a.excerpt}
                 </p>
-                <div className="mt-3 flex items-center justify-between text-xs">
+                <div className="mt-auto flex items-center justify-between pt-4 text-xs">
                   <span className="text-ink-soft dark:text-white/45">{a.read}</span>
                   <span className="inline-flex items-center gap-1 font-semibold text-magenta">
                     Read more

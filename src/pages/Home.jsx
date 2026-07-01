@@ -1,5 +1,5 @@
 import Hero from "../components/Hero.jsx";
-import Affirmations from "../components/home/Affirmations.jsx";
+import Offers from "../components/home/Offers.jsx";
 import FeaturedProducts from "../components/home/FeaturedProducts.jsx";
 import ShopByConcern from "../components/home/ShopByConcern.jsx";
 import Rituals from "../components/home/Rituals.jsx";
@@ -23,7 +23,7 @@ export default function Home() {
       />
 
       <Hero />
-      <Affirmations />
+      <Offers />
       <FeaturedProducts />
       <ShopByConcern />
       <Rituals />

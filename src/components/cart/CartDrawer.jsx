@@ -1,14 +1,19 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, ShoppingBag, ArrowRight, Lock } from "lucide-react";
+import { X, ShoppingBag, ArrowRight, Lock, Tag } from "lucide-react";
 import { useCart } from "../../context/CartContext.jsx";
 import { formatPrice } from "../../lib/format.js";
 import LineItem from "./LineItem.jsx";
 import FreeShippingBar from "./FreeShippingBar.jsx";
 import Button from "../ui/Button.jsx";
+import { useFocusTrap } from "../../lib/useFocusTrap.js";
 
 export default function CartDrawer() {
-  const { isOpen, closeCart, items, count, subtotal } = useCart();
+  const { isOpen, closeCart, items, count, subtotal, discountAmount, appliedCoupon } = useCart();
+  const drawerRef = useRef(null);
+  useFocusTrap(drawerRef, isOpen);
+
+  const discounted = Math.max(0, subtotal - discountAmount);
 
   // Esc closes — but we deliberately DON'T lock body scroll (boss wants the
   // shopper to keep browsing the grid while the drawer is open, ASOS-style).
@@ -32,15 +37,18 @@ export default function CartDrawer() {
            Only the drawer surface itself catches pointer events; everywhere
            else stays clickable for browse/quick-add. */
         <motion.aside
+          ref={drawerRef}
           /* Mobile: takes most of the screen but leaves a thin strip on the
              left for swipe-out / orientation. Desktop: capped at max-w-md so
              the product grid stays visible and shoppable. */
-          className="fixed inset-y-0 right-0 z-[var(--z-modal)] flex w-[88vw] max-w-md flex-col bg-white shadow-[var(--shadow-lift)] ring-1 ring-line dark:bg-[#0a0a0b] dark:ring-white/10"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Shopping bag"
+          className="fixed inset-y-0 right-0 z-[var(--z-modal)] flex w-[88vw] max-w-md flex-col bg-white shadow-[var(--shadow-lift)] ring-1 ring-line dark:bg-[var(--color-ink)] dark:ring-white/10"
           initial={{ x: "100%" }}
           animate={{ x: 0 }}
           exit={{ x: "100%" }}
           transition={{ type: "spring", stiffness: 300, damping: 34 }}
-          aria-label="Shopping bag"
         >
             {/* Header */}
             <div className="flex items-center justify-between border-b border-line px-5 py-4 dark:border-white/10">
@@ -68,7 +76,7 @@ export default function CartDrawer() {
               <>
                 {/* Free shipping */}
                 <div className="px-5 pt-4">
-                  <FreeShippingBar subtotal={subtotal} />
+                  <FreeShippingBar subtotal={discounted} />
                 </div>
 
                 {/* Items */}
@@ -90,7 +98,20 @@ export default function CartDrawer() {
                       {formatPrice(subtotal)}
                     </span>
                   </div>
-                  <p className="mt-1 text-xs text-ink-soft dark:text-white/45">
+
+                  {appliedCoupon && (
+                    <div className="mt-3 flex items-center justify-between rounded-xl bg-petal/50 p-2.5 ring-1 ring-line dark:bg-white/[0.04] dark:ring-white/10">
+                      <span className="flex items-center gap-2">
+                        <Tag className="h-3.5 w-3.5 text-magenta" strokeWidth={2} />
+                        <span className="text-xs font-semibold text-ink dark:text-white">{appliedCoupon.code}</span>
+                      </span>
+                      <span className="text-xs font-semibold text-magenta dark:text-rose">
+                        −{formatPrice(discountAmount)}
+                      </span>
+                    </div>
+                  )}
+
+                  <p className="mt-2 text-xs text-ink-soft dark:text-white/45">
                     Shipping & taxes calculated at checkout.
                   </p>
 

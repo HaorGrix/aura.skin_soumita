@@ -16,14 +16,17 @@ export default function FeaturedProducts() {
 
   const items = useMemo(() => {
     if (tab === "new")
-      return [...PRODUCTS].filter((p) => p.isNew).concat(
-        [...PRODUCTS].sort((a, b) => b.popularity - a.popularity)
-      ).slice(0, 8);
-    return [...PRODUCTS].sort((a, b) => b.reviews - a.reviews).slice(0, 8);
+      // Only show products tagged isNew, ranked by popularity.
+      return [...PRODUCTS]
+        .filter((p) => p.isNew)
+        .sort((a, b) => b.popularity - a.popularity)
+        .slice(0, 8);
+    // Best Sellers: rank by salesCount (synthetic units-sold), matching the Shop page.
+    return [...PRODUCTS].sort((a, b) => b.salesCount - a.salesCount).slice(0, 8);
   }, [tab]);
 
   return (
-    <section id="featured" className="py-14 sm:py-20">
+    <section id="featured" className="py-10 sm:py-14">
       <div className="mx-auto max-w-7xl px-5 sm:px-8">
         <div className="flex flex-col items-start justify-between gap-5 sm:flex-row sm:items-end">
           <div>

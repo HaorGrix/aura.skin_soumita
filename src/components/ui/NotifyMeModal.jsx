@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, BellRing, Check, Mail } from "lucide-react";
 import Button from "./Button.jsx";
+import { Input } from "./index.js";
 
 /**
  * NotifyMeModal — back-in-stock waitlist (mock). Reused by ProductCard, the PDP
@@ -11,6 +13,9 @@ import Button from "./Button.jsx";
 export default function NotifyMeModal({ product, open, onClose }) {
   const [email, setEmail] = useState("");
   const [sent, setSent] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => setMounted(true), []);
 
   // Reset whenever a fresh modal opens.
   useEffect(() => {
@@ -32,10 +37,10 @@ export default function NotifyMeModal({ product, open, onClose }) {
     };
   }, [open, onClose]);
 
-  if (!product) return null;
+  if (!product || !mounted) return null;
   const valid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
-  return (
+  return createPortal(
     <AnimatePresence>
       {open && (
         <div className="fixed inset-0 z-[var(--z-modal)] flex items-end justify-center p-0 sm:items-center sm:p-6">
@@ -54,7 +59,7 @@ export default function NotifyMeModal({ product, open, onClose }) {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 30, scale: 0.97 }}
             transition={{ type: "spring", stiffness: 280, damping: 30 }}
-            className="relative z-10 w-full max-w-md overflow-hidden rounded-t-[1.75rem] bg-white p-6 text-center shadow-lift ring-1 ring-line sm:rounded-[1.75rem] sm:p-8 dark:bg-[#0f0f12] dark:ring-white/10"
+            className="relative z-10 w-full max-w-md overflow-hidden rounded-t-[1.75rem] bg-white p-6 text-center shadow-lift ring-1 ring-line sm:rounded-[1.75rem] sm:p-8 dark:bg-[var(--color-ink-deep)] dark:ring-white/10"
           >
             <button
               onClick={onClose}
@@ -93,13 +98,13 @@ export default function NotifyMeModal({ product, open, onClose }) {
                       className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-soft dark:text-white/45"
                       strokeWidth={1.8}
                     />
-                    <input
+                    <Input
                       type="email"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       onKeyDown={(e) => e.key === "Enter" && valid && setSent(true)}
                       placeholder="you@example.com"
-                      className="w-full rounded-full bg-snow py-3 pl-11 pr-4 text-sm text-ink ring-1 ring-line outline-none focus:ring-2 focus:ring-magenta/50 dark:bg-white/5 dark:text-white dark:ring-white/10"
+                      className="pl-11 rounded-full py-3"
                     />
                   </div>
 
@@ -140,6 +145,7 @@ export default function NotifyMeModal({ product, open, onClose }) {
           </motion.div>
         </div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 }

@@ -133,6 +133,7 @@ export default function PredictiveSearch({
         aria-label="Search products"
         aria-autocomplete="list"
         aria-expanded={open}
+        aria-controls="search-results-listbox"
         /* py-3 mobile = ~48px thumb-friendly target; tighter on desktop */
         className="w-full rounded-full bg-white py-3 pl-11 pr-10 text-base text-ink ring-1 ring-line outline-none transition-shadow placeholder:text-ink-soft/70 focus:ring-2 focus:ring-magenta/50 sm:py-2.5 sm:text-sm dark:bg-white/5 dark:text-white dark:ring-white/10 dark:placeholder:text-white/40"
       />
@@ -153,7 +154,9 @@ export default function PredictiveSearch({
       <AnimatePresence>
         {open && (showProducts || showEmpty || showFocused) && (
           <motion.div
+            id="search-results-listbox"
             role="listbox"
+            aria-label="Search suggestions"
             initial={{ opacity: 0, y: -6, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -6, scale: 0.98 }}
@@ -163,7 +166,7 @@ export default function PredictiveSearch({
                the toolbar itself must be a positioned stacking context at
                `z-sticky` — see Shop.jsx. Together they guarantee the dropdown
                paints above all product cards. */
-            className="absolute left-0 right-0 top-full z-[var(--z-dropdown)] mt-2 max-h-[70vh] overflow-y-auto rounded-2xl bg-white/95 p-2 shadow-lift ring-1 ring-line backdrop-blur-md scrollbar-thin dark:bg-[#16161a]/95 dark:ring-white/10"
+            className="absolute left-0 right-0 top-full z-[var(--z-dropdown)] mt-2 max-h-[70vh] overflow-y-auto rounded-2xl bg-white/95 p-2 shadow-lift ring-1 ring-line backdrop-blur-md scrollbar-thin dark:bg-[var(--color-ink-lift)]/95 dark:ring-white/10"
           >
             {/* Suggested filter chips */}
             {suggestion && suggestion.facets.length > 0 && (

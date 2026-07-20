@@ -54,14 +54,12 @@ export default function MagneticButton({
 
   const variants = {
     solid:
-      "bg-ink text-white shadow-soft hover:shadow-lift " +
-      "dark:bg-white dark:text-ink",
+      "bg-ink text-white shadow-soft hover:shadow-lift",
     accent:
       "bg-magenta text-white shadow-soft hover:shadow-[var(--shadow-glow-pink)]",
     outline:
       "border border-ink/15 bg-white/60 text-ink backdrop-blur " +
-      "hover:border-magenta/50 hover:text-magenta " +
-      "dark:border-white/20 dark:bg-white/5 dark:text-white dark:hover:text-rose",
+      "hover:border-magenta/50 hover:text-magenta",
   };
 
   const MotionTag = motion[as] ?? motion.button;

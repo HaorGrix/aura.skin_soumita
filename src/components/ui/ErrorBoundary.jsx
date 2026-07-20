@@ -23,10 +23,10 @@ export default class ErrorBoundary extends React.Component {
           <div className="h-16 w-16 bg-rose/20 text-magenta rounded-full flex items-center justify-center mb-6 ring-1 ring-magenta/20">
             <AlertTriangle className="h-8 w-8" />
           </div>
-          <h2 className="font-serif text-3xl text-ink dark:text-white mb-3">
+          <h2 className="font-serif text-3xl text-ink mb-3">
             Something went wrong
           </h2>
-          <p className="text-ink-soft dark:text-white/60 max-w-md mx-auto mb-8">
+          <p className="text-ink-soft max-w-md mx-auto mb-8">
             We hit a small snag. Please try reloading the page to restore your glow.
           </p>
           <Button variant="primary" onClick={() => window.location.reload()} className="px-6 py-3">

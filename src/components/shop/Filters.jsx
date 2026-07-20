@@ -7,6 +7,7 @@ import {
   BRANDS,
   CATEGORIES,
   PRICE_RANGES,
+  DISCOUNT_TIERS,
   AVAILABILITY,
   SORTS,
 } from "../../data/products.js";
@@ -14,6 +15,7 @@ import {
 /* The filter groups, in display order */
 const GROUPS = [
   { key: "availability", label: "Availability", options: AVAILABILITY },
+  { key: "discount", label: "Discount", options: DISCOUNT_TIERS.map((t) => ({ id: t.id, label: t.label })) },
   { key: "skinType", label: "Skin Type", options: SKIN_TYPES },
   { key: "concern", label: "Concern", options: CONCERNS },
   { key: "brand", label: "Brand", options: BRANDS },
@@ -23,6 +25,7 @@ const GROUPS = [
 
 export const EMPTY_FILTERS = {
   availability: [],
+  discount: [],
   skinType: [],
   concern: [],
   brand: [],
@@ -40,14 +43,14 @@ function FacetGroup({ group, selected, onToggle, defaultOpen }) {
   const opts = group.options.map((o) => (typeof o === "string" ? { id: o, label: o } : o));
 
   return (
-    <div className="border-b border-line py-4 dark:border-white/10">
+    <div className="border-b border-line py-4">
       <button
         onClick={() => setOpen((v) => !v)}
         className="flex w-full items-center justify-between text-left"
         aria-expanded={open}
         aria-controls={`facet-${group.key}`}
       >
-        <span className="text-sm font-semibold text-ink dark:text-white">
+        <span className="text-sm font-semibold text-ink">
           {group.label}
           {selected.length > 0 && (
             <span className="ml-2 rounded-full bg-magenta px-1.5 py-0.5 text-[10px] font-semibold text-white">
@@ -56,7 +59,7 @@ function FacetGroup({ group, selected, onToggle, defaultOpen }) {
           )}
         </span>
         <ChevronDown
-          className={`h-4 w-4 text-ink-soft transition-transform duration-300 dark:text-white/60 ${open ? "rotate-180" : ""}`}
+          className={`h-4 w-4 text-ink-soft transition-transform duration-300 ${open ? "rotate-180" : ""}`}
           strokeWidth={1.8}
         />
       </button>
@@ -79,12 +82,12 @@ function FacetGroup({ group, selected, onToggle, defaultOpen }) {
                 const checked = selected.includes(o.id);
                 return (
                   <li key={o.id}>
-                    <label className="flex cursor-pointer items-center gap-3 rounded-lg px-1 py-1.5 text-sm text-ink-soft transition-colors hover:text-ink dark:text-white/65 dark:hover:text-white">
+                    <label className="flex cursor-pointer items-center gap-3 rounded-lg px-1 py-1.5 text-sm text-ink-soft transition-colors hover:text-ink">
                       <span
                         className={`grid h-[18px] w-[18px] place-items-center rounded-[6px] border transition-all ${
                           checked
                             ? "border-magenta bg-magenta text-white"
-                            : "border-ink/25 dark:border-white/25"
+                            : "border-ink/25"
                         }`}
                       >
                         {checked && <Check className="h-3 w-3" strokeWidth={3} />}
@@ -116,21 +119,21 @@ function SortFacet({ value, onChange }) {
   const current = SORTS.find((s) => s.id === value) ?? SORTS[0];
 
   return (
-    <div className="border-b border-line py-4 dark:border-white/10">
+    <div className="border-b border-line py-4">
       <button
         onClick={() => setOpen((v) => !v)}
         className="flex w-full items-center justify-between text-left"
         aria-expanded={open}
         aria-controls="sort-facet-options"
       >
-        <span className="text-sm font-semibold text-ink dark:text-white">
+        <span className="text-sm font-semibold text-ink">
           Sort by
-          <span className="ml-2 text-[11px] font-medium text-ink-soft dark:text-white/55">
+          <span className="ml-2 text-[11px] font-medium text-ink-soft">
             {current.label}
           </span>
         </span>
         <ChevronDown
-          className={`h-4 w-4 text-ink-soft transition-transform duration-300 dark:text-white/60 ${open ? "rotate-180" : ""}`}
+          className={`h-4 w-4 text-ink-soft transition-transform duration-300 ${open ? "rotate-180" : ""}`}
           strokeWidth={1.8}
         />
       </button>
@@ -151,12 +154,12 @@ function SortFacet({ value, onChange }) {
                 const active = s.id === value;
                 return (
                   <li key={s.id}>
-                    <label className="flex cursor-pointer items-center gap-3 rounded-lg px-1 py-1.5 text-sm text-ink-soft transition-colors hover:text-ink dark:text-white/65 dark:hover:text-white">
+                    <label className="flex cursor-pointer items-center gap-3 rounded-lg px-1 py-1.5 text-sm text-ink-soft transition-colors hover:text-ink">
                       <span
                         className={`grid h-[18px] w-[18px] place-items-center rounded-full border transition-all ${
                           active
                             ? "border-magenta"
-                            : "border-ink/25 dark:border-white/25"
+                            : "border-ink/25"
                         }`}
                       >
                         {active && <span className="h-2.5 w-2.5 rounded-full bg-magenta" />}
@@ -192,7 +195,7 @@ export function FilterPanel({ filters, onToggle, onClear, sort, onSortChange }) 
   return (
     <div>
       <div className="flex items-center justify-between pb-2">
-        <h3 className="font-serif text-xl text-ink dark:text-white">Filters</h3>
+        <h3 className="font-serif text-xl text-ink">Filters</h3>
         {active > 0 && (
           <button
             onClick={onClear}
@@ -221,6 +224,7 @@ export function ActiveChips({ filters, onToggle, onClear }) {
   const labelFor = (key, id) => {
     if (key === "price") return PRICE_RANGES.find((r) => r.id === id)?.label ?? id;
     if (key === "availability") return AVAILABILITY.find((a) => a.id === id)?.label ?? id;
+    if (key === "discount") return DISCOUNT_TIERS.find((t) => t.id === id)?.label ?? id;
     return id;
   };
   const chips = Object.entries(filters).flatMap(([key, arr]) =>
@@ -235,7 +239,7 @@ export function ActiveChips({ filters, onToggle, onClear }) {
           key={`${key}-${id}`}
           onClick={() => onToggle(key, id)}
           aria-label={`Remove ${labelFor(key, id)} filter`}
-          className="inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1.5 text-xs font-medium text-ink ring-1 ring-line transition-colors hover:ring-magenta dark:bg-white/5 dark:text-white dark:ring-white/10"
+          className="inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1.5 text-xs font-medium text-ink ring-1 ring-line transition-colors hover:ring-magenta"
         >
           {labelFor(key, id)}
           <X className="h-3 w-3 text-ink-soft" strokeWidth={2.4} />

@@ -1,10 +1,11 @@
 import { motion } from "framer-motion";
-import { ArrowRight, Flame } from "lucide-react";
+import { ArrowRight, Flame, Home } from "lucide-react";
+import BackButton from "../components/ui/BackButton.jsx";
 
 // Sale banners (bundled at build; full image always visible via object-contain).
-import summerSale from "../../../assests/summersale2.jpg";
-import clearanceSale from "../../../assests/sale3.jpg";
-import flashSale from "../../../assests/sale4.jpg";
+import summerSale from "../../assests/summersale2.jpg";
+import clearanceSale from "../../assests/sale3.jpg";
+import flashSale from "../../assests/sale4.jpg";
 
 const EASE = [0.22, 1, 0.36, 1];
 
@@ -46,11 +47,10 @@ function OfferCard({ offer, index }) {
       initial={{ opacity: 0, y: 28 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, amount: 0.3 }}
-      transition={{ duration: 0.55, delay: index * 0.1, ease: EASE }}
+      transition={{ duration: 0.55, delay: (index % 3) * 0.1, ease: EASE }}
       whileHover={{ y: -8 }}
       className="group relative flex flex-col overflow-hidden rounded-[1.75rem] bg-white shadow-soft ring-1 ring-line transition-shadow duration-500 hover:shadow-[var(--shadow-glow-pink)]"
     >
-      {/* Banner — object-contain on a branded glow so nothing is ever cropped */}
       <div
         className="relative aspect-[4/3] overflow-hidden"
         style={{ background: `radial-gradient(120% 120% at 30% 0%, #fff 0%, ${offer.tone} 90%)` }}
@@ -62,8 +62,6 @@ function OfferCard({ offer, index }) {
           decoding="async"
           className="absolute inset-0 h-full w-full object-contain p-3 transition-transform duration-[900ms] ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform group-hover:scale-[1.04]"
         />
-
-        {/* Limited-offer badge with a live pinging dot */}
         <span className="absolute left-4 top-4 inline-flex items-center gap-1.5 rounded-full bg-magenta px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wide text-white shadow-glow-pink">
           <span className="relative flex h-2 w-2">
             <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white/80" />
@@ -73,7 +71,6 @@ function OfferCard({ offer, index }) {
         </span>
       </div>
 
-      {/* Caption */}
       <div className="flex flex-1 flex-col p-5">
         <p className="font-serif text-xl text-ink">{offer.title}</p>
         <p className="mt-1 text-sm text-ink-soft">{offer.blurb}</p>
@@ -88,28 +85,41 @@ function OfferCard({ offer, index }) {
 
 export default function Offers() {
   return (
-    <section id="offers" className="py-10 sm:py-14">
+    <div className="min-h-screen pb-28">
       <div className="mx-auto max-w-7xl px-5 sm:px-8">
-        <div className="mx-auto max-w-2xl text-center">
+        <BackButton route="offers" />
+
+        {/* Breadcrumb */}
+        <nav className="flex items-center gap-2 text-sm text-ink-soft" aria-label="Breadcrumb">
+          <a href="#/" className="inline-flex items-center gap-1 hover:text-magenta">
+            <Home className="h-3.5 w-3.5" strokeWidth={1.8} /> Home
+          </a>
+          <span>/</span>
+          <span className="text-ink">Offers</span>
+        </nav>
+
+        {/* Header */}
+        <div className="mx-auto mt-8 max-w-2xl text-center">
           <p className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.2em] text-magenta">
             <Flame className="h-3.5 w-3.5" strokeWidth={2.2} />
             Limited time
           </p>
-          <h2 className="mt-2 font-serif text-[clamp(1.9rem,4.5vw,3.25rem)] leading-tight text-ink">
+          <h1 className="mt-2 font-serif text-[clamp(2.2rem,5vw,3.75rem)] leading-tight text-ink">
             Glow <span className="italic text-gradient-glow">deals</span>
-          </h2>
-          <p className="mx-auto mt-3 max-w-md text-sm text-ink-soft">
-            Hand-picked K &amp; J-Beauty markdowns. Tap any drop to shop the
-            discounted edit.
+          </h1>
+          <p className="mx-auto mt-3 max-w-md text-sm text-ink-soft sm:text-base">
+            Every hand-picked K &amp; J-Beauty markdown in one place. Tap any drop
+            to shop the discounted edit.
           </p>
         </div>
 
-        <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        {/* Grid */}
+        <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {OFFERS.map((offer, i) => (
-            <OfferCard key={offer.badge} offer={offer} index={i} />
+            <OfferCard key={`${offer.badge}-${i}`} offer={offer} index={i} />
           ))}
         </div>
       </div>
-    </section>
+    </div>
   );
 }

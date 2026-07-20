@@ -43,14 +43,14 @@ export default function Journal() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.3 }}
           transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-          className="relative overflow-hidden rounded-[1.75rem] bg-gradient-to-br from-petal via-white to-cyan-soft/30 p-8 text-center ring-1 ring-line dark:from-white/[0.05] dark:via-transparent dark:to-white/[0.02] dark:ring-white/10 sm:p-14"
+          className="relative overflow-hidden rounded-[1.75rem] bg-gradient-to-br from-petal via-white to-cyan-soft/30 p-8 text-center ring-1 ring-line sm:p-14"
         >
           <span className="text-4xl">🌸</span>
-          <blockquote className="mx-auto mt-5 max-w-2xl font-serif text-[clamp(1.4rem,3vw,2.25rem)] leading-snug text-ink dark:text-white">
+          <blockquote className="mx-auto mt-5 max-w-2xl font-serif text-[clamp(1.4rem,3vw,2.25rem)] leading-snug text-ink">
             “aura.skin didn’t just change my skin — it gave me ten minutes a day
             that feel like self-love. My barrier healed, and so did my confidence.”
           </blockquote>
-          <figcaption className="mt-5 text-sm font-medium text-ink-soft dark:text-white/60">
+          <figcaption className="mt-5 text-sm font-medium text-ink-soft">
             — Tasnia H., glowing for 8 months
           </figcaption>
           <div className="mt-4 flex items-center justify-center gap-1 text-gold">
@@ -66,11 +66,11 @@ export default function Journal() {
             <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-magenta">
               The Journal
             </p>
-            <h2 className="mt-2 font-serif text-[clamp(1.75rem,4vw,3rem)] leading-tight text-ink dark:text-white">
+            <h2 className="mt-2 font-serif text-[clamp(1.75rem,4vw,3rem)] leading-tight text-ink">
               Stories & <span className="italic text-gradient-glow">soulful reads</span>
             </h2>
           </div>
-          <a href="#journal" className="hidden text-sm font-medium text-magenta hover:underline sm:inline">
+          <a href="#/journal" className="hidden text-sm font-medium text-magenta hover:underline sm:inline">
             All articles →
           </a>
         </div>
@@ -87,7 +87,7 @@ export default function Journal() {
               viewport={{ once: true, amount: 0.2 }}
               transition={{ duration: 0.5, delay: i * 0.1, ease: [0.22, 1, 0.36, 1] }}
               whileHover={{ y: -6 }}
-              className="group flex flex-col overflow-hidden rounded-[1.5rem] bg-white ring-1 ring-line transition-shadow duration-500 hover:shadow-lift dark:bg-white/[0.03] dark:ring-white/10"
+              className="group flex flex-col overflow-hidden rounded-[1.5rem] bg-white ring-1 ring-line transition-shadow duration-500 hover:shadow-lift"
             >
               <div
                 className="relative aspect-[16/10] overflow-hidden"
@@ -110,14 +110,14 @@ export default function Journal() {
                 </span>
               </div>
               <div className="flex flex-1 flex-col p-5">
-                <h3 className="line-clamp-2 font-serif text-lg leading-snug text-ink transition-colors group-hover:text-magenta dark:text-white">
+                <h3 className="line-clamp-2 font-serif text-lg leading-snug text-ink transition-colors group-hover:text-magenta">
                   {a.title}
                 </h3>
-                <p className="mt-2 line-clamp-3 text-sm leading-relaxed text-ink-soft dark:text-white/65">
+                <p className="mt-2 line-clamp-3 text-sm leading-relaxed text-ink-soft">
                   {a.excerpt}
                 </p>
                 <div className="mt-auto flex items-center justify-between pt-4 text-xs">
-                  <span className="text-ink-soft dark:text-white/45">{a.read}</span>
+                  <span className="text-ink-soft">{a.read}</span>
                   <span className="inline-flex items-center gap-1 font-semibold text-magenta">
                     Read more
                     <ArrowUpRight className="h-3.5 w-3.5 transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" strokeWidth={2} />

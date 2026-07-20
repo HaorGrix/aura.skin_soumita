@@ -7,8 +7,6 @@ import {
   User,
   Menu,
   X,
-  Sun,
-  Moon,
   Sparkles,
   ChevronRight,
 } from "lucide-react";
@@ -19,10 +17,9 @@ import { useFocusTrap } from "../lib/useFocusTrap.js";
 
 const LINKS = [
   { label: "Shop", href: "#/shop" },
-  { label: "Offers", href: "#offers" },
+  { label: "Offers", href: "#/offers" },
   { label: "Rewards", href: "#/rewards" },
-  { label: "Rituals", href: "#rituals" },
-  { label: "Journal", href: "#journal" },
+  { label: "Journal", href: "#/journal" },
   { label: "About", href: "#/about" },
   { label: "Contact", href: "#/contact" },
 ];
@@ -45,13 +42,13 @@ const PILLS = [
   "Radiance from within 🌟",
   "You are enough, always 💖",
   "Bloom at your own pace 🌺",
-  "Glass skin, glowing soul 🫧",
+  "Glass skin, glowing soul 💫",
   "Self-care is sacred 🕊️",
 ];
 
 const MOBILE_QUOTE = "Glass skin is a daily ritual — and you’re already glowing. 🌸";
 
-export default function Navbar({ onToggleTheme, isDark, onOpenSearch }) {
+export default function Navbar({ onOpenSearch }) {
   const reduce = useReducedMotion();
   const { count, openCart, isOpen: cartOpen } = useCart();
   const { points, authed, openAuth } = useUser();
@@ -78,8 +75,7 @@ export default function Navbar({ onToggleTheme, isDark, onOpenSearch }) {
 
   const iconBtn =
     "relative grid h-11 w-11 place-items-center rounded-full p-2 text-ink/75 " +
-    "transition-colors hover:bg-petal hover:text-magenta " +
-    "dark:text-white/80 dark:hover:bg-white/10 dark:hover:text-rose";
+    "transition-colors hover:bg-petal hover:text-magenta";
 
   return (
     <>
@@ -90,12 +86,12 @@ export default function Navbar({ onToggleTheme, isDark, onOpenSearch }) {
         className="fixed inset-x-0 top-0 z-50"
       >
         {/* Brand announcement marquee (replacing the old black announcement bar) */}
-        <div className="marquee-pause relative flex overflow-hidden border-y border-line py-5 dark:border-white/10">
+        <div className="marquee-pause relative z-50 isolate flex overflow-hidden border-y border-line bg-white/90 backdrop-blur-md py-5 shadow-sm">
           <div className="animate-marquee flex shrink-0 items-center gap-4 pr-4">
             {[...PILLS, ...PILLS].map((p, i) => (
               <span
                 key={i}
-                className="whitespace-nowrap font-serif text-2xl text-ink-soft dark:text-white/55 sm:text-3xl"
+                className="whitespace-nowrap font-serif text-2xl text-ink-soft sm:text-3xl"
               >
                 {p}
                 <span className="mx-4 text-magenta">·</span>
@@ -112,7 +108,7 @@ export default function Navbar({ onToggleTheme, isDark, onOpenSearch }) {
           {/* Logo */}
           <a
             href="#/"
-            className="font-serif text-2xl tracking-tight text-ink dark:text-white"
+            className="font-serif text-2xl tracking-tight text-ink"
           >
             aura<span className="text-magenta">.</span>skin
           </a>
@@ -123,7 +119,7 @@ export default function Navbar({ onToggleTheme, isDark, onOpenSearch }) {
               <a
                 key={link.label}
                 href={link.href}
-                className="group relative rounded-full px-4 py-2 text-sm font-medium text-ink/70 transition-colors hover:text-ink dark:text-white/70 dark:hover:text-white"
+                className="group relative rounded-full px-4 py-2 text-sm font-medium text-ink/70 transition-colors hover:text-ink"
               >
                 {link.label}
                 <span className="absolute inset-x-4 -bottom-0.5 h-0.5 origin-left scale-x-0 rounded-full bg-magenta transition-transform duration-300 group-hover:scale-x-100" />
@@ -181,15 +177,27 @@ export default function Navbar({ onToggleTheme, isDark, onOpenSearch }) {
               </AnimatePresence>
             </button>
 
-            {/* Loyalty points pill — global, links to the Rewards page */}
-            <a
-              href="#/rewards"
-              aria-label={`You have ${points} loyalty points`}
-              className="hidden items-center gap-1.5 rounded-full bg-petal px-3 py-1.5 text-xs font-semibold text-magenta transition-colors hover:bg-rose/30 sm:inline-flex dark:bg-white/10 dark:text-rose dark:hover:bg-white/15"
-            >
-              <Sparkles className="h-3.5 w-3.5" strokeWidth={2} />
-              {points} pts
-            </a>
+            {/* Loyalty pill — a guest has no balance, so invite them to join
+                instead of implying points they don't own. */}
+            {authed ? (
+              <a
+                href="#/rewards"
+                aria-label={`You have ${points} loyalty points`}
+                className="hidden items-center gap-1.5 rounded-full bg-petal px-3 py-1.5 text-xs font-semibold text-magenta transition-colors hover:bg-rose/30 sm:inline-flex"
+              >
+                <Sparkles className="h-3.5 w-3.5" strokeWidth={2} />
+                {points} pts
+              </a>
+            ) : (
+              <button
+                onClick={() => openAuth("signup")}
+                aria-label="Join Aura Rewards to start earning points"
+                className="hidden items-center gap-1.5 rounded-full bg-petal px-3 py-1.5 text-xs font-semibold text-magenta transition-colors hover:bg-rose/30 sm:inline-flex"
+              >
+                <Sparkles className="h-3.5 w-3.5" strokeWidth={2} />
+                Join &amp; earn
+              </button>
+            )}
 
             {/* Logged out → open the login modal; logged in → go to account.
                 Browsing never forces auth, so this is just a friendly entry. */}
@@ -206,14 +214,6 @@ export default function Navbar({ onToggleTheme, isDark, onOpenSearch }) {
             >
               <User className="h-[18px] w-[18px]" strokeWidth={1.7} />
             </a>
-
-            <button className={iconBtn} aria-label="Toggle theme" onClick={onToggleTheme}>
-              {isDark ? (
-                <Sun className="h-[18px] w-[18px]" strokeWidth={1.7} />
-              ) : (
-                <Moon className="h-[18px] w-[18px]" strokeWidth={1.7} />
-              )}
-            </button>
 
             <button
               className={`${iconBtn} lg:hidden`}
@@ -249,14 +249,14 @@ export default function Navbar({ onToggleTheme, isDark, onOpenSearch }) {
               role="dialog"
               aria-modal="true"
               aria-label="Navigation menu"
-              className="fixed inset-y-0 right-0 z-[var(--z-modal)] flex w-[86%] max-w-sm flex-col bg-white px-7 pb-10 pt-6 shadow-lift dark:bg-[var(--color-ink)] lg:hidden"
+              className="fixed inset-y-0 right-0 z-[var(--z-modal)] flex w-[86%] max-w-sm flex-col bg-white px-7 pb-10 pt-6 shadow-lift lg:hidden"
               initial={{ x: reduce ? 0 : "100%" }}
               animate={{ x: 0 }}
               exit={{ x: reduce ? 0 : "100%" }}
               transition={{ type: "spring", stiffness: 260, damping: 30 }}
             >
               <div className="flex items-center justify-between">
-                <span className="font-serif text-2xl text-ink dark:text-white">
+                <span className="font-serif text-2xl text-ink">
                   aura<span className="text-magenta">.</span>skin
                 </span>
                 <button
@@ -277,11 +277,11 @@ export default function Navbar({ onToggleTheme, isDark, onOpenSearch }) {
                     initial={{ opacity: 0, x: 30 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: 0.06 * i + 0.1, ease: [0.22, 1, 0.36, 1] }}
-                    className="group flex items-center justify-between border-b border-line py-4 font-serif text-[1.7rem] leading-none text-ink transition-all hover:pl-2 hover:text-magenta dark:border-white/10 dark:text-white/90 dark:hover:text-rose"
+                    className="group flex items-center justify-between border-b border-line py-4 font-serif text-[1.7rem] leading-none text-ink transition-all hover:pl-2 hover:text-magenta"
                   >
                     {link.label}
                     <ChevronRight
-                      className="h-5 w-5 -translate-x-2 text-magenta opacity-0 transition-all duration-300 group-hover:translate-x-0 group-hover:opacity-100 dark:text-rose"
+                      className="h-5 w-5 -translate-x-2 text-magenta opacity-0 transition-all duration-300 group-hover:translate-x-0 group-hover:opacity-100"
                       strokeWidth={2}
                     />
                   </motion.a>
@@ -321,20 +321,27 @@ export default function Navbar({ onToggleTheme, isDark, onOpenSearch }) {
                   </span>
                 </button>
 
-                {/* Aura Rewards — full-width accent row */}
+                {/* Aura Rewards — full-width accent row. Guests get a join CTA
+                    rather than a points balance they don't have. */}
                 <a
-                  href="#/rewards"
-                  onClick={() => setOpen(false)}
-                  className="flex items-center justify-between rounded-2xl bg-petal px-4 py-3.5 transition-colors hover:bg-rose/25 dark:bg-white/10 dark:hover:bg-white/15"
+                  href={authed ? "#/rewards" : "#/account"}
+                  onClick={(e) => {
+                    setOpen(false);
+                    if (!authed) {
+                      e.preventDefault();
+                      openAuth("signup");
+                    }
+                  }}
+                  className="flex items-center justify-between rounded-2xl bg-petal px-4 py-3.5 transition-colors hover:bg-rose/25"
                 >
-                  <span className="inline-flex items-center gap-3 text-sm font-semibold text-magenta-deep dark:text-rose">
-                    <span className="grid h-9 w-9 place-items-center rounded-full bg-white text-magenta dark:bg-white/10 dark:text-rose">
+                  <span className="inline-flex items-center gap-3 text-sm font-semibold text-magenta-deep">
+                    <span className="grid h-9 w-9 place-items-center rounded-full bg-white text-magenta">
                       <Sparkles className="h-4 w-4" strokeWidth={2} />
                     </span>
                     Aura Rewards
                   </span>
-                  <span className="text-sm font-semibold text-magenta-deep dark:text-rose">
-                    {points} pts →
+                  <span className="text-sm font-semibold text-magenta-deep">
+                    {authed ? `${points} pts →` : "Join & earn →"}
                   </span>
                 </a>
 
@@ -367,9 +374,9 @@ export default function Navbar({ onToggleTheme, isDark, onOpenSearch }) {
                           openAuth("login");
                         }
                       }}
-                      className="flex flex-col gap-3 rounded-2xl bg-white px-4 py-4 ring-1 ring-line transition-all hover:-translate-y-0.5 hover:ring-magenta/40 dark:bg-white/5 dark:ring-white/10"
+                      className="flex flex-col gap-3 rounded-2xl bg-white px-4 py-4 ring-1 ring-line transition-all hover:-translate-y-0.5 hover:ring-magenta/40"
                     >
-                      <span className="grid h-9 w-9 place-items-center rounded-full bg-petal text-magenta dark:bg-white/10 dark:text-rose">
+                      <span className="grid h-9 w-9 place-items-center rounded-full bg-petal text-magenta">
                         <tile.icon
                           className="h-4 w-4"
                           strokeWidth={1.8}
@@ -377,10 +384,10 @@ export default function Navbar({ onToggleTheme, isDark, onOpenSearch }) {
                         />
                       </span>
                       <span>
-                        <span className="block text-sm font-semibold text-ink dark:text-white">
+                        <span className="block text-sm font-semibold text-ink">
                           {tile.label}
                         </span>
-                        <span className="block text-[11px] text-ink-soft dark:text-white/55">
+                        <span className="block text-[11px] text-ink-soft">
                           {tile.hint}
                         </span>
                       </span>
@@ -392,7 +399,7 @@ export default function Navbar({ onToggleTheme, isDark, onOpenSearch }) {
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ delay: 0.6, duration: 0.8 }}
-                  className="pt-1 font-serif text-lg italic leading-snug text-magenta-deep dark:text-rose"
+                  className="pt-1 font-serif text-lg italic leading-snug text-magenta-deep"
                 >
                   “{MOBILE_QUOTE}”
                 </motion.p>

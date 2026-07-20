@@ -91,31 +91,31 @@ export default function AuthModal() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 12, scale: 0.97 }}
             transition={{ type: "spring", stiffness: 260, damping: 26 }}
-            className="relative w-full max-w-md rounded-[1.75rem] bg-white p-7 shadow-lift ring-1 ring-line dark:bg-[var(--color-ink-deep)] dark:ring-white/10 sm:p-8"
+            className="relative w-full max-w-md rounded-[1.75rem] bg-white p-7 shadow-lift ring-1 ring-line sm:p-8"
           >
             <button
               onClick={closeAuth}
               aria-label="Close dialog"
-              className="absolute right-4 top-4 grid h-9 w-9 place-items-center rounded-full text-ink-soft transition-colors hover:bg-snow hover:text-magenta dark:text-white/60 dark:hover:bg-white/10"
+              className="absolute right-4 top-4 grid h-9 w-9 place-items-center rounded-full text-ink-soft transition-colors hover:bg-snow hover:text-magenta"
             >
               <X className="h-4 w-4" strokeWidth={2} />
             </button>
 
             {/* Heading */}
-            <span className="grid h-12 w-12 place-items-center rounded-full bg-petal text-magenta dark:bg-white/10 dark:text-rose">
+            <span className="grid h-12 w-12 place-items-center rounded-full bg-petal text-magenta">
               <Sparkles className="h-5 w-5" strokeWidth={1.8} />
             </span>
-            <h2 className="mt-4 font-serif text-[1.8rem] leading-tight text-ink dark:text-white">
+            <h2 className="mt-4 font-serif text-[1.8rem] leading-tight text-ink">
               {isSignup ? "Create your aura" : "Welcome back"}
             </h2>
-            <p className="mt-1 text-sm text-ink-soft dark:text-white/60">
+            <p className="mt-1 text-sm text-ink-soft">
               {isSignup
                 ? "Save your faves, track orders & earn glow points."
                 : "Sign in to pick up right where you left off."}
             </p>
 
             {/* Mode toggle */}
-            <div className="mt-6 grid grid-cols-2 gap-1 rounded-full bg-snow p-1 ring-1 ring-line dark:bg-white/5 dark:ring-white/10">
+            <div className="mt-6 grid grid-cols-2 gap-1 rounded-full bg-snow p-1 ring-1 ring-line">
               {[
                 { id: "login", label: "Log in" },
                 { id: "signup", label: "Sign up" },
@@ -134,7 +134,7 @@ export default function AuthModal() {
                       transition={{ type: "spring", stiffness: 380, damping: 30 }}
                     />
                   )}
-                  <span className={`relative z-10 ${mode === t.id ? "text-white" : "text-ink-soft dark:text-white/60"}`}>
+                  <span className={`relative z-10 ${mode === t.id ? "text-white" : "text-ink-soft"}`}>
                     {t.label}
                   </span>
                 </button>
@@ -153,7 +153,7 @@ export default function AuthModal() {
                     className="overflow-hidden"
                   >
                     <div className="relative">
-                      <User className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-soft dark:text-white/45" strokeWidth={1.7} />
+                      <User className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-soft" strokeWidth={1.7} />
                       <Input value={form.name} onChange={set("name")} placeholder="Your name" className="pl-11" />
                     </div>
                   </motion.div>
@@ -161,12 +161,12 @@ export default function AuthModal() {
               </AnimatePresence>
 
               <div className="relative">
-                <Mail className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-soft dark:text-white/45" strokeWidth={1.7} />
+                <Mail className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-soft" strokeWidth={1.7} />
                 <Input type="email" value={form.email} onChange={set("email")} placeholder="you@email.com" className="pl-11" />
               </div>
 
               <div className="relative">
-                <Lock className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-soft dark:text-white/45" strokeWidth={1.7} />
+                <Lock className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-soft" strokeWidth={1.7} />
                 <Input
                   type={showPw ? "text" : "password"}
                   value={form.password}
@@ -178,7 +178,7 @@ export default function AuthModal() {
                   type="button"
                   onClick={() => setShowPw((v) => !v)}
                   aria-label={showPw ? "Hide password" : "Show password"}
-                  className="absolute right-3 top-1/2 grid h-7 w-7 -translate-y-1/2 place-items-center rounded-full text-ink-soft transition-colors hover:text-magenta dark:text-white/45"
+                  className="absolute right-3 top-1/2 grid h-7 w-7 -translate-y-1/2 place-items-center rounded-full text-ink-soft transition-colors hover:text-magenta"
                 >
                   {showPw ? <EyeOff className="h-4 w-4" strokeWidth={1.7} /> : <Eye className="h-4 w-4" strokeWidth={1.7} />}
                 </button>
@@ -193,12 +193,12 @@ export default function AuthModal() {
               </Button>
             </form>
 
-            <p className="mt-4 text-center text-xs text-ink-soft dark:text-white/50">
+            <p className="mt-4 text-center text-xs text-ink-soft">
               {isSignup ? "Already have an account? " : "New to aura.skin? "}
               <button
                 type="button"
                 onClick={() => { setMode(isSignup ? "login" : "signup"); setError(""); }}
-                className="font-semibold text-magenta hover:underline dark:text-rose"
+                className="font-semibold text-magenta hover:underline"
               >
                 {isSignup ? "Log in" : "Create one"}
               </button>

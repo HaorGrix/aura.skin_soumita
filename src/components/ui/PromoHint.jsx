@@ -15,7 +15,7 @@ import { FIRST_ORDER_CODES } from "../../lib/rewards-config.js";
  * keeping the message focused.  Loyalty codes are multi-use by design and
  * are unaffected by the firstOrderOnly check in CartContext.
  */
-export default function PromoHint({ orders, coupons, usedCoupons, appliedCoupon }) {
+export default function PromoHint({ orders, coupons, usedCoupons, appliedCoupon, authed = false }) {
   if (appliedCoupon) return null;
 
   const normalizedUsed = usedCoupons.map((c) => c.toUpperCase());
@@ -33,19 +33,29 @@ export default function PromoHint({ orders, coupons, usedCoupons, appliedCoupon 
 
   let hint = null;
 
-  if (isFirstOrder) {
+  if (isFirstOrder && !authed) {
+    // First-order codes are account-bound (see validate/requiresAuth), so
+    // dangling the code at a guest would just dead-end at "Login required".
+    hint = {
+      key: "first-order-guest",
+      Icon: Gift,
+      iconClass: "text-magenta",
+      wrapperClass: "bg-petal/60 ring-rose/25",
+      body: <>Sign in to claim your exclusive welcome discount on this first order.</>,
+    };
+  } else if (isFirstOrder) {
     hint = {
       key: "first-order",
       Icon: Gift,
       iconClass: "text-magenta",
-      wrapperClass: "bg-petal/60 ring-rose/25 dark:bg-white/[0.04] dark:ring-white/10",
+      wrapperClass: "bg-petal/60 ring-rose/25",
       body: (
         <>
           First order?{" "}
           {availableFirstOrder.map((code, i) => (
             <span key={code}>
-              {i > 0 && <span className="text-ink-soft dark:text-white/50"> or </span>}
-              <span className="font-semibold text-magenta dark:text-rose">{code}</span>
+              {i > 0 && <span className="text-ink-soft"> or </span>}
+              <span className="font-semibold text-magenta">{code}</span>
             </span>
           ))}{" "}
           unlocks an exclusive welcome discount.
@@ -58,7 +68,7 @@ export default function PromoHint({ orders, coupons, usedCoupons, appliedCoupon 
       key: "loyalty",
       Icon: Sparkles,
       iconClass: "text-gold",
-      wrapperClass: "bg-gold/10 ring-gold/25 dark:bg-white/[0.04] dark:ring-white/10",
+      wrapperClass: "bg-gold/10 ring-gold/25",
       body: (
         <>
           Rewards code available:{" "}
@@ -84,7 +94,7 @@ export default function PromoHint({ orders, coupons, usedCoupons, appliedCoupon 
             className={`mt-0.5 h-3.5 w-3.5 shrink-0 ${hint.iconClass}`}
             strokeWidth={2}
           />
-          <p className="text-xs leading-relaxed text-ink-soft dark:text-white/65">
+          <p className="text-xs leading-relaxed text-ink-soft">
             {hint.body}
           </p>
         </motion.div>

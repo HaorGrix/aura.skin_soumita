@@ -20,6 +20,7 @@ import { useCart } from "../../context/CartContext.jsx";
 import { useWishlist } from "../../context/WishlistContext.jsx";
 import { useToast } from "../ui/Toast.jsx";
 import { formatPrice } from "../../lib/format.js";
+import { maxQtyFor } from "../../data/products.js";
 
 function Stars({ value, className = "h-4 w-4" }) {
   return (
@@ -53,6 +54,7 @@ export default function ProductInfo({ product, related = [], onWriteReview }) {
     Object.fromEntries(product.variants.map((g) => [g.name, g.options[0].id]))
   );
   const [qty, setQty] = useState(1);
+  const maxQty = maxQtyFor(product.id); // stock-aware cap for the stepper
   const [adding, setAdding] = useState(false);
   const [added, setAdded] = useState(false);
   const wished = wishHas(product.id);
@@ -112,15 +114,15 @@ export default function ProductInfo({ product, related = [], onWriteReview }) {
       <p className="text-xs font-semibold uppercase tracking-[0.18em] text-magenta">
         {product.brand}
       </p>
-      <h1 className="mt-2 font-serif text-[clamp(1.9rem,4vw,2.75rem)] leading-tight text-ink dark:text-white">
+      <h1 className="mt-2 font-serif text-[clamp(1.9rem,4vw,2.75rem)] leading-tight text-ink">
         {product.name}
       </h1>
 
       {/* Rating */}
       <div className="mt-3 flex flex-wrap items-center gap-3 text-sm">
-        <span className="inline-flex items-center gap-1.5 text-ink-soft dark:text-white/60">
+        <span className="inline-flex items-center gap-1.5 text-ink-soft">
           <Stars value={product.rating} />
-          <span className="font-semibold text-ink dark:text-white">{product.rating.toFixed(1)}</span>
+          <span className="font-semibold text-ink">{product.rating.toFixed(1)}</span>
           <span>({product.reviewCount.toLocaleString()} reviews)</span>
         </span>
         <button
@@ -135,14 +137,14 @@ export default function ProductInfo({ product, related = [], onWriteReview }) {
       <div className="mt-5 flex items-center gap-3">
         <span
           className={`font-serif text-3xl ${
-            product.isOnSale ? "text-magenta" : "text-ink dark:text-white"
+            product.isOnSale ? "text-magenta" : "text-ink"
           }`}
         >
           {formatPrice(unitPrice)}
         </span>
         {product.isOnSale && product.originalPrice > unitPrice && (
           <>
-            <span className="text-lg text-ink-soft line-through dark:text-white/45">
+            <span className="text-lg text-ink-soft line-through">
               {formatPrice(product.originalPrice)}
             </span>
             <span className="rounded-full bg-magenta px-2.5 py-1 text-xs font-bold text-white">
@@ -158,7 +160,7 @@ export default function ProductInfo({ product, related = [], onWriteReview }) {
           {product.benefits.map((b) => (
             <span
               key={b.label}
-              className="inline-flex items-center gap-1.5 rounded-full bg-petal px-3 py-1.5 text-xs font-medium text-ink ring-1 ring-rose/30 dark:bg-white/5 dark:text-white/85 dark:ring-white/10"
+              className="inline-flex items-center gap-1.5 rounded-full bg-petal px-3 py-1.5 text-xs font-medium text-ink ring-1 ring-rose/30"
             >
               <span>{b.emoji}</span> {b.label}
             </span>
@@ -167,16 +169,16 @@ export default function ProductInfo({ product, related = [], onWriteReview }) {
       )}
 
       {/* Short description */}
-      <p className="mt-5 text-pretty leading-relaxed text-ink-soft dark:text-white/70">
+      <p className="mt-5 text-pretty leading-relaxed text-ink-soft">
         {product.longDescription}
       </p>
 
       {/* Variants */}
       {product.variants.map((g) => (
         <div key={g.name} className="mt-6">
-          <p className="mb-2 text-sm font-semibold text-ink dark:text-white">
+          <p className="mb-2 text-sm font-semibold text-ink">
             {g.name}:{" "}
-            <span className="font-normal text-ink-soft dark:text-white/60">
+            <span className="font-normal text-ink-soft">
               {variant[g.name]}
             </span>
           </p>
@@ -190,7 +192,7 @@ export default function ProductInfo({ product, related = [], onWriteReview }) {
                   className={`rounded-full border px-4 py-2 text-sm font-medium transition-all ${
                     on
                       ? "border-magenta bg-magenta text-white"
-                      : "border-ink/15 text-ink hover:border-magenta/50 dark:border-white/15 dark:text-white/80"
+                      : "border-ink/15 text-ink hover:border-magenta/50"
                   }`}
                 >
                   {o.label}
@@ -203,22 +205,23 @@ export default function ProductInfo({ product, related = [], onWriteReview }) {
 
       {/* Quantity + Add to Bag */}
       <div className="mt-7 flex items-stretch gap-3">
-        <div className="flex items-center rounded-full border border-ink/15 dark:border-white/15">
+        <div className="flex items-center rounded-full border border-ink/15">
           <button
             onClick={() => setQty((q) => Math.max(1, q - 1))}
             aria-label="Decrease quantity"
-            className="grid h-12 w-12 place-items-center rounded-full text-ink-soft transition-colors hover:text-magenta disabled:opacity-40 dark:text-white/60"
+            className="grid h-12 w-12 place-items-center rounded-full text-ink-soft transition-colors hover:text-magenta disabled:opacity-40"
             disabled={qty <= 1}
           >
             <Minus className="h-4 w-4" strokeWidth={2} />
           </button>
-          <span className="w-8 text-center font-semibold tabular-nums text-ink dark:text-white">
+          <span className="w-8 text-center font-semibold tabular-nums text-ink">
             {qty}
           </span>
           <button
-            onClick={() => setQty((q) => Math.min(10, q + 1))}
+            onClick={() => setQty((q) => Math.min(maxQty, q + 1))}
             aria-label="Increase quantity"
-            className="grid h-12 w-12 place-items-center rounded-full text-ink-soft transition-colors hover:text-magenta dark:text-white/60"
+            disabled={qty >= maxQty}
+            className="grid h-12 w-12 place-items-center rounded-full text-ink-soft transition-colors hover:text-magenta disabled:pointer-events-none disabled:opacity-40"
           >
             <Plus className="h-4 w-4" strokeWidth={2} />
           </button>
@@ -229,7 +232,7 @@ export default function ProductInfo({ product, related = [], onWriteReview }) {
           onClick={product.inStock ? handleAdd : () => setNotify(true)}
           className={`group relative flex flex-1 items-center justify-center gap-2 overflow-hidden rounded-full px-6 text-sm font-semibold transition-all duration-500 ${
             !product.inStock
-              ? "border border-magenta/50 bg-magenta/10 text-magenta hover:bg-magenta hover:text-white hover:shadow-[var(--shadow-glow-pink)] dark:bg-magenta/15"
+              ? "border border-magenta/50 bg-magenta/10 text-magenta hover:bg-magenta hover:text-white hover:shadow-[var(--shadow-glow-pink)]"
               : added
               ? "bg-success text-white"
               : "bg-magenta text-white hover:shadow-[var(--shadow-glow-pink)]"
@@ -268,7 +271,7 @@ export default function ProductInfo({ product, related = [], onWriteReview }) {
           className={`grid h-12 w-12 shrink-0 place-items-center rounded-full border transition-colors ${
             wished
               ? "border-magenta bg-magenta/5 text-magenta"
-              : "border-ink/15 hover:border-magenta/50 dark:border-white/15"
+              : "border-ink/15 hover:border-magenta/50"
           }`}
         >
           <motion.span
@@ -288,8 +291,16 @@ export default function ProductInfo({ product, related = [], onWriteReview }) {
       </div>
 
       {/* Stock + shipping hint */}
-      <div className="mt-4 flex items-center gap-2 text-sm text-ink-soft dark:text-white/60">
-        {product.inStock ? (
+      <div className="mt-4 flex items-center gap-2 text-sm text-ink-soft">
+        {product.isLowStock ? (
+          <>
+            <span className="inline-block h-2 w-2 rounded-full bg-error animate-pulse" />
+            <span className="font-semibold text-magenta">
+              Only {product.stock} left
+            </span>
+            · <Truck className="h-4 w-4" strokeWidth={1.7} /> Free shipping over ৳6000
+          </>
+        ) : product.inStock ? (
           <>
             <span className="inline-block h-2 w-2 rounded-full bg-success" />
             In stock · <Truck className="h-4 w-4" strokeWidth={1.7} /> Free shipping over ৳6000
@@ -303,15 +314,15 @@ export default function ProductInfo({ product, related = [], onWriteReview }) {
 
       {/* Frequently bought together / Add to Ritual */}
       {bundle.length === 3 && (
-        <div className="mt-7 rounded-[1.25rem] bg-snow p-4 ring-1 ring-line dark:bg-white/[0.03] dark:ring-white/10">
-          <p className="mb-3 text-sm font-semibold text-ink dark:text-white">
+        <div className="mt-7 rounded-[1.25rem] bg-snow p-4 ring-1 ring-line">
+          <p className="mb-3 text-sm font-semibold text-ink">
             ✨ Complete the ritual — frequently bought together
           </p>
           <div className="flex items-center gap-2">
             {bundle.map((p, i) => (
               <div key={p.id} className="flex items-center gap-2">
                 <div
-                  className="h-14 w-14 shrink-0 rounded-xl ring-1 ring-line dark:ring-white/10"
+                  className="h-14 w-14 shrink-0 rounded-xl ring-1 ring-line"
                   style={{ background: `radial-gradient(120% 100% at 50% 0%, #fff 0%, ${p.tone} 75%, #ffe1ec 100%)` }}
                   title={`${p.brand} ${p.name}`}
                 />
@@ -320,9 +331,9 @@ export default function ProductInfo({ product, related = [], onWriteReview }) {
             ))}
           </div>
           <div className="mt-3 flex items-center justify-between">
-            <span className="text-sm text-ink-soft dark:text-white/60">
+            <span className="text-sm text-ink-soft">
               Bundle total{" "}
-              <span className="font-semibold text-ink dark:text-white">
+              <span className="font-semibold text-ink">
                 {formatPrice(bundleTotal)}
               </span>
             </span>
@@ -334,9 +345,9 @@ export default function ProductInfo({ product, related = [], onWriteReview }) {
       )}
 
       {/* Trust signals */}
-      <div className="mt-6 flex flex-wrap gap-4 border-t border-line pt-5 dark:border-white/10">
+      <div className="mt-6 flex flex-wrap gap-4 border-t border-line pt-5">
         {TRUST.map((t) => (
-          <span key={t.label} className="inline-flex items-center gap-2 text-xs font-medium text-ink-soft dark:text-white/60">
+          <span key={t.label} className="inline-flex items-center gap-2 text-xs font-medium text-ink-soft">
             <t.icon className="h-4 w-4 text-cyan" strokeWidth={1.7} /> {t.label}
           </span>
         ))}
@@ -381,11 +392,11 @@ export default function ProductInfo({ product, related = [], onWriteReview }) {
 /* Fixed bottom bar on mobile only */
 function MobileAddBar({ product, price, adding, added, onAdd, onNotify }) {
   return (
-    <div className="fixed inset-x-0 bottom-0 z-[90] border-t border-line bg-white/90 px-4 py-3 backdrop-blur lg:hidden dark:border-white/10 dark:bg-[var(--color-ink)]/90">
+    <div className="fixed inset-x-0 bottom-0 z-[90] border-t border-line bg-white/90 px-4 py-3 backdrop-blur lg:hidden">
       <div className="flex items-center gap-3">
         <div className="min-w-0">
-          <p className="truncate text-xs text-ink-soft dark:text-white/55">{product.brand}</p>
-          <p className="font-serif text-lg leading-none text-ink dark:text-white">
+          <p className="truncate text-xs text-ink-soft">{product.brand}</p>
+          <p className="font-serif text-lg leading-none text-ink">
             {formatPrice(price)}
           </p>
         </div>
@@ -393,7 +404,7 @@ function MobileAddBar({ product, price, adding, added, onAdd, onNotify }) {
           onClick={product.inStock ? onAdd : onNotify}
           className={`flex flex-1 items-center justify-center gap-2 rounded-full py-3.5 text-sm font-semibold transition-colors ${
             !product.inStock
-              ? "border border-magenta/50 bg-magenta/10 text-magenta dark:bg-magenta/15"
+              ? "border border-magenta/50 bg-magenta/10 text-magenta"
               : added
               ? "bg-success text-white"
               : "bg-magenta text-white"

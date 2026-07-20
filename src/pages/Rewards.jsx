@@ -30,8 +30,8 @@ function TabBtn({ active, onClick, icon: Icon, children }) {
       onClick={onClick}
       className={`flex flex-1 items-center justify-center gap-2 rounded-xl py-3 text-sm font-semibold transition-all duration-200 ${
         active
-          ? "bg-white text-magenta shadow-soft ring-1 ring-line dark:bg-white/10 dark:text-rose dark:ring-white/15"
-          : "text-ink-soft hover:text-ink dark:text-white/55 dark:hover:text-white"
+          ? "bg-white text-magenta shadow-soft ring-1 ring-line"
+          : "text-ink-soft hover:text-ink"
       }`}
     >
       <Icon className="h-4 w-4" strokeWidth={active ? 2.2 : 1.8} />
@@ -141,7 +141,7 @@ function CouponGrid({ coupons }) {
         {coupons.map((c) => (
           <div
             key={c.code}
-            className="flex items-center gap-4 rounded-2xl border border-dashed border-magenta/40 bg-petal/50 p-4 dark:bg-magenta/[0.06]"
+            className="flex items-center gap-4 rounded-2xl border border-dashed border-magenta/40 bg-petal/50 p-4"
           >
             <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-magenta/10 text-magenta">
               {c.code === "AURA8FS"
@@ -149,7 +149,7 @@ function CouponGrid({ coupons }) {
                 : <Ticket className="h-5 w-5" strokeWidth={1.8} />}
             </span>
             <div>
-              <p className="text-sm font-semibold text-ink dark:text-white">{c.reward}</p>
+              <p className="text-sm font-semibold text-ink">{c.reward}</p>
               <p className="mt-0.5 font-mono text-xs text-magenta">Code: {c.code}</p>
             </div>
           </div>
@@ -173,23 +173,23 @@ function TiersGrid({ milestones, points, authed }) {
               key={m.code}
               className={`rounded-2xl p-4 ring-1 transition-colors ${
                 unlocked
-                  ? "bg-petal/60 ring-magenta/30 dark:bg-magenta/[0.07] dark:ring-magenta/20"
-                  : "bg-snow ring-line dark:bg-white/[0.02] dark:ring-white/10"
+                  ? "bg-petal/60 ring-magenta/30"
+                  : "bg-snow ring-line"
               }`}
             >
               <span className={`inline-flex h-8 w-8 items-center justify-center rounded-full ${
                 unlocked
                   ? "bg-magenta text-white"
-                  : "bg-line/60 text-ink-soft dark:bg-white/10 dark:text-white/40"
+                  : "bg-line/60 text-ink-soft"
               }`}>
                 {unlocked
                   ? <Check className="h-4 w-4" strokeWidth={2.5} />
                   : <Gift className="h-4 w-4" strokeWidth={1.8} />}
               </span>
-              <p className={`mt-3 text-sm font-semibold ${unlocked ? "text-magenta" : "text-ink dark:text-white"}`}>
+              <p className={`mt-3 text-sm font-semibold ${unlocked ? "text-magenta" : "text-ink"}`}>
                 {m.short}
               </p>
-              <p className="mt-0.5 text-xs text-ink-soft dark:text-white/50">{m.points} points</p>
+              <p className="mt-0.5 text-xs text-ink-soft">{m.points} points</p>
             </div>
           );
         })}
@@ -201,28 +201,28 @@ function TiersGrid({ milestones, points, authed }) {
 /* ── How to earn ─────────────────────────────────────────────────────────── */
 
 const HOW_TO_EARN = [
-  { icon: Star,        label: "Leave a review",  desc: "+1 point per verified purchase review" },
-  { icon: ShoppingBag, label: "Buy to qualify",   desc: "Only verified buyers can submit reviews" },
+  { icon: ShoppingBag, label: "Shop your ritual", desc: "+1 point for every ৳1000 you spend" },
+  { icon: Star,        label: "Leave a review",   desc: "+5 points per verified purchase review" },
 ];
 
 function HowToEarn() {
   return (
-    <section className="rounded-[1.5rem] bg-snow p-6 ring-1 ring-line dark:bg-white/[0.02] dark:ring-white/10">
+    <section className="rounded-[1.5rem] bg-snow p-6 ring-1 ring-line">
       <p className="mb-4 text-[11px] font-semibold uppercase tracking-[0.2em] text-magenta">How to Earn</p>
       <div className="grid gap-4 sm:grid-cols-2">
         {HOW_TO_EARN.map(({ icon: Icon, label, desc }) => (
           <div key={label} className="flex items-start gap-3">
-            <span className="mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-full bg-petal text-magenta dark:bg-white/10 dark:text-rose">
+            <span className="mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-full bg-petal text-magenta">
               <Icon className="h-4 w-4" strokeWidth={1.8} />
             </span>
             <div>
-              <p className="text-sm font-semibold text-ink dark:text-white">{label}</p>
-              <p className="mt-0.5 text-xs text-ink-soft dark:text-white/50">{desc}</p>
+              <p className="text-sm font-semibold text-ink">{label}</p>
+              <p className="mt-0.5 text-xs text-ink-soft">{desc}</p>
             </div>
           </div>
         ))}
       </div>
-      <div className="mt-5 border-t border-line pt-5 dark:border-white/10">
+      <div className="mt-5 border-t border-line pt-5">
         <a
           href="#/shop"
           className="inline-flex items-center gap-2 rounded-full bg-magenta px-5 py-2.5 text-sm font-semibold text-white transition-all hover:bg-magenta-deep hover:shadow-[var(--shadow-glow-pink)]"
@@ -241,7 +241,7 @@ export default function Rewards() {
   const [view, setView] = useState("rewards");
 
   return (
-    <div className="min-h-screen pb-28 pt-28 sm:pt-32">
+    <div className="min-h-screen pb-28">
       <div className="mx-auto max-w-7xl px-5 sm:px-8">
 
         {/* Header */}
@@ -254,11 +254,11 @@ export default function Rewards() {
           <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-magenta">
             Aura Rewards
           </p>
-          <h1 className="mt-2 font-serif text-[clamp(2rem,5vw,3.25rem)] leading-tight text-ink dark:text-white">
+          <h1 className="mt-2 font-serif text-[clamp(2rem,5vw,3.25rem)] leading-tight text-ink">
             Your Glow, Rewarded
           </h1>
-          <p className="mt-3 max-w-lg text-base text-ink-soft dark:text-white/60">
-            Earn 1 point for every verified product review. Unlock exclusive discount codes and free shipping as you grow your ritual.
+          <p className="mt-3 max-w-lg text-base text-ink-soft">
+            Earn a point for every ৳1000 you spend, plus 5 for each verified review. Unlock exclusive discount codes and free shipping as you grow your ritual.
           </p>
         </motion.div>
 
@@ -267,7 +267,7 @@ export default function Rewards() {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, delay: 0.12, ease }}
-          className="mb-8 flex gap-1 rounded-2xl bg-snow p-1 ring-1 ring-line dark:bg-white/[0.03] dark:ring-white/10"
+          className="mb-8 flex gap-1 rounded-2xl bg-snow p-1 ring-1 ring-line"
         >
           <TabBtn active={view === "rewards"} onClick={() => setView("rewards")} icon={Sparkles}>
             My Rewards

@@ -36,12 +36,12 @@ export default function Rituals() {
           <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-magenta">
             Your daily ritual
           </p>
-          <h2 className="mt-2 font-serif text-[clamp(1.9rem,4.5vw,3.25rem)] leading-tight text-ink dark:text-white">
+          <h2 className="mt-2 font-serif text-[clamp(1.9rem,4.5vw,3.25rem)] leading-tight text-ink">
             A <span className="italic text-gradient-glow">ritual</span> for every hour
           </h2>
 
           {/* AM/PM toggle */}
-          <div className="mt-7 flex rounded-full bg-snow p-1 ring-1 ring-line dark:bg-white/5 dark:ring-white/10">
+          <div className="mt-7 flex rounded-full bg-snow p-1 ring-1 ring-line">
             {[
               { id: "morning", label: "Morning", Icon: Sun },
               { id: "evening", label: "Evening", Icon: Moon },
@@ -58,7 +58,7 @@ export default function Rituals() {
                     transition={{ type: "spring", stiffness: 360, damping: 30 }}
                   />
                 )}
-                <span className={`relative z-10 inline-flex items-center gap-2 ${time === id ? "text-white" : "text-ink-soft dark:text-white/60"}`}>
+                <span className={`relative z-10 inline-flex items-center gap-2 ${time === id ? "text-white" : "text-ink-soft"}`}>
                   <Icon className="h-4 w-4" strokeWidth={1.8} /> {label}
                 </span>
               </button>
@@ -81,7 +81,7 @@ export default function Rituals() {
                 initial={{ opacity: 0, y: 18 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.4, delay: i * 0.08 }}
-                className="group relative flex flex-col overflow-hidden rounded-[1.5rem] bg-white p-6 ring-1 ring-line transition-shadow duration-500 hover:shadow-lift dark:bg-white/[0.03] dark:ring-white/10"
+                className="group relative flex flex-col overflow-hidden rounded-[1.5rem] bg-white p-6 ring-1 ring-line transition-shadow duration-500 hover:shadow-lift"
               >
                 <span
                   aria-hidden
@@ -92,14 +92,14 @@ export default function Rituals() {
                   <span className="text-4xl">{step.emoji}</span>
                   <span className="font-serif text-2xl text-magenta/30">0{i + 1}</span>
                 </div>
-                <h3 className="relative mt-4 font-serif text-xl text-ink dark:text-white">
+                <h3 className="relative mt-4 font-serif text-xl text-ink">
                   {step.title}
                 </h3>
-                <p className="relative mt-1.5 text-sm leading-relaxed text-ink-soft dark:text-white/65">
+                <p className="relative mt-1.5 text-sm leading-relaxed text-ink-soft">
                   {step.text}
                 </p>
-                <p className="relative mt-auto border-t border-line pt-3 text-xs font-medium text-ink-soft dark:border-white/10 dark:text-white/50">
-                  ✨ Try: <span className="text-ink dark:text-white">{step.pick}</span>
+                <p className="relative mt-auto border-t border-line pt-3 text-xs font-medium text-ink-soft">
+                  ✨ Try: <span className="text-ink">{step.pick}</span>
                 </p>
               </motion.div>
             ))}

@@ -4,13 +4,6 @@ export const STANDARD_SHIPPING = 100 / 120;
 export const EXPRESS_SHIPPING = 150 / 120;
 export const TAX_RATE = 0; // mock store — taxes shown as included
 
-import { findCoupon, validate } from "./coupons.js";
-
-export function applyPromo(code, subtotal = 0, user = {}) {
-  const result = validate(code, user);
-  if (!result?.success) return null;
-  const promo = findCoupon(result.code);
-  const amount =
-    promo.type === "percent" ? (subtotal * promo.value) / 100 : Math.min(promo.value, subtotal);
-  return { code: result.code, ...promo, amount: Math.round(amount * 100) / 100 };
-}
+/* Coupon validation + discount math live in CartContext.applyPromo (backed by
+   lib/coupons.js). A second implementation here was unused and drifting — one
+   source of truth only. */

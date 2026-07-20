@@ -14,6 +14,7 @@ import Home from "./pages/Home.jsx";
 import CartDrawer from "./components/cart/CartDrawer.jsx";
 import AuthModal from "./components/auth/AuthModal.jsx";
 import FloatingCart from "./components/FloatingCart.jsx";
+import { recordRoute } from "./lib/nav-history.js";
 
 // Route-level code splitting — the home page loads eagerly; the rest lazy-load.
 const Shop = lazy(() => import("./pages/Shop.jsx"));
@@ -25,6 +26,8 @@ const Wishlist = lazy(() => import("./pages/Wishlist.jsx"));
 const Contact = lazy(() => import("./pages/Contact.jsx"));
 const About = lazy(() => import("./pages/About.jsx"));
 const Rewards = lazy(() => import("./pages/Rewards.jsx"));
+const Offers = lazy(() => import("./pages/Offers.jsx"));
+const Journal = lazy(() => import("./pages/Articles.jsx"));
 const NotFound = lazy(() => import("./pages/NotFound.jsx"));
 import ErrorBoundary from "./components/ui/ErrorBoundary.jsx";
 
@@ -51,7 +54,9 @@ function useRoute() {
     if (h.startsWith("#/contact")) return { name: "contact" };
     if (h.startsWith("#/about")) return { name: "about" };
     if (h.startsWith("#/rewards")) return { name: "rewards" };
-    // Plain anchor (e.g. #offers, #rituals, #journal) — not a SPA route.
+    if (h.startsWith("#/offers")) return { name: "offers" };
+    if (h.startsWith("#/journal")) return { name: "journal" };
+    // Plain anchor (e.g. #rituals) — not a SPA route.
     // Return "home" so the home page stays/mounts; the scroll-to-id useEffect
     // in <App> then scrolls to the matching section after React finishes painting.
     if (h.startsWith("#") && !h.startsWith("#/")) return { name: "home" };
@@ -69,28 +74,14 @@ function useRoute() {
 export default function App() {
   const [loaded, setLoaded] = useState(false);
   const route = useRoute();
-  // Dark-mode dominant: default to dark unless the user has opted into light.
-  const [isDark, setIsDark] = useState(true);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
-  
+
   const trending = useMemo(() => [...PRODUCTS].sort((a, b) => b.popularity - a.popularity).slice(0, 3), []);
 
-  // Sync the dark class on <html>.
+  // Feed our own route stack — BackButton resolves a loop-proof target from it.
   useEffect(() => {
-    document.documentElement.classList.toggle("dark", isDark);
-  }, [isDark]);
-
-  // Respect saved preference on first paint (defaults to dark).
-  useEffect(() => {
-    const saved = localStorage.getItem("aura-theme");
-    if (saved) setIsDark(saved === "dark");
-  }, []);
-
-  const toggleTheme = () =>
-    setIsDark((d) => {
-      localStorage.setItem("aura-theme", !d ? "dark" : "light");
-      return !d;
-    });
+    recordRoute(route.name);
+  }, [route.name]);
 
   // When a plain anchor (e.g. #offers, #rituals) routes back to "home", scroll
   // to the matching section after React finishes painting. rAF gives one frame
@@ -124,7 +115,7 @@ export default function App() {
           {/* Entry ritual */}
           <Loader onComplete={() => setLoaded(true)} />
 
-          <Navbar onToggleTheme={toggleTheme} isDark={isDark} onOpenSearch={() => setIsSearchOpen(true)} />
+          <Navbar onOpenSearch={() => setIsSearchOpen(true)} />
 
           <AnimatePresence>
             {isSearchOpen && (
@@ -145,7 +136,7 @@ export default function App() {
                   <button onClick={() => setIsSearchOpen(false)} className="absolute -right-2 -top-12 sm:-right-4 sm:-top-4 text-white/80 hover:text-white p-2">
                     <X className="h-6 w-6" strokeWidth={1.5} />
                   </button>
-                  <div className="bg-white dark:bg-[#16161a] rounded-2xl shadow-lift w-full relative z-[var(--z-dropdown)]">
+                  <div className="bg-white rounded-2xl shadow-lift w-full relative z-[var(--z-dropdown)]">
                     <PredictiveSearch 
                       products={PRODUCTS} brands={BRANDS} categories={CATEGORIES} trending={trending}
                       onQueryChange={() => {}} onApplyFilter={(key, val) => {
@@ -172,7 +163,9 @@ export default function App() {
             <FloatingCart />
           )}
 
-          <main>
+          {/* Full-bleed pages (home/about/contact) own their top spacing; every
+              other route inherits uniform navbar clearance here. */}
+          <main className={`relative w-full overflow-x-hidden ${["home", "about", "contact"].includes(route.name) ? "" : "pt-40 sm:pt-44 md:pt-44"}`}>
             <Suspense fallback={<RouteFallback />}>
               {route.name === "product" ? (
                 <ErrorBoundary><Product id={route.id} /></ErrorBoundary>
@@ -192,6 +185,10 @@ export default function App() {
                 <ErrorBoundary><About /></ErrorBoundary>
               ) : route.name === "rewards" ? (
                 <ErrorBoundary><Rewards /></ErrorBoundary>
+              ) : route.name === "offers" ? (
+                <ErrorBoundary><Offers /></ErrorBoundary>
+              ) : route.name === "journal" ? (
+                <ErrorBoundary><Journal /></ErrorBoundary>
               ) : route.name === "home" ? (
                 <ErrorBoundary><Home /></ErrorBoundary>
               ) : (

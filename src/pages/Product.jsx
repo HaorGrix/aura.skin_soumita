@@ -2,6 +2,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { ChevronLeft, Home } from "lucide-react";
 import { getProductDetail, getRelated } from "../data/product-details.js";
+import { useUser } from "../context/UserContext.jsx";
+import { smartNavigate } from "../lib/nav-history.js";
 import Gallery from "../components/pdp/Gallery.jsx";
 import ProductInfo from "../components/pdp/ProductInfo.jsx";
 import ProductTabs from "../components/pdp/ProductTabs.jsx";
@@ -11,6 +13,7 @@ import QuickViewModal from "../components/shop/QuickViewModal.jsx";
 import EmptyState from "../components/ui/EmptyState.jsx";
 
 export default function Product({ id }) {
+  const { authed, openAuth } = useUser();
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState("description");
   const [quickView, setQuickView] = useState(null);
@@ -40,7 +43,7 @@ export default function Product({ id }) {
 
   if (!product) {
     return (
-      <div className="pt-28 sm:pt-32">
+      <div>
         <EmptyState
           emoji="🫧"
           title="We couldn’t find that product"
@@ -56,14 +59,14 @@ export default function Product({ id }) {
     /* Tight mobile gutters (px-4) for an immersive, edge-to-edge feel like
        Sephora/ASOS; generous on desktop. Bottom padding clears the mobile
        sticky add-bar (~70px). */
-    <div className="pb-28 pt-24 sm:pt-32 lg:pb-24">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-10">
+    <div className="pb-28 lg:pb-24">
+      <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-10">
         {/* Breadcrumb / back */}
         <motion.nav
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="flex items-center gap-2 text-sm text-ink-soft dark:text-white/55"
+          className="flex items-center gap-2 text-sm text-ink-soft"
           aria-label="Breadcrumb"
         >
           <a href="#/" className="inline-flex items-center gap-1 hover:text-magenta">
@@ -72,12 +75,16 @@ export default function Product({ id }) {
           <span>/</span>
           <a href="#/shop" className="hover:text-magenta">Shop</a>
           <span>/</span>
-          <span className="truncate text-ink dark:text-white">{product.name}</span>
+          <span className="truncate text-ink">{product.name}</span>
         </motion.nav>
 
         <a
           href="#/shop"
-          className="mt-4 inline-flex items-center gap-1.5 text-sm font-medium text-ink-soft transition-colors hover:text-magenta dark:text-white/60"
+          onClick={(e) => {
+            e.preventDefault();
+            smartNavigate("#/shop", "shop", "product");
+          }}
+          className="mt-4 inline-flex items-center gap-1.5 text-sm font-medium text-ink-soft transition-colors hover:text-magenta"
         >
           <ChevronLeft className="h-4 w-4" strokeWidth={1.8} /> Back to Shop
         </a>
@@ -99,7 +106,19 @@ export default function Product({ id }) {
             onChange={setTab}
             onWriteReview={goReviews}
           />
-          <p className="text-sm text-ink-lift italic mt-2 text-center">Verified purchases only: Please sign in to your account to share your glow ritual.</p>
+          {/* Only guests need the sign-in nudge — and it needs a way to act on it. */}
+          {!authed && (
+            <p className="mt-2 text-center text-sm italic text-ink-soft">
+              Verified purchases only —{" "}
+              <button
+                onClick={() => openAuth("login")}
+                className="font-semibold not-italic text-magenta hover:underline"
+              >
+                sign in
+              </button>{" "}
+              to share your glow ritual.
+            </p>
+          )}
         </div>
 
         {/* Complete your ritual */}

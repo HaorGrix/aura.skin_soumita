@@ -44,19 +44,19 @@ export default function CartDrawer() {
           role="dialog"
           aria-modal="true"
           aria-label="Shopping bag"
-          className="fixed inset-y-0 right-0 z-[var(--z-modal)] flex w-[88vw] max-w-md flex-col bg-white shadow-[var(--shadow-lift)] ring-1 ring-line dark:bg-[var(--color-ink)] dark:ring-white/10"
+          className="fixed inset-y-0 right-0 z-[var(--z-modal)] flex w-[88vw] max-w-md flex-col bg-white shadow-[var(--shadow-lift)] ring-1 ring-line"
           initial={{ x: "100%" }}
           animate={{ x: 0 }}
           exit={{ x: "100%" }}
           transition={{ type: "spring", stiffness: 300, damping: 34 }}
         >
             {/* Header */}
-            <div className="flex items-center justify-between border-b border-line px-5 py-4 dark:border-white/10">
-              <h2 className="flex items-center gap-2 font-serif text-xl text-ink dark:text-white">
+            <div className="flex items-center justify-between border-b border-line px-5 py-4">
+              <h2 className="flex items-center gap-2 font-serif text-xl text-ink">
                 <ShoppingBag className="h-5 w-5 text-magenta" strokeWidth={1.7} />
                 Your Bag
                 {count > 0 && (
-                  <span className="rounded-full bg-petal px-2 py-0.5 text-xs font-semibold text-magenta dark:bg-white/10 dark:text-rose">
+                  <span className="rounded-full bg-petal px-2 py-0.5 text-xs font-semibold text-magenta">
                     {count}
                   </span>
                 )}
@@ -64,7 +64,7 @@ export default function CartDrawer() {
               <button
                 onClick={closeCart}
                 aria-label="Close bag"
-                className="grid h-9 w-9 place-items-center rounded-full text-ink-soft transition-colors hover:bg-snow hover:text-magenta dark:text-white/60 dark:hover:bg-white/10"
+                className="grid h-9 w-9 place-items-center rounded-full text-ink-soft transition-colors hover:bg-snow hover:text-magenta"
               >
                 <X className="h-5 w-5" strokeWidth={1.8} />
               </button>
@@ -76,7 +76,7 @@ export default function CartDrawer() {
               <>
                 {/* Free shipping */}
                 <div className="px-5 pt-4">
-                  <FreeShippingBar subtotal={discounted} />
+                  <FreeShippingBar subtotal={discounted} couponFreeShipping={!!appliedCoupon?.freeShipping} />
                 </div>
 
                 {/* Items */}
@@ -91,27 +91,27 @@ export default function CartDrawer() {
                 </div>
 
                 {/* Footer */}
-                <div className="border-t border-line px-5 py-4 dark:border-white/10">
+                <div className="border-t border-line px-5 py-4">
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-ink-soft dark:text-white/60">Subtotal</span>
-                    <span className="font-serif text-xl text-ink dark:text-white">
+                    <span className="text-ink-soft">Subtotal</span>
+                    <span className="font-serif text-xl text-ink">
                       {formatPrice(subtotal)}
                     </span>
                   </div>
 
                   {appliedCoupon && (
-                    <div className="mt-3 flex items-center justify-between rounded-xl bg-petal/50 p-2.5 ring-1 ring-line dark:bg-white/[0.04] dark:ring-white/10">
+                    <div className="mt-3 flex items-center justify-between rounded-xl bg-petal/50 p-2.5 ring-1 ring-line">
                       <span className="flex items-center gap-2">
                         <Tag className="h-3.5 w-3.5 text-magenta" strokeWidth={2} />
-                        <span className="text-xs font-semibold text-ink dark:text-white">{appliedCoupon.code}</span>
+                        <span className="text-xs font-semibold text-ink">{appliedCoupon.code}</span>
                       </span>
-                      <span className="text-xs font-semibold text-magenta dark:text-rose">
+                      <span className="text-xs font-semibold text-magenta">
                         −{formatPrice(discountAmount)}
                       </span>
                     </div>
                   )}
 
-                  <p className="mt-2 text-xs text-ink-soft dark:text-white/45">
+                  <p className="mt-2 text-xs text-ink-soft">
                     Shipping & taxes calculated at checkout.
                   </p>
 
@@ -127,12 +127,12 @@ export default function CartDrawer() {
                   <a
                     href="#/cart"
                     onClick={closeCart}
-                    className="mt-2.5 block text-center text-sm font-medium text-ink-soft underline-offset-2 hover:text-magenta hover:underline dark:text-white/60"
+                    className="mt-2.5 block text-center text-sm font-medium text-ink-soft underline-offset-2 hover:text-magenta hover:underline"
                   >
                     View full bag
                   </a>
 
-                  <p className="mt-3 flex items-center justify-center gap-1.5 text-xs text-ink-soft dark:text-white/45">
+                  <p className="mt-3 flex items-center justify-center gap-1.5 text-xs text-ink-soft">
                     <Lock className="h-3 w-3" strokeWidth={2} /> Secure checkout
                   </p>
                 </div>
@@ -150,12 +150,12 @@ function EmptyBag({ onClose }) {
       <motion.div
         animate={{ y: [0, -8, 0] }}
         transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-        className="grid h-20 w-20 place-items-center rounded-full bg-petal text-4xl ring-1 ring-rose/30 dark:bg-white/5 dark:ring-white/10"
+        className="grid h-20 w-20 place-items-center rounded-full bg-petal text-4xl ring-1 ring-rose/30"
       >
         🛍️
       </motion.div>
-      <h3 className="mt-6 font-serif text-2xl text-ink dark:text-white">Your bag is empty</h3>
-      <p className="mt-2 text-sm text-ink-soft dark:text-white/65">
+      <h3 className="mt-6 font-serif text-2xl text-ink">Your bag is empty</h3>
+      <p className="mt-2 text-sm text-ink-soft">
         Let’s find your next glass-skin staple. Your glow awaits. ✨
       </p>
       <a

@@ -2,6 +2,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { X, Package, Truck, MapPin, CheckCircle, Clock } from "lucide-react";
 import Button from "./ui/Button.jsx";
 import { formatPrice } from "../lib/format.js";
+import { ORDER_STAGES, orderStatusId } from "../lib/order-status.js";
 
 /**
  * TrackingModal — Order status tracker with 4-stage progress.
@@ -24,18 +25,8 @@ import { formatPrice } from "../lib/format.js";
 export default function TrackingModal({ isOpen, onClose, orderData }) {
   if (!orderData) return null;
 
-  // Mock status progression based on hours since order was placed
-  const getOrderStatus = () => {
-    const createdAt = new Date(orderData.timestamp || Date.now());
-    const now = new Date();
-    const hoursPassed = (now - createdAt) / (1000 * 60 * 60);
-
-    // Timeline: 0–0.5h → confirmed, 0.5–24h → processing, 24–48h → out-for-delivery, 48h+ → delivered
-    if (hoursPassed < 0.5) return "confirmed";
-    if (hoursPassed < 24) return "processing";
-    if (hoursPassed < 48) return "out-for-delivery";
-    return "delivered";
-  };
+  // Status comes from lib/order-status.js — the same helper the orders list and
+  // details modal read, so the tracker can never contradict them.
 
   // Format order date for display
   const formatOrderDate = () => {
@@ -60,34 +51,15 @@ export default function TrackingModal({ isOpen, onClose, orderData }) {
     });
   };
 
-  const status = getOrderStatus();
+  const status = orderStatusId(orderData.timestamp);
 
-  const stages = [
-    {
-      id: "confirmed",
-      label: "Order Confirmed",
-      icon: CheckCircle,
-      desc: "Your order has been received",
-    },
-    {
-      id: "processing",
-      label: "Processing",
-      icon: Package,
-      desc: "Preparing your items",
-    },
-    {
-      id: "out-for-delivery",
-      label: "Out for Delivery",
-      icon: Truck,
-      desc: "On its way to you",
-    },
-    {
-      id: "delivered",
-      label: "Delivered",
-      icon: MapPin,
-      desc: "Delivered to your address",
-    },
-  ];
+  const STAGE_ICONS = {
+    confirmed: CheckCircle,
+    processing: Package,
+    "out-for-delivery": Truck,
+    delivered: MapPin,
+  };
+  const stages = ORDER_STAGES.map((s) => ({ ...s, icon: STAGE_ICONS[s.id] }));
 
   const currentStageIndex = stages.findIndex((s) => s.id === status);
   const isDelivered = status === "delivered";
@@ -103,7 +75,7 @@ export default function TrackingModal({ isOpen, onClose, orderData }) {
           onClick={onClose}
         >
           <motion.div
-            className="w-full max-w-2xl rounded-[1.75rem] bg-white p-8 text-center shadow-lift ring-1 ring-line dark:bg-[#0f0f12] dark:ring-white/10 sm:p-10"
+            className="w-full max-w-2xl rounded-[1.75rem] bg-white p-8 text-center shadow-lift ring-1 ring-line sm:p-10"
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
@@ -112,13 +84,13 @@ export default function TrackingModal({ isOpen, onClose, orderData }) {
           >
             {/* Header */}
             <div className="flex items-center justify-between mb-8">
-              <h2 className="font-serif text-2xl text-ink dark:text-white">
+              <h2 className="font-serif text-2xl text-ink">
                 Order Tracking
               </h2>
               <button
                 onClick={onClose}
                 aria-label="Close tracking modal"
-                className="grid h-9 w-9 place-items-center rounded-full text-ink-soft transition-colors hover:bg-snow hover:text-magenta dark:text-white/60 dark:hover:bg-white/10"
+                className="grid h-9 w-9 place-items-center rounded-full text-ink-soft transition-colors hover:bg-snow hover:text-magenta"
               >
                 <X className="h-5 w-5" strokeWidth={1.8} />
               </button>
@@ -131,11 +103,11 @@ export default function TrackingModal({ isOpen, onClose, orderData }) {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
             >
-              <p className="text-sm text-ink-soft dark:text-white/60">Order Number</p>
-              <p className="font-serif text-xl text-magenta dark:text-rose mt-1">
+              <p className="text-sm text-ink-soft">Order Number</p>
+              <p className="font-serif text-xl text-magenta mt-1">
                 {orderData.number}
               </p>
-              <p className="text-xs text-ink-soft dark:text-white/50 mt-1">
+              <p className="text-xs text-ink-soft mt-1">
                 {formatOrderDate()}
               </p>
             </motion.div>
@@ -150,7 +122,7 @@ export default function TrackingModal({ isOpen, onClose, orderData }) {
               {/* Stage Timeline Container */}
               <div className="relative px-4">
                 {/* Background line */}
-                <div className="absolute top-8 left-4 right-4 h-1 bg-line dark:bg-white/10" />
+                <div className="absolute top-8 left-4 right-4 h-1 bg-line" />
 
                 {/* Filled progress line (animates as stages complete) */}
                 <motion.div
@@ -182,7 +154,7 @@ export default function TrackingModal({ isOpen, onClose, orderData }) {
                           className={`h-16 w-16 rounded-full flex items-center justify-center ring-4 transition-all ${
                             isDone || isActive
                               ? "bg-magenta text-white ring-magenta/30 shadow-[var(--shadow-glow-pink)]"
-                              : "bg-white text-ink-soft ring-line dark:bg-white/5 dark:ring-white/10 dark:text-white/40"
+                              : "bg-white text-ink-soft ring-line"
                           }`}
                           animate={isActive ? { scale: [1, 1.08, 1] } : {}}
                           transition={{
@@ -201,8 +173,8 @@ export default function TrackingModal({ isOpen, onClose, orderData }) {
                         <p
                           className={`mt-4 text-xs font-semibold uppercase tracking-wide transition-colors ${
                             isDone || isActive
-                              ? "text-magenta dark:text-rose"
-                              : "text-ink-soft dark:text-white/40"
+                              ? "text-magenta"
+                              : "text-ink-soft"
                           }`}
                         >
                           {stage.label}
@@ -212,8 +184,8 @@ export default function TrackingModal({ isOpen, onClose, orderData }) {
                         <p
                           className={`mt-1 text-xs leading-snug transition-colors ${
                             isDone || isActive
-                              ? "text-ink dark:text-white"
-                              : "text-ink-soft dark:text-white/50"
+                              ? "text-ink"
+                              : "text-ink-soft"
                           }`}
                         >
                           {stage.desc}
@@ -227,14 +199,14 @@ export default function TrackingModal({ isOpen, onClose, orderData }) {
 
             {/* Status Message Card */}
             <motion.div
-              className="mb-8 rounded-2xl bg-petal/30 p-4 ring-1 ring-rose/30 dark:bg-white/5 dark:ring-white/10"
+              className="mb-8 rounded-2xl bg-petal/30 p-4 ring-1 ring-rose/30"
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.4 }}
             >
               <div className="flex items-center justify-center gap-2">
                 <Clock className="h-4 w-4 text-magenta flex-shrink-0" strokeWidth={2} />
-                <p className="text-sm font-medium text-ink dark:text-white">
+                <p className="text-sm font-medium text-ink">
                   {isDelivered
                     ? "✨ Your order has been delivered! Thank you for glowing with us."
                     : "Your order is on its way. We'll keep you updated."}
@@ -244,35 +216,35 @@ export default function TrackingModal({ isOpen, onClose, orderData }) {
 
             {/* Order Summary */}
             <motion.div
-              className="rounded-2xl bg-snow p-5 ring-1 ring-line dark:bg-white/[0.04] dark:ring-white/10 text-left mb-8"
+              className="rounded-2xl bg-snow p-5 ring-1 ring-line text-left mb-8"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.5 }}
             >
-              <h3 className="font-semibold text-ink dark:text-white mb-4">
+              <h3 className="font-semibold text-ink mb-4">
                 Order Summary
               </h3>
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
-                  <span className="text-ink-soft dark:text-white/60">Number of Items</span>
-                  <span className="font-medium text-ink dark:text-white">
+                  <span className="text-ink-soft">Number of Items</span>
+                  <span className="font-medium text-ink">
                     {orderData.count}
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-ink-soft dark:text-white/60">Total Amount</span>
-                  <span className="font-serif text-base font-medium text-magenta dark:text-rose">
+                  <span className="text-ink-soft">Total Amount</span>
+                  <span className="font-serif text-base font-medium text-magenta">
                     {formatPrice(orderData.total)}
                   </span>
                 </div>
                 {orderData.trackingNumber && (
                   <>
-                    <div className="my-3 h-px bg-line dark:bg-white/10" />
+                    <div className="my-3 h-px bg-line" />
                     <div className="flex justify-between pt-2">
-                      <span className="text-ink-soft dark:text-white/60">
+                      <span className="text-ink-soft">
                         Tracking Number
                       </span>
-                      <span className="font-mono text-xs font-semibold text-magenta dark:text-rose">
+                      <span className="font-mono text-xs font-semibold text-magenta">
                         {orderData.trackingNumber}
                       </span>
                     </div>

@@ -5,6 +5,7 @@ import { useCart } from "../context/CartContext.jsx";
 import { useUser } from "../context/UserContext.jsx";
 import { PRODUCTS } from "../data/products.js";
 import { FREE_SHIPPING_THRESHOLD, STANDARD_SHIPPING } from "../lib/shop-config.js";
+import { smartNavigate } from "../lib/nav-history.js";
 import LineItem from "../components/cart/LineItem.jsx";
 import FreeShippingBar from "../components/cart/FreeShippingBar.jsx";
 import OrderSummary from "../components/cart/OrderSummary.jsx";
@@ -17,13 +18,18 @@ import { Input } from "../components/ui/index.js";
 
 export default function Cart() {
   const { items, subtotal, count, clear, discountAmount, appliedCoupon, applyPromo } = useCart();
-  const { points, orders, usedCoupons, coupons } = useUser();
+  const { authed, openAuth, points, orders, usedCoupons, coupons } = useUser();
   const { toast } = useToast();
   const [promoInput, setPromoInput] = useState("");
   const [quickView, setQuickView] = useState(null);
 
   const discounted = Math.max(0, subtotal - discountAmount);
-  const shipping = discounted >= FREE_SHIPPING_THRESHOLD || discounted === 0 ? 0 : STANDARD_SHIPPING;
+  // Honour the coupon's free-shipping flag here too — Checkout does, and a bag
+  // that quotes one total then charges another at checkout destroys trust.
+  const shipping =
+    discounted >= FREE_SHIPPING_THRESHOLD || discounted === 0 || appliedCoupon?.freeShipping
+      ? 0
+      : STANDARD_SHIPPING;
   const total = discounted + shipping;
 
   const recommended = useMemo(() => {
@@ -36,10 +42,25 @@ export default function Cart() {
 
   function handlePromo(e) {
     e.preventDefault();
-    const res = applyPromo(promoInput, { points, orders, usedCoupons, coupons });
-    if (res) {
+    const res = applyPromo(promoInput, { authed, points, orders, usedCoupons, coupons });
+
+    // `applyPromo` returns a truthy result object on failure too — only a
+    // `success` flag means the coupon actually applied.
+    if (res?.success) {
       setPromoInput("");
       toast.success(res.label, "Promo applied");
+    } else if (res?.requiresAuth) {
+      toast.error("Sign in to use your welcome code — it's tied to your account.", "Login required");
+      openAuth("login");
+    } else if (res?.alreadyUsed) {
+      toast.error("You've already used that code.", "Already redeemed");
+    } else if (res?.firstOrderOnly) {
+      toast.error("That code is for first orders only.", "Not eligible");
+    } else if (res?.notUnlocked) {
+      toast.error(
+        `Keep glowing — that reward unlocks at ${res.coupon.points} points.`,
+        "Not yet unlocked"
+      );
     } else {
       toast.error("That code isn’t valid. Check your welcome email for a promo code.", "Hmm");
     }
@@ -47,7 +68,7 @@ export default function Cart() {
 
   if (count === 0) {
     return (
-      <div className="min-h-screen pt-28 sm:pt-32">
+      <div className="min-h-screen">
         <div className="mx-auto max-w-7xl px-5 sm:px-8">
           <EmptyState
             emoji="🛍️"
@@ -68,23 +89,31 @@ export default function Cart() {
   }
 
   return (
-    <div className="min-h-screen pb-24 pt-28 sm:pt-32">
+    <div className="min-h-screen pb-24">
       <div className="mx-auto max-w-7xl px-5 sm:px-8">
+        {/* Stays an anchor (middle-click, "open in new tab", a11y all keep
+            working), but a plain click pops back to Shop when that's where we
+            came from — pushing a duplicate entry is what built the
+            Shop → Cart → Shop → Cart trap. */}
         <a
           href="#/shop"
-          className="inline-flex items-center gap-1.5 text-sm font-medium text-ink-soft transition-colors hover:text-magenta dark:text-white/60"
+          onClick={(e) => {
+            e.preventDefault();
+            smartNavigate("#/shop", "shop", "cart");
+          }}
+          className="inline-flex items-center gap-1.5 text-sm font-medium text-ink-soft transition-colors hover:text-magenta"
         >
           <ChevronLeft className="h-4 w-4" strokeWidth={1.8} /> Continue shopping
         </a>
 
         <div className="mt-4 flex items-end justify-between gap-4">
-          <h1 className="font-serif text-[clamp(2rem,5vw,3.25rem)] leading-tight text-ink dark:text-white">
+          <h1 className="font-serif text-[clamp(2rem,5vw,3.25rem)] leading-tight text-ink">
             Your Bag{" "}
-            <span className="text-ink-soft dark:text-white/45">({count})</span>
+            <span className="text-ink-soft">({count})</span>
           </h1>
           <button
             onClick={() => { if (window.confirm('Are you sure you want to clear your bag?')) clear(); }}
-            className="text-sm font-medium text-ink-soft underline-offset-2 hover:text-error hover:underline dark:text-white/55"
+            className="text-sm font-medium text-ink-soft underline-offset-2 hover:text-error hover:underline"
           >
             Clear bag
           </button>
@@ -94,9 +123,9 @@ export default function Cart() {
           {/* Items */}
           <div>
             <div className="mb-5">
-              <FreeShippingBar subtotal={discounted} />
+              <FreeShippingBar subtotal={discounted} couponFreeShipping={!!appliedCoupon?.freeShipping} />
             </div>
-            <div className="flex flex-col divide-y divide-line dark:divide-white/10">
+            <div className="flex flex-col divide-y divide-line">
               <AnimatePresence initial={false}>
                 {items.map((item) => (
                   <div key={item.id} className="py-5 first:pt-0">
@@ -119,7 +148,7 @@ export default function Cart() {
               {/* Promo */}
               <form onSubmit={handlePromo} className="flex gap-2">
                 <div className="relative flex-1">
-                  <Tag className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-soft dark:text-white/45" strokeWidth={1.7} />
+                  <Tag className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-soft" strokeWidth={1.7} />
                   <Input
                     value={promoInput}
                     onChange={(e) => setPromoInput(e.target.value)}
@@ -129,7 +158,7 @@ export default function Cart() {
                 </div>
                 <button
                   type="submit"
-                  className="rounded-full bg-ink px-5 text-sm font-semibold text-white transition-colors hover:bg-magenta dark:bg-white dark:text-ink dark:hover:bg-rose"
+                  className="rounded-full bg-ink px-5 text-sm font-semibold text-white transition-colors hover:bg-magenta"
                 >
                   Apply
                 </button>
@@ -146,7 +175,7 @@ export default function Cart() {
               </Button>
 
               {/* Trust */}
-              <div className="mt-4 flex flex-wrap justify-center gap-x-4 gap-y-1.5 text-xs text-ink-soft dark:text-white/50">
+              <div className="mt-4 flex flex-wrap justify-center gap-x-4 gap-y-1.5 text-xs text-ink-soft">
                 <span className="inline-flex items-center gap-1.5"><Lock className="h-3.5 w-3.5" strokeWidth={1.8} /> Secure</span>
                 <span className="inline-flex items-center gap-1.5"><ShieldCheck className="h-3.5 w-3.5" strokeWidth={1.8} /> Authentic</span>
                 <span className="inline-flex items-center gap-1.5"><Truck className="h-3.5 w-3.5" strokeWidth={1.8} /> Fast shipping</span>

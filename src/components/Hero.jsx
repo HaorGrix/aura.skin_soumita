@@ -58,7 +58,7 @@ export default function Hero() {
     <section
       id="top"
       ref={ref}
-      className="relative flex min-h-[100svh] items-center overflow-hidden"
+      className="relative flex min-h-[100svh] items-start overflow-hidden lg:items-center"
     >
       {/* ── Background ───────────────────────────────────────── */}
       <motion.div
@@ -78,7 +78,7 @@ export default function Hero() {
           className="absolute -right-32 -top-24 h-[28rem] w-[28rem] rounded-full opacity-50 blur-3xl"
           style={{ background: "radial-gradient(circle, var(--color-cyan-soft), transparent 70%)" }}
         />
-        <div className="absolute inset-0 hidden dark:block dark:bg-gradient-to-b dark:from-[var(--color-ink)] dark:via-[#140810] dark:to-[var(--color-ink)]" />
+        <div className="absolute inset-0 hidden" />
       </motion.div>
 
       {/* Sparkle particle field */}
@@ -120,24 +120,28 @@ export default function Hero() {
       )}
 
       {/* ── Split content ────────────────────────────────────── */}
-      <div className="relative z-10 mx-auto grid w-full max-w-7xl items-center gap-12 px-6 pb-16 pt-28 sm:px-8 lg:grid-cols-[1.05fr_0.95fr] lg:gap-6 lg:pb-20 lg:pt-24">
-        {/* LEFT — copy */}
+      <div className="relative z-10 mx-auto flex w-full max-w-7xl flex-col items-center gap-8 px-6 pb-16 pt-36 sm:px-8 sm:pt-40 md:pt-40 lg:grid lg:grid-cols-[1.05fr_0.95fr] lg:items-center lg:gap-6 lg:pb-20 lg:pt-24">
+        {/* LEFT — copy. `contents lg:block` promotes the headline group and the
+            action group into the flex flow on mobile so the image can slot
+            between them; on desktop it collapses back into one left column. */}
         <motion.div
           style={{ y: reduce ? 0 : yLeft, opacity: reduce ? 1 : opacity }}
-          className="text-center lg:text-left"
+          className="contents lg:block lg:text-left"
         >
+          {/* Group A — pill + headline + subtext */}
+          <div className="order-1 text-center lg:order-none lg:text-left">
           <motion.span
             initial={{ opacity: 0, y: 14 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1, duration: 0.7 }}
             whileHover={reduce ? {} : { scale: 1.04 }}
-            className="inline-flex cursor-default items-center gap-2 rounded-full border border-ink/10 bg-white/70 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.2em] text-ink/80 backdrop-blur transition-shadow hover:shadow-soft dark:border-white/15 dark:bg-white/5 dark:text-white/80"
+            className="inline-flex cursor-default items-center gap-2 rounded-full border border-ink/10 bg-white/70 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.2em] text-ink/80 backdrop-blur transition-shadow hover:shadow-soft"
           >
             <Sparkles className="h-3.5 w-3.5 text-magenta" strokeWidth={2} />
             For every skin · K &amp; J-Beauty
           </motion.span>
 
-          <h1 className="mt-6 font-serif text-[clamp(2.8rem,6.5vw,5.25rem)] leading-[0.98] tracking-[-0.01em] text-ink dark:text-white">
+          <h1 className="mt-6 font-serif text-[clamp(2.8rem,6.5vw,5.25rem)] leading-[0.98] tracking-[-0.01em] text-ink">
             <span className="block">
               {line1.map((word, i) => (
                 <motion.span
@@ -174,13 +178,17 @@ export default function Hero() {
             initial={{ opacity: 0, y: 18 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.95, duration: 0.85, ease: EASE }}
-            className="mx-auto mt-6 max-w-xl text-pretty text-base text-ink-soft sm:text-lg lg:mx-0 dark:text-white/70"
+            className="mx-auto mt-6 max-w-xl text-pretty text-base text-ink-soft sm:text-lg lg:mx-0"
           >
-            Authentic K &amp; J-Beauty, curated into one dewy ritual. Barrier
-            repair, gentle actives, and that lit-from-within glow — built for
-            your skin, whatever it is. ✨
+            Real K- and J-Beauty, straight from authorised distributors.
+            Barrier-first formulas for the skin you actually have, plus honest
+            advice about what you can skip. ✨
           </motion.p>
+          </div>
 
+          {/* Group B — CTA + stats. Renders after the image on mobile, back in
+              the left column on desktop. */}
+          <div className="order-3 lg:order-none">
           {/* CTA — centered on mobile/tablet, left-aligned on desktop split */}
           <motion.div
             initial={{ opacity: 0, y: 18 }}
@@ -207,27 +215,29 @@ export default function Hero() {
               { n: "12k+", l: "reviews" },
             ].map((s, i) => (
               <div key={s.l} className="flex items-center gap-6">
-                {i > 0 && <span className="h-8 w-px bg-ink/15 dark:bg-white/15" />}
+                {i > 0 && <span className="h-8 w-px bg-ink/15" />}
                 <div className="text-left">
-                  <p className="font-serif text-xl text-ink dark:text-white sm:text-2xl">
+                  <p className="font-serif text-xl text-ink sm:text-2xl">
                     {s.n}
                   </p>
-                  <p className="text-[11px] uppercase tracking-wide text-ink/55 dark:text-white/50">
+                  <p className="whitespace-nowrap text-[10px] font-medium uppercase tracking-wide text-ink/55 sm:text-xs">
                     {s.l}
                   </p>
                 </div>
               </div>
             ))}
           </motion.div>
+          </div>
         </motion.div>
 
-        {/* RIGHT — framed photo (own proportions, never cropped) */}
+        {/* RIGHT — framed photo (own proportions, never cropped).
+            order-2 slots it between headline and CTA on mobile. */}
         <motion.div
           style={{ y: reduce ? 0 : yImg }}
           initial={{ opacity: 0, scale: 0.94 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.35, duration: 0.9, ease: EASE }}
-          className="relative mx-auto w-fit max-w-full"
+          className="relative order-2 mx-auto w-fit max-w-full lg:order-none"
         >
           {/* Glow halo behind frame */}
           <div
@@ -244,7 +254,7 @@ export default function Hero() {
           <motion.div
             whileHover={reduce ? {} : { scale: 1.015 }}
             transition={{ type: "spring", stiffness: 220, damping: 22 }}
-            className="relative mx-auto w-fit rounded-[2rem] bg-white p-3 shadow-lift ring-1 ring-white/60 dark:bg-white/5 dark:ring-white/10"
+            className="relative mx-auto w-fit rounded-[2rem] bg-white p-3 shadow-lift ring-1 ring-white/60"
           >
             <img
               src={HERO_IMG}
@@ -261,7 +271,7 @@ export default function Hero() {
         <motion.a
           href="#best-sellers"
           aria-label="Scroll to explore"
-          className="absolute bottom-6 left-1/2 z-10 flex -translate-x-1/2 flex-col items-center gap-2 text-ink/60 dark:text-white/50"
+          className="absolute bottom-6 left-1/2 z-10 hidden -translate-x-1/2 flex-col items-center gap-2 text-ink/60 lg:flex"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 1.7, duration: 1 }}

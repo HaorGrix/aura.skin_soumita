@@ -1,14 +1,10 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
-import { POINTS_PER_REVIEW, SEED_ORDERS } from "../data/reviews.js";
+import { POINTS_PER_REVIEW, pointsForOrder } from "../data/reviews.js";
 import { MILESTONES, couponForPoints } from "../lib/rewards-config.js";
 
 const UserContext = createContext(null);
 const SESSION_KEY = "aura-session";
 const STORE_KEY = "aura_users_store";
-
-const MOCK_USER = { id: null, initial: "" };
-const DEFAULT_PROFILE = {};
-const SEED_POINTS = 0;
 
 function loadStore() {
   try {
@@ -190,7 +186,11 @@ export function UserProvider({ children }) {
         return true;
       },
       updateProfile: (updates) => {
-        setProfile((prev) => ({ ...prev, ...updates }));
+        // `email` keys the user store / cart / wishlist. Changing it here would
+        // orphan the record (the session still points at the old key), so it is
+        // never writable through this path.
+        const { email: _ignored, ...safe } = updates ?? {};
+        setProfile((prev) => ({ ...prev, ...safe }));
       },
       usedCoupons,
       markCouponUsed: (code) => {
@@ -199,17 +199,24 @@ export function UserProvider({ children }) {
         setUsedCoupons((prev) => (prev.includes(normalized) ? prev : [...prev, normalized]));
       },
       addOrder: (orderData) => {
+        const earned = pointsForOrder(orderData.total);
         const newOrder = {
           orderId: orderData.number,
           date: new Date().toISOString().split('T')[0],
-          status: "Confirmed",
+          // No stored `status` — it's derived from `timestamp` via
+          // lib/order-status.js. A stored value goes stale as time passes.
           items: orderData.itemIds || [],
           total: orderData.total,
           email: orderData.email,
           payMethod: orderData.payMethod,
+          pointsEarned: earned,
           timestamp: new Date().toISOString(),
         };
         setOrders((prev) => [newOrder, ...prev]);
+        // Purchases are the primary earn path — see the loyalty economy note
+        // in data/reviews.js. Without this the milestone tiers are unreachable.
+        if (earned > 0) setPoints((p) => p + earned);
+        return earned;
       },
     };
   }, [points, myReviews, reviewedIds, orders, purchasedIds, profile, authed, auth, openAuth, closeAuth, login, signup, logout, usedCoupons]);

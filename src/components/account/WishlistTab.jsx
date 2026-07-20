@@ -19,6 +19,12 @@ export default function WishlistTab() {
     .filter(Boolean);
 
   const handleMoveToCart = (product) => {
+    // The cart refuses sold-out items, so removing it from the wishlist here
+    // would silently destroy the save and never add anything to the bag.
+    if (!product.inStock) {
+      toast.error("This one's sold out — we'll keep it saved for you.", "Out of stock");
+      return;
+    }
     addItem(product, 1);
     toggle(product.id);
     toast.cart("Moved to your bag");
@@ -33,8 +39,8 @@ export default function WishlistTab() {
     >
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <h2 className="font-serif text-2xl text-ink dark:text-white">Saved Items</h2>
-          <p className="mt-1 text-sm text-ink-soft dark:text-white/60">
+          <h2 className="font-serif text-2xl text-ink">Saved Items</h2>
+          <p className="mt-1 text-sm text-ink-soft">
             {savedProducts.length} {savedProducts.length === 1 ? "item" : "items"} you're eyeing.
           </p>
         </div>
@@ -64,32 +70,32 @@ export default function WishlistTab() {
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: i * 0.05 }}
-              className="group relative flex flex-col overflow-hidden rounded-2xl bg-white p-4 ring-1 ring-line transition-shadow hover:shadow-lift dark:bg-white/[0.03] dark:ring-white/10"
+              className="group relative flex flex-col overflow-hidden rounded-2xl bg-white p-4 ring-1 ring-line transition-shadow hover:shadow-lift"
             >
               <button
                 onClick={() => toggle(p.id)}
-                className="absolute right-3 top-3 z-10 grid h-8 w-8 place-items-center rounded-full bg-white/80 text-ink-soft backdrop-blur hover:bg-white hover:text-magenta dark:bg-ink/50 dark:text-white/60 dark:hover:bg-ink dark:hover:text-magenta"
+                className="absolute right-3 top-3 z-10 grid h-8 w-8 place-items-center rounded-full bg-white/80 text-ink-soft backdrop-blur hover:bg-white hover:text-magenta"
               >
                 <X className="h-4 w-4" />
               </button>
 
               <a
                 href={`#/product/${p.id}`}
-                className="relative aspect-square w-full overflow-hidden rounded-xl bg-snow dark:bg-white/5"
+                className="relative aspect-square w-full overflow-hidden rounded-xl bg-snow"
               >
                 <div
                   className="absolute inset-0"
                   style={{ background: `radial-gradient(120% 100% at 50% 0%, var(--color-white) 0%, ${p.tone} 75%, var(--color-petal-deep) 100%)` }}
                 />
-                {p.image && <img src={p.image} alt={p.name} className="absolute inset-0 h-full w-full object-contain p-2 mix-blend-multiply dark:mix-blend-normal" />}
+                {p.image && <img src={p.image} alt={p.name} className="absolute inset-0 h-full w-full object-contain p-2 mix-blend-multiply" />}
               </a>
 
               <div className="mt-4 flex flex-1 flex-col">
                 <p className="text-[10px] font-semibold uppercase tracking-widest text-magenta">{p.brand}</p>
-                <a href={`#/product/${p.id}`} className="mt-1 line-clamp-2 text-sm font-medium leading-tight text-ink hover:text-magenta dark:text-white">
+                <a href={`#/product/${p.id}`} className="mt-1 line-clamp-2 text-sm font-medium leading-tight text-ink hover:text-magenta">
                   {p.name}
                 </a>
-                <p className="mt-2 text-sm font-semibold text-ink dark:text-white">{formatPrice(p.price)}</p>
+                <p className="mt-2 text-sm font-semibold text-ink">{formatPrice(p.price)}</p>
               </div>
 
               <Button

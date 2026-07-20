@@ -1,7 +1,7 @@
 /* =================================================================== *
  * aura.skin — DESIGN SYSTEM (single source of truth)
  * -------------------------------------------------------------------
- * Dark-mode-dominant K/J-Beauty "glass skin" system.
+ * K/J-Beauty "glass skin" system.
  *
  * Raw token values mirror the Tailwind `@theme` block in `src/index.css`.
  * Import the `tokens` for inline styles/JS logic, and the class-map helpers
@@ -10,22 +10,16 @@
  * =================================================================== */
 
 /* ------------------------------------------------------------------ *
- * 1. COLOR PALETTE  (dark dominant)
+ * 1. COLOR PALETTE
  * ------------------------------------------------------------------ */
 export const tokens = {
   color: {
     // Core neutrals
-    ink: "#0a0a0b", // near-black — primary text on light / deep sections
-    inkSoft: "#5b5b62", // secondary text on light
-    black: "#050506", // app background (dark mode)
+    ink: "#0a0a0b", // near-black — primary text
+    inkSoft: "#5b5b62", // secondary text
     white: "#ffffff",
-    snow: "#fbf9fa", // off-white background (light mode)
-
-    // Dark-mode surfaces
-    surface: "#0f0f12", // raised card on black
-    surfaceRaised: "#16161a", // modals / hovered cards
-    line: "#ececef", // hairline on light
-    lineDark: "rgba(255,255,255,0.10)", // hairline on dark
+    snow: "#fbf9fa", // off-white background
+    line: "#ececef", // hairlines
 
     // Pink family (signature accent)
     petal: "#ffeef4", // softest wash
@@ -113,7 +107,7 @@ export const type = {
   h2: "font-serif text-[clamp(1.75rem,4vw,3rem)] leading-[1.08] tracking-[-0.01em]",
   h3: "font-serif text-2xl sm:text-3xl leading-snug",
   h4: "font-serif text-xl sm:text-2xl leading-snug",
-  lead: "font-sans text-lg sm:text-xl leading-relaxed text-ink-soft dark:text-white/70",
+  lead: "font-sans text-lg sm:text-xl leading-relaxed text-ink-soft",
   body: "font-sans text-base leading-relaxed",
   small: "font-sans text-sm leading-relaxed",
   micro: "font-sans text-xs leading-normal",
@@ -145,12 +139,11 @@ export const btn = {
     primary:
       "bg-magenta text-white shadow-soft hover:shadow-[var(--shadow-glow-pink)]",
     secondary:
-      "border border-ink/15 bg-white/60 text-ink backdrop-blur hover:border-magenta/50 hover:text-magenta " +
-      "dark:border-white/15 dark:bg-white/5 dark:text-white dark:hover:text-rose dark:hover:border-rose/40",
+      "border border-ink/15 bg-white/60 text-ink backdrop-blur hover:border-magenta/50 hover:text-magenta",
     ghost:
-      "text-ink/75 hover:text-magenta dark:text-white/75 dark:hover:text-rose",
+      "text-ink/75 hover:text-magenta",
     solid:
-      "bg-ink text-white shadow-soft hover:shadow-lift dark:bg-white dark:text-ink",
+      "bg-ink text-white shadow-soft hover:shadow-lift",
     addToBag:
       "border border-cyan/50 text-cyan bg-cyan/5 hover:bg-magenta hover:border-magenta hover:text-white " +
       "hover:shadow-[var(--shadow-glow-pink)]",
@@ -168,7 +161,7 @@ export const badge = {
     barrier: "bg-rose/15 text-magenta ring-1 ring-rose/40",
     exfoliation: "bg-gold/15 text-gold ring-1 ring-gold/40",
     bestseller: "bg-magenta text-white",
-    new: "bg-ink text-white dark:bg-white dark:text-ink",
+    new: "bg-ink text-white",
     sale: "bg-error/15 text-error ring-1 ring-error/30",
   },
 };
@@ -178,11 +171,10 @@ export const badge = {
  * ------------------------------------------------------------------ */
 export const surface = {
   card:
-    "bg-white shadow-soft ring-1 ring-line " +
-    "dark:bg-[#0f0f12] dark:ring-white/10",
+    "bg-white shadow-soft ring-1 ring-line",
   glass: "glass",
   panel:
-    "bg-snow ring-1 ring-line dark:bg-[#16161a] dark:ring-white/10",
+    "bg-snow ring-1 ring-line",
 };
 
 const TONE_SURFACES = new Map([

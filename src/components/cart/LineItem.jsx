@@ -8,8 +8,9 @@ import { formatPrice } from "../../lib/format.js";
  * `readOnly` hides the steppers (used in checkout summary).
  */
 export default function LineItem({ item, compact = false, readOnly = false }) {
-  const { inc, dec, removeItem } = useCart();
+  const { inc, dec, removeItem, atMaxQty } = useCart();
   const thumb = compact ? "h-16 w-16" : "h-24 w-24";
+  const maxed = atMaxQty(item.id);
 
   return (
     <motion.div
@@ -22,7 +23,7 @@ export default function LineItem({ item, compact = false, readOnly = false }) {
     >
       <a
         href={`#/product/${item.id}`}
-        className={`${thumb} shrink-0 overflow-hidden rounded-xl ring-1 ring-line dark:ring-white/10`}
+        className={`${thumb} shrink-0 overflow-hidden rounded-xl ring-1 ring-line`}
         style={{
           background: `radial-gradient(120% 100% at 50% 0%, var(--color-white) 0%, ${item.tone} 75%, var(--color-petal-deep) 100%)`,
         }}
@@ -41,21 +42,21 @@ export default function LineItem({ item, compact = false, readOnly = false }) {
             </p>
             <a
               href={`#/product/${item.id}`}
-              className={`block truncate font-serif text-ink hover:text-magenta dark:text-white ${
+              className={`block truncate font-serif text-ink hover:text-magenta ${
                 compact ? "text-sm" : "text-base sm:text-lg"
               }`}
             >
               {item.name}
             </a>
             {!compact && (
-              <p className="mt-0.5 text-xs text-ink-soft dark:text-white/50">{item.category}</p>
+              <p className="mt-0.5 text-xs text-ink-soft">{item.category}</p>
             )}
           </div>
           {!readOnly && (
             <button
               onClick={() => removeItem(item.id)}
               aria-label={`Remove ${item.name}`}
-              className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-ink-soft transition-colors hover:bg-error/10 hover:text-error dark:text-white/50"
+              className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-ink-soft transition-colors hover:bg-error/10 hover:text-error"
             >
               <Trash2 className="h-4 w-4" strokeWidth={1.7} />
             </button>
@@ -64,30 +65,31 @@ export default function LineItem({ item, compact = false, readOnly = false }) {
 
         <div className="mt-auto flex items-center justify-between pt-2">
           {readOnly ? (
-            <span className="text-sm text-ink-soft dark:text-white/60">Qty {item.qty}</span>
+            <span className="text-sm text-ink-soft">Qty {item.qty}</span>
           ) : (
-            <div className="flex items-center rounded-full border border-ink/15 dark:border-white/15">
+            <div className="flex items-center rounded-full border border-ink/15">
               <button
                 onClick={() => dec(item.id)}
                 aria-label="Decrease quantity"
-                className="grid h-8 w-8 place-items-center rounded-full text-ink-soft transition-colors hover:text-magenta dark:text-white/60"
+                className="grid h-8 w-8 place-items-center rounded-full text-ink-soft transition-colors hover:text-magenta"
               >
                 <Minus className="h-3.5 w-3.5" strokeWidth={2} />
               </button>
-              <span className="w-7 text-center text-sm font-semibold tabular-nums text-ink dark:text-white">
+              <span className="w-7 text-center text-sm font-semibold tabular-nums text-ink">
                 {item.qty}
               </span>
               <button
                 onClick={() => inc(item.id)}
-                aria-label="Increase quantity"
-                className="grid h-8 w-8 place-items-center rounded-full text-ink-soft transition-colors hover:text-magenta dark:text-white/60"
+                disabled={maxed}
+                aria-label={maxed ? "Maximum available quantity reached" : "Increase quantity"}
+                className="grid h-8 w-8 place-items-center rounded-full text-ink-soft transition-colors hover:text-magenta disabled:pointer-events-none disabled:opacity-40"
               >
                 <Plus className="h-3.5 w-3.5" strokeWidth={2} />
               </button>
             </div>
           )}
 
-          <span className="font-semibold tabular-nums text-ink dark:text-white">
+          <span className="font-semibold tabular-nums text-ink">
             {formatPrice(item.price * item.qty)}
           </span>
         </div>

@@ -21,7 +21,7 @@ export default function RelatedProducts({ products, onQuickView, title = "Comple
           <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-magenta">
             Pairs beautifully
           </p>
-          <h2 className="mt-1 font-serif text-2xl text-ink dark:text-white sm:text-3xl">
+          <h2 className="mt-1 font-serif text-2xl text-ink sm:text-3xl">
             {title} 🌸
           </h2>
         </div>
@@ -29,14 +29,14 @@ export default function RelatedProducts({ products, onQuickView, title = "Comple
           <button
             onClick={() => scrollBy(-1)}
             aria-label="Scroll left"
-            className="grid h-10 w-10 place-items-center rounded-full ring-1 ring-line transition-colors hover:text-magenta dark:ring-white/15"
+            className="grid h-10 w-10 place-items-center rounded-full ring-1 ring-line transition-colors hover:text-magenta"
           >
             <ChevronLeft className="h-5 w-5" strokeWidth={1.8} />
           </button>
           <button
             onClick={() => scrollBy(1)}
             aria-label="Scroll right"
-            className="grid h-10 w-10 place-items-center rounded-full ring-1 ring-line transition-colors hover:text-magenta dark:ring-white/15"
+            className="grid h-10 w-10 place-items-center rounded-full ring-1 ring-line transition-colors hover:text-magenta"
           >
             <ChevronRight className="h-5 w-5" strokeWidth={1.8} />
           </button>

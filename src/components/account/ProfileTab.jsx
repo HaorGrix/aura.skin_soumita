@@ -45,19 +45,19 @@ export default function ProfileTab() {
       className="space-y-6"
     >
       <div>
-        <h2 className="font-serif text-2xl text-ink dark:text-white">Personal Info</h2>
-        <p className="mt-1 text-sm text-ink-soft dark:text-white/60">
+        <h2 className="font-serif text-2xl text-ink">Personal Info</h2>
+        <p className="mt-1 text-sm text-ink-soft">
           Update your details and how we can reach you.
         </p>
       </div>
 
       <form onSubmit={handleSubmit} className="max-w-md space-y-5">
         <div className="space-y-1.5">
-          <label htmlFor="name" className="text-sm font-semibold text-ink dark:text-white">
+          <label htmlFor="name" className="text-sm font-semibold text-ink">
             Full Name
           </label>
           <div className="relative">
-            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-ink-soft dark:text-white/40">
+            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-ink-soft">
               <User className="h-4 w-4" />
             </span>
             <Input
@@ -72,28 +72,35 @@ export default function ProfileTab() {
           </div>
         </div>
 
+        {/* Email is the account identifier — it keys the user store, the cart
+            (`cart_{email}`) and the wishlist. Letting it be edited here rewrote
+            the key while the session still pointed at the old one, so the change
+            vanished on reload and left an orphan record behind. Read-only. */}
         <div className="space-y-1.5">
-          <label htmlFor="email" className="text-sm font-semibold text-ink dark:text-white">
+          <label htmlFor="email" className="text-sm font-semibold text-ink">
             Email Address
           </label>
           <div className="relative">
-            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-ink-soft dark:text-white/40">
+            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-ink-soft">
               <Mail className="h-4 w-4" />
             </span>
             <Input
               id="email"
               name="email"
               type="email"
-              required
               value={formData.email}
-              onChange={handleChange}
-              className="pl-11"
+              readOnly
+              aria-describedby="email-hint"
+              className="pl-11 cursor-not-allowed bg-snow text-ink-soft"
             />
           </div>
+          <p id="email-hint" className="text-xs text-ink-soft">
+            Your email identifies your account and can’t be changed here.
+          </p>
         </div>
 
         <div className="space-y-1.5">
-          <label className="text-sm font-semibold text-ink dark:text-white">
+          <label className="text-sm font-semibold text-ink">
             Phone Number
           </label>
           <PhoneInput
@@ -106,11 +113,11 @@ export default function ProfileTab() {
         </div>
 
         <div className="space-y-1.5">
-          <label htmlFor="address" className="text-sm font-semibold text-ink dark:text-white">
+          <label htmlFor="address" className="text-sm font-semibold text-ink">
             Shipping Address
           </label>
           <div className="relative">
-            <span className="absolute left-4 top-3.5 text-ink-soft dark:text-white/40">
+            <span className="absolute left-4 top-3.5 text-ink-soft">
               <MapPin className="h-4 w-4" />
             </span>
             <textarea
@@ -119,7 +126,7 @@ export default function ProfileTab() {
               rows={3}
               value={formData.address}
               onChange={handleChange}
-              className="w-full resize-none rounded-xl border border-line bg-snow py-3 pl-11 pr-4 text-sm text-ink outline-none transition-colors focus:border-magenta focus:ring-1 focus:ring-magenta dark:border-white/10 dark:bg-white/[0.03] dark:text-white dark:focus:border-magenta"
+              className="w-full resize-none rounded-xl border border-line bg-snow py-3 pl-11 pr-4 text-sm text-ink outline-none transition-colors focus:border-magenta focus:ring-1 focus:ring-magenta"
             />
           </div>
         </div>

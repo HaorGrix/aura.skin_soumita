@@ -66,7 +66,7 @@ const PILLARS = [
   {
     icon: RotateCcw,
     title: "Money-Back Promise",
-    body: "Not seeing results in 30 days? We offer a no-questions-asked refund. Great skin is a right, not a risk — and we stand behind every order we send.",
+    body: "Not seeing results in 30 days? Send it back. No forms, no restocking fee, no asking you to justify it. Opened bottles included.",
     accent: "gold",
   },
   {
@@ -101,10 +101,10 @@ const VALUES = [
    ACCENT TOKEN MAP
 ───────────────────────────────────────────── */
 const ACCENT_ICON = {
-  magenta: "bg-petal text-magenta dark:bg-magenta/15 dark:text-rose",
-  cyan: "bg-cyan/10 text-cyan dark:bg-cyan/10 dark:text-cyan-soft",
-  gold: "bg-gold/10 text-gold dark:bg-gold/10 dark:text-gold-soft",
-  rose: "bg-rose/10 text-rose dark:bg-rose/10 dark:text-rose",
+  magenta: "bg-petal text-magenta",
+  cyan: "bg-cyan/10 text-cyan",
+  gold: "bg-gold/10 text-gold",
+  rose: "bg-rose/10 text-rose",
 };
 const ACCENT_BORDER = {
   magenta: "hover:border-magenta/50",
@@ -118,42 +118,42 @@ const ACCENT_BORDER = {
 ───────────────────────────────────────────── */
 export default function About() {
   return (
-    <div className="flex min-h-screen flex-col bg-snow text-ink dark:bg-[#050506] dark:text-white">
+    <div className="flex min-h-screen flex-col bg-snow text-ink">
 
       {/* ══════════════════════════════════════
           HERO
       ══════════════════════════════════════ */}
-      <section className="relative flex min-h-[90vh] items-center justify-center overflow-hidden px-5 pt-28 sm:pt-32">
+      <section className="relative flex min-h-[90vh] items-center justify-center overflow-hidden px-5 pt-40 sm:pt-44">
         {/* Ambient glow orbs */}
         <div
           aria-hidden
-          className="pointer-events-none absolute -left-32 -top-32 h-[520px] w-[520px] rounded-full bg-magenta/10 blur-[120px] dark:bg-magenta/8"
+          className="pointer-events-none absolute -left-32 -top-32 h-[520px] w-[520px] rounded-full bg-magenta/10 blur-[120px]"
         />
         <div
           aria-hidden
-          className="pointer-events-none absolute -right-24 bottom-0 h-[400px] w-[400px] rounded-full bg-cyan/10 blur-[100px] dark:bg-cyan/8"
+          className="pointer-events-none absolute -right-24 bottom-0 h-[400px] w-[400px] rounded-full bg-cyan/10 blur-[100px]"
         />
 
         <div className="relative z-10 mx-auto max-w-4xl text-center">
           <Reveal>
-            <span className="inline-block rounded-full bg-magenta/10 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.22em] text-magenta dark:bg-magenta/15">
+            <span className="inline-block rounded-full bg-magenta/10 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.22em] text-magenta">
               Our Commitment
             </span>
           </Reveal>
 
           <Reveal delay={1}>
-            <h1 className="mt-6 font-serif text-[clamp(3rem,8vw,6.5rem)] leading-[0.95] tracking-tight text-ink dark:text-white">
+            <h1 className="mt-6 font-serif text-[clamp(3rem,8vw,6.5rem)] leading-[0.95] tracking-tight text-ink">
               Transparency{" "}
-              <span className="italic text-magenta dark:text-rose">in Every Drop.</span>
+              <span className="italic text-magenta">in Every Drop.</span>
             </h1>
           </Reveal>
 
           <Reveal delay={2}>
-            <p className="mx-auto mt-8 max-w-2xl text-[1.1rem] leading-relaxed text-ink-soft dark:text-white/65 sm:text-xl">
+            <p className="mx-auto mt-8 max-w-2xl text-[1.1rem] leading-relaxed text-ink-soft sm:text-xl">
               We believe skincare is not just a market — it's a trust contract between
               a brand and a person's skin. Every decision we make at aura.skin flows
               from one question:{" "}
-              <em className="text-ink dark:text-white">"Would we use this ourselves?"</em>
+              <em className="text-ink">"Would we use this ourselves?"</em>
             </p>
           </Reveal>
 
@@ -185,14 +185,14 @@ export default function About() {
       {/* ══════════════════════════════════════
           STATS BAND
       ══════════════════════════════════════ */}
-      <section className="border-y border-line bg-white dark:border-white/10 dark:bg-white/[0.025]">
-        <div className="mx-auto grid max-w-5xl grid-cols-2 divide-x divide-line dark:divide-white/10 sm:grid-cols-4">
+      <section className="border-y border-line bg-white">
+        <div className="mx-auto grid max-w-5xl grid-cols-2 divide-x divide-line sm:grid-cols-4">
           {STATS.map((s, i) => (
             <Reveal key={s.label} delay={i * 0.5} className="flex flex-col items-center py-8 px-4 text-center">
-              <span className="font-serif text-[clamp(1.8rem,4vw,2.8rem)] leading-none text-ink dark:text-white">
+              <span className="font-serif text-[clamp(1.8rem,4vw,2.8rem)] leading-none text-ink">
                 {s.value}
               </span>
-              <span className="mt-2 text-xs font-semibold uppercase tracking-widest text-ink-soft dark:text-white/55">
+              <span className="mt-2 text-xs font-semibold uppercase tracking-widest text-ink-soft">
                 {s.label}
               </span>
             </Reveal>
@@ -208,10 +208,10 @@ export default function About() {
           <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-magenta">
             Our Four Commitments
           </p>
-          <h2 className="mt-3 font-serif text-[clamp(2rem,5vw,3.5rem)] leading-tight text-ink dark:text-white">
+          <h2 className="mt-3 font-serif text-[clamp(2rem,5vw,3.5rem)] leading-tight text-ink">
             What we promise. What we prove.
           </h2>
-          <p className="mt-4 text-base leading-relaxed text-ink-soft dark:text-white/60">
+          <p className="mt-4 text-base leading-relaxed text-ink-soft">
             Not marketing slogans — operational standards that every team member is
             accountable to, every single day.
           </p>
@@ -221,15 +221,15 @@ export default function About() {
           {PILLARS.map((p, i) => (
             <Reveal key={p.title} delay={i}>
               <article
-                className={`group flex h-full flex-col rounded-[1.5rem] border border-line bg-white p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-[var(--shadow-soft)] dark:border-white/10 dark:bg-white/[0.04] ${ACCENT_BORDER[p.accent]}`}
+                className={`group flex h-full flex-col rounded-[1.5rem] border border-line bg-white p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-[var(--shadow-soft)] ${ACCENT_BORDER[p.accent]}`}
               >
                 <span className={`mb-5 inline-grid h-12 w-12 place-items-center rounded-2xl ${ACCENT_ICON[p.accent]}`}>
                   <p.icon className="h-5 w-5" strokeWidth={1.7} />
                 </span>
-                <h3 className="font-serif text-xl leading-snug text-ink dark:text-white">
+                <h3 className="font-serif text-xl leading-snug text-ink">
                   {p.title}
                 </h3>
-                <p className="mt-3 flex-1 text-sm leading-relaxed text-ink-soft dark:text-white/60">
+                <p className="mt-3 flex-1 text-sm leading-relaxed text-ink-soft">
                   {p.body}
                 </p>
               </article>
@@ -241,7 +241,7 @@ export default function About() {
       {/* ══════════════════════════════════════
           TRANSPARENCY / AUTHENTICITY BANNER
       ══════════════════════════════════════ */}
-      <section className="relative overflow-hidden bg-ink px-5 py-20 dark:bg-[#0a0a0b] sm:py-28">
+      <section className="relative overflow-hidden bg-ink px-5 py-20 sm:py-28">
         {/* Pink glow top-left */}
         <div
           aria-hidden
@@ -334,7 +334,7 @@ export default function About() {
           <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-magenta">
             The Aura Standard
           </p>
-          <h2 className="mt-3 font-serif text-[clamp(2rem,5vw,3.2rem)] text-ink dark:text-white">
+          <h2 className="mt-3 font-serif text-[clamp(2rem,5vw,3.2rem)] text-ink">
             Guided by science, grounded in care.
           </h2>
         </Reveal>
@@ -342,11 +342,11 @@ export default function About() {
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
           {VALUES.map((v, i) => (
             <Reveal key={v.label} delay={i * 0.8}>
-              <div className="flex flex-col items-center gap-4 rounded-[1.5rem] bg-white py-8 px-5 text-center ring-1 ring-line transition-shadow hover:shadow-[var(--shadow-soft)] dark:bg-white/[0.04] dark:ring-white/10">
-                <span className="inline-grid h-12 w-12 place-items-center rounded-full bg-petal text-magenta dark:bg-magenta/15 dark:text-rose">
+              <div className="flex flex-col items-center gap-4 rounded-[1.5rem] bg-white py-8 px-5 text-center ring-1 ring-line transition-shadow hover:shadow-[var(--shadow-soft)]">
+                <span className="inline-grid h-12 w-12 place-items-center rounded-full bg-petal text-magenta">
                   <v.icon className="h-5 w-5" strokeWidth={1.7} />
                 </span>
-                <span className="font-serif text-lg text-ink dark:text-white">{v.label}</span>
+                <span className="font-serif text-lg text-ink">{v.label}</span>
               </div>
             </Reveal>
           ))}
@@ -357,12 +357,12 @@ export default function About() {
           FINAL CTA
       ══════════════════════════════════════ */}
       <section className="relative overflow-hidden px-5 pb-24 sm:pb-32">
-        <Reveal className="mx-auto max-w-3xl rounded-[2rem] bg-gradient-to-br from-petal via-white to-cyan-soft/30 p-10 text-center ring-1 ring-line dark:from-white/[0.07] dark:via-white/[0.025] dark:to-cyan/10 dark:ring-white/10 sm:p-14">
+        <Reveal className="mx-auto max-w-3xl rounded-[2rem] bg-gradient-to-br from-petal via-white to-cyan-soft/30 p-10 text-center ring-1 ring-line sm:p-14">
           <span className="text-4xl" role="img" aria-label="glow">✨</span>
-          <h2 className="mt-5 font-serif text-[clamp(2rem,5vw,3.4rem)] leading-tight text-ink dark:text-white">
+          <h2 className="mt-5 font-serif text-[clamp(2rem,5vw,3.4rem)] leading-tight text-ink">
             Your glow routine starts here.
           </h2>
-          <p className="mx-auto mt-4 max-w-xl text-base leading-relaxed text-ink-soft dark:text-white/65">
+          <p className="mx-auto mt-4 max-w-xl text-base leading-relaxed text-ink-soft">
             Explore verified K-Beauty and J-Beauty formulations curated for real skin, real lives,
             and the rituals that make mornings sacred.
           </p>

@@ -7,6 +7,7 @@ import {
   useState,
 } from "react";
 import { validate } from "../lib/coupons.js";
+import { maxQtyFor } from "../data/products.js";
 
 /**
  * Cart store — line items with quantity, localStorage persistence, and the
@@ -35,18 +36,22 @@ function reducer(state, action) {
   switch (action.type) {
     case "ADD": {
       const { item, qty } = action;
+      // Never let a line exceed the units actually on hand.
+      const max = maxQtyFor(item.id);
+      if (max === 0) return state;
       const existing = state.items.find((i) => i.id === item.id);
       if (existing) {
         return {
           items: state.items.map((i) =>
-            i.id === item.id ? { ...i, qty: i.qty + qty } : i
+            i.id === item.id ? { ...i, qty: Math.min(i.qty + qty, max) } : i
           ),
         };
       }
-      return { items: [...state.items, { ...slim(item), qty }] };
+      return { items: [...state.items, { ...slim(item), qty: Math.min(qty, max) }] };
     }
     case "SET_QTY": {
-      const qty = Math.max(0, action.qty);
+      const max = maxQtyFor(action.id);
+      const qty = Math.min(Math.max(0, action.qty), max);
       if (qty === 0) return { items: state.items.filter((i) => i.id !== action.id) };
       return {
         items: state.items.map((i) => (i.id === action.id ? { ...i, qty } : i)),
@@ -87,14 +92,25 @@ export function CartProvider({ children }) {
       try {
         const { email } = e.detail;
         const key = `cart_${email}`;
-        const saved = localStorage.getItem(key);
-        if (saved) {
-          dispatch({ type: "LOAD", items: JSON.parse(saved) });
-        } else {
-          dispatch({ type: "CLEAR" });
+        const saved = JSON.parse(localStorage.getItem(key) || "[]");
+        // Merge, don't overwrite. Checkout's AuthGate prompts login with a full
+        // bag — clearing it here would empty the cart mid-purchase. Guest lines
+        // win on quantity, and every line stays clamped to available stock.
+        const merged = [...saved];
+        for (const guestLine of state.items) {
+          const existing = merged.find((i) => i.id === guestLine.id);
+          if (existing) {
+            existing.qty = Math.min(
+              Math.max(existing.qty, guestLine.qty),
+              maxQtyFor(guestLine.id)
+            );
+          } else {
+            merged.push({ ...guestLine, qty: Math.min(guestLine.qty, maxQtyFor(guestLine.id)) });
+          }
         }
+        dispatch({ type: "LOAD", items: merged.filter((i) => i.qty > 0) });
       } catch {
-        dispatch({ type: "CLEAR" });
+        /* non-fatal — keep the current bag rather than destroying it */
       }
     };
     const handleLogout = (e) => {
@@ -170,6 +186,12 @@ export function CartProvider({ children }) {
       },
       removeItem: (id) => dispatch({ type: "REMOVE", id }),
       clear: () => dispatch({ type: "CLEAR" }),
+      // Units a line may hold — lets the stepper disable `+` at the cap.
+      maxQtyFor,
+      atMaxQty: (id) => {
+        const it = state.items.find((i) => i.id === id);
+        return (it?.qty ?? 0) >= maxQtyFor(id);
+      },
       // --- Drawer ---
       isOpen,
       openCart: () => setOpen(true),

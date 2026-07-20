@@ -22,12 +22,12 @@ export default function EmptyState({
       <motion.div
         animate={{ y: [0, -8, 0] }}
         transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-        className="grid h-20 w-20 place-items-center rounded-full bg-petal text-4xl ring-1 ring-rose/30 dark:bg-white/5 dark:ring-white/10"
+        className="grid h-20 w-20 place-items-center rounded-full bg-petal text-4xl ring-1 ring-rose/30"
       >
         {emoji}
       </motion.div>
-      <h3 className="mt-6 font-serif text-2xl text-ink dark:text-white">{title}</h3>
-      <p className="mt-2 text-sm text-ink-soft dark:text-white/70">{message}</p>
+      <h3 className="mt-6 font-serif text-2xl text-ink">{title}</h3>
+      <p className="mt-2 text-sm text-ink-soft">{message}</p>
       {actionLabel && (
         <Button variant="primary" size="md" className="mt-7" onClick={onAction}>
           {actionLabel}

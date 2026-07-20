@@ -14,15 +14,71 @@ const TABS = [
   { id: "wishlist", label: "Saved Items", icon: Heart },
 ];
 
+// Resolve a valid tab id from the hash query (e.g. #/account?tab=orders).
+// Returns null for plain #/account so mobile still opens on the tab menu.
+function readTabFromHash() {
+  const h = window.location.hash;
+  const qi = h.indexOf("?");
+  if (qi === -1) return null;
+  const tab = new URLSearchParams(h.slice(qi + 1)).get("tab");
+  return TABS.some((t) => t.id === tab) ? tab : null;
+}
+
 export default function Account() {
-  const { name, logout } = useUser();
+  const { name, authed, logout, openAuth } = useUser();
   // null means mobile menu is showing. Desktop always shows the current tab.
-  const [activeTab, setActiveTab] = useState(null); 
+  // Seed from the deep link so #/account?tab=orders lands on My Orders.
+  const [activeTab, setActiveTab] = useState(readTabFromHash);
   const currentId = activeTab || "profile";
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "auto" });
   }, [activeTab]);
+
+  // Honor tab changes that arrive while the page is already mounted — e.g. the
+  // PDP "review to earn" CTA navigating to #/account?tab=orders.
+  useEffect(() => {
+    const onHash = () => {
+      const t = readTabFromHash();
+      if (t) setActiveTab(t);
+    };
+    window.addEventListener("hashchange", onHash);
+    return () => window.removeEventListener("hashchange", onHash);
+  }, []);
+
+  // Guests can reach #/account by deep link — never show a dashboard (or a
+  // Sign Out button) for a session that doesn't exist.
+  if (!authed) {
+    return (
+      <div className="min-h-screen pb-28">
+        <div className="mx-auto max-w-md px-5 pt-12 text-center sm:px-8">
+          <span className="grid h-14 w-14 place-items-center mx-auto rounded-full bg-petal text-magenta">
+            <User className="h-6 w-6" strokeWidth={1.8} />
+          </span>
+          <h1 className="mt-5 font-serif text-[clamp(1.8rem,4vw,2.5rem)] leading-tight text-ink">
+            Your glow, saved 🌸
+          </h1>
+          <p className="mt-2 text-sm text-ink-soft">
+            Log in to see your orders, loyalty points, and saved items.
+          </p>
+          <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:justify-center">
+            <button
+              onClick={() => openAuth("login")}
+              className="rounded-full bg-magenta px-7 py-3.5 text-sm font-semibold text-white shadow-soft transition-shadow hover:shadow-[var(--shadow-glow-pink)]"
+            >
+              Log In
+            </button>
+            <button
+              onClick={() => openAuth("signup")}
+              className="rounded-full bg-white px-7 py-3.5 text-sm font-semibold text-ink ring-1 ring-line transition-colors hover:text-magenta hover:ring-magenta"
+            >
+              Sign Up
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const renderTab = () => {
     switch (currentId) {
@@ -35,7 +91,7 @@ export default function Account() {
   };
 
   return (
-    <div className="min-h-screen pb-28 pt-28 sm:pt-32">
+    <div className="min-h-screen pb-28">
       <div className="mx-auto max-w-7xl px-5 sm:px-8">
         
         {/* Header - Hidden on mobile when a tab is active to save space */}
@@ -48,7 +104,7 @@ export default function Account() {
           <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-magenta">
             Dashboard
           </p>
-          <h1 className="mt-2 font-serif text-[clamp(2rem,5vw,3.25rem)] leading-tight text-ink dark:text-white">
+          <h1 className="mt-2 font-serif text-[clamp(2rem,5vw,3.25rem)] leading-tight text-ink">
             Hi {name} 🌸
           </h1>
         </motion.div>
@@ -67,8 +123,8 @@ export default function Account() {
                     onClick={() => setActiveTab(tab.id)}
                     className={`group flex items-center justify-between rounded-2xl p-4 text-left transition-all ${
                       isActive
-                        ? "bg-snow text-magenta ring-1 ring-line dark:bg-white/5 dark:ring-white/10"
-                        : "text-ink-soft hover:bg-snow/50 hover:text-ink dark:text-white/60 dark:hover:bg-white/[0.02] dark:hover:text-white"
+                        ? "bg-snow text-magenta ring-1 ring-line"
+                        : "text-ink-soft hover:bg-snow/50 hover:text-ink"
                     }`}
                   >
                     <span className="flex items-center gap-3 font-medium">
@@ -80,14 +136,14 @@ export default function Account() {
                 );
               })}
               
-              <div className="my-4 border-t border-line dark:border-white/10" />
+              <div className="my-4 border-t border-line" />
               
               <button
                 onClick={() => {
                   logout();
                   window.location.hash = "#/";
                 }}
-                className="flex items-center gap-3 rounded-2xl p-4 text-left font-medium text-ink-soft transition-colors hover:bg-rose/10 hover:text-rose dark:text-white/60 dark:hover:bg-rose/10 dark:hover:text-rose"
+                className="flex items-center gap-3 rounded-2xl p-4 text-left font-medium text-ink-soft transition-colors hover:bg-rose/10 hover:text-rose"
               >
                 <LogOut className="h-5 w-5" strokeWidth={1.8} />
                 Sign Out
@@ -101,7 +157,7 @@ export default function Account() {
             {/* Mobile Back Button */}
             <button
               onClick={() => setActiveTab(null)}
-              className="mt-12 mb-6 flex items-center gap-1.5 text-sm font-medium text-ink-soft transition-colors hover:text-magenta lg:hidden dark:text-white/60"
+              className="mt-12 mb-6 flex items-center gap-1.5 text-sm font-medium text-ink-soft transition-colors hover:text-magenta lg:hidden"
             >
               <ChevronLeft className="h-4 w-4" strokeWidth={2} /> Back to Menu
             </button>

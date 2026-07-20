@@ -118,7 +118,7 @@ export default function PredictiveSearch({
   return (
     <div ref={rootRef} className="relative flex-1">
       <Search
-        className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-soft dark:text-white/50"
+        className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-soft"
         strokeWidth={1.8}
       />
       <input
@@ -135,7 +135,7 @@ export default function PredictiveSearch({
         aria-expanded={open}
         aria-controls="search-results-listbox"
         /* py-3 mobile = ~48px thumb-friendly target; tighter on desktop */
-        className="w-full rounded-full bg-white py-3 pl-11 pr-10 text-base text-ink ring-1 ring-line outline-none transition-shadow placeholder:text-ink-soft/70 focus:ring-2 focus:ring-magenta/50 sm:py-2.5 sm:text-sm dark:bg-white/5 dark:text-white dark:ring-white/10 dark:placeholder:text-white/40"
+        className="w-full rounded-full bg-white py-3 pl-11 pr-10 text-base text-ink ring-1 ring-line outline-none transition-shadow placeholder:text-ink-soft/70 focus:ring-2 focus:ring-magenta/50 sm:py-2.5 sm:text-sm"
       />
       {input && (
         <button
@@ -145,7 +145,7 @@ export default function PredictiveSearch({
             onQueryChange?.("");
           }}
           aria-label="Clear search"
-          className="absolute right-3 top-1/2 grid h-6 w-6 -translate-y-1/2 place-items-center rounded-full text-ink-soft hover:text-magenta dark:text-white/50"
+          className="absolute right-3 top-1/2 grid h-6 w-6 -translate-y-1/2 place-items-center rounded-full text-ink-soft hover:text-magenta"
         >
           <X className="h-3.5 w-3.5" strokeWidth={2.2} />
         </button>
@@ -166,12 +166,12 @@ export default function PredictiveSearch({
                the toolbar itself must be a positioned stacking context at
                `z-sticky` — see Shop.jsx. Together they guarantee the dropdown
                paints above all product cards. */
-            className="absolute left-0 right-0 top-full z-[var(--z-dropdown)] mt-2 max-h-[70vh] overflow-y-auto rounded-2xl bg-white/95 p-2 shadow-lift ring-1 ring-line backdrop-blur-md scrollbar-thin dark:bg-[var(--color-ink-lift)]/95 dark:ring-white/10"
+            className="absolute left-0 right-0 top-full z-[var(--z-dropdown)] mt-2 max-h-[70vh] overflow-y-auto rounded-2xl bg-white/95 p-2 shadow-lift ring-1 ring-line backdrop-blur-md scrollbar-thin"
           >
             {/* Suggested filter chips */}
             {suggestion && suggestion.facets.length > 0 && (
-              <div className="border-b border-line p-2 dark:border-white/10">
-                <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-soft dark:text-white/45">
+              <div className="border-b border-line p-2">
+                <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-soft">
                   Refine by
                 </p>
                 <div className="flex flex-wrap gap-1.5">
@@ -179,7 +179,7 @@ export default function PredictiveSearch({
                     <button
                       key={`${f.key}-${f.value}`}
                       onClick={() => pickFacet(f)}
-                      className="inline-flex items-center gap-1.5 rounded-full bg-petal px-3 py-1.5 text-xs font-medium text-magenta hover:bg-rose/30 dark:bg-magenta/15 dark:text-rose dark:hover:bg-magenta/25"
+                      className="inline-flex items-center gap-1.5 rounded-full bg-petal px-3 py-1.5 text-xs font-medium text-magenta hover:bg-rose/30"
                     >
                       <Tag className="h-3 w-3" strokeWidth={2} /> {f.label}
                     </button>
@@ -192,7 +192,7 @@ export default function PredictiveSearch({
             {showProducts && (
               <ul className="p-1">
                 {suggestion.isFuzzy && (
-                  <li className="px-2 py-1.5 text-[11px] italic text-ink-soft dark:text-white/45">
+                  <li className="px-2 py-1.5 text-[11px] italic text-ink-soft">
                     Showing close matches…
                   </li>
                 )}
@@ -206,7 +206,7 @@ export default function PredictiveSearch({
                   />
                 ))}
                 {suggestion.totalHits > suggestion.products.length && (
-                  <li className="px-3 py-2 text-[11px] text-ink-soft dark:text-white/45">
+                  <li className="px-3 py-2 text-[11px] text-ink-soft">
                     +{suggestion.totalHits - suggestion.products.length} more — see all results below
                   </li>
                 )}
@@ -247,11 +247,11 @@ function ProductRow({ product: p, active, onHover, onPick, compact = false }) {
         onClick={onPick}
         onMouseEnter={onHover}
         className={`flex w-full items-center gap-3 rounded-xl p-2 text-left transition-colors ${
-          active ? "bg-snow dark:bg-white/5" : "hover:bg-snow dark:hover:bg-white/5"
+          active ? "bg-snow" : "hover:bg-snow"
         }`}
       >
         <span
-          className={`relative ${compact ? "h-10 w-10" : "h-12 w-12"} shrink-0 overflow-hidden rounded-lg ring-1 ring-line dark:ring-white/10`}
+          className={`relative ${compact ? "h-10 w-10" : "h-12 w-12"} shrink-0 overflow-hidden rounded-lg ring-1 ring-line`}
           style={{
             background: `radial-gradient(120% 100% at 50% 0%, #fff 0%, ${p.tone} 75%, #ffe1ec 100%)`,
           }}
@@ -269,13 +269,13 @@ function ProductRow({ product: p, active, onHover, onPick, compact = false }) {
           <span className="block truncate text-[10px] font-semibold uppercase tracking-[0.12em] text-magenta">
             {p.brand}
           </span>
-          <span className="block truncate text-sm font-medium text-ink dark:text-white">
+          <span className="block truncate text-sm font-medium text-ink">
             {p.name}
           </span>
         </span>
         <span
           className={`shrink-0 ${compact ? "text-xs" : "text-sm"} font-semibold tabular-nums ${
-            p.isOnSale ? "text-magenta" : "text-ink dark:text-white"
+            p.isOnSale ? "text-magenta" : "text-ink"
           }`}
         >
           {formatPrice(p.price)}
@@ -292,7 +292,7 @@ function PopularPills({ onPick }) {
         <button
           key={s}
           onClick={() => onPick(s)}
-          className="rounded-full bg-snow px-3 py-1.5 text-xs font-medium text-ink-soft transition-colors hover:bg-petal hover:text-magenta dark:bg-white/5 dark:text-white/65 dark:hover:bg-white/10"
+          className="rounded-full bg-snow px-3 py-1.5 text-xs font-medium text-ink-soft transition-colors hover:bg-petal hover:text-magenta"
         >
           {s}
         </button>
@@ -314,16 +314,16 @@ function TrendingList({ trending, onPick }) {
 function EmptyPanel({ query, trending, onPickSearch, onPickProduct }) {
   return (
     <div className="p-2">
-      <p className="px-2 py-1.5 text-sm text-ink-soft dark:text-white/55">
+      <p className="px-2 py-1.5 text-sm text-ink-soft">
         No products match “{query}”.
       </p>
-      <p className="mt-3 mb-1.5 px-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-soft dark:text-white/45">
+      <p className="mt-3 mb-1.5 px-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-soft">
         Popular searches
       </p>
       <PopularPills onPick={onPickSearch} />
       {trending.length > 0 && (
         <>
-          <p className="mt-4 mb-1 inline-flex items-center gap-1.5 px-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-soft dark:text-white/45">
+          <p className="mt-4 mb-1 inline-flex items-center gap-1.5 px-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-soft">
             <TrendingUp className="h-3 w-3" strokeWidth={2} /> Trending now
           </p>
           <TrendingList trending={trending} onPick={onPickProduct} />
@@ -336,11 +336,11 @@ function EmptyPanel({ query, trending, onPickSearch, onPickProduct }) {
 function FocusedPanel({ trending, onPickSearch, onPickProduct }) {
   return (
     <div className="p-2">
-      <p className="mt-2 mb-1.5 px-2 inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-soft dark:text-white/45">
+      <p className="mt-2 mb-1.5 px-2 inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-soft">
         <Sparkles className="h-3 w-3" strokeWidth={2} /> Popular searches
       </p>
       <PopularPills onPick={onPickSearch} />
-      <p className="mt-4 mb-1 inline-flex items-center gap-1.5 px-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-soft dark:text-white/45">
+      <p className="mt-4 mb-1 inline-flex items-center gap-1.5 px-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-soft">
         <TrendingUp className="h-3 w-3" strokeWidth={2} /> Trending now
       </p>
       <TrendingList trending={trending} onPick={onPickProduct} />

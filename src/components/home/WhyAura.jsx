@@ -2,10 +2,10 @@ import { motion } from "framer-motion";
 import { Leaf, Heart, Sparkles, Recycle } from "lucide-react";
 
 const PILLARS = [
-  { icon: Leaf, title: "Organic", text: "Plant-born actives, thoughtfully sourced and skin-kind." },
-  { icon: Heart, title: "Cruelty-Free", text: "Never tested on animals. Leaping Bunny in spirit." },
-  { icon: Sparkles, title: "Clean", text: "No nasties — just transparent, effective formulas." },
-  { icon: Recycle, title: "Sustainable", text: "Recyclable packaging and refills that love the planet." },
+  { icon: Leaf, title: "Organic", text: "Plant-derived actives, sourced from growers we can name." },
+  { icon: Heart, title: "Cruelty-Free", text: "Never tested on animals, at any stage, by anyone we stock." },
+  { icon: Sparkles, title: "Clean", text: "Full INCI on every product. Nothing hidden behind “fragrance”." },
+  { icon: Recycle, title: "Sustainable", text: "Glass and aluminium where it works. Refills where it doesn’t." },
 ];
 
 const STATS = [
@@ -23,7 +23,7 @@ export default function WhyAura() {
           <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-magenta">
             The aura promise
           </p>
-          <h2 className="mt-2 font-serif text-[clamp(1.9rem,4.5vw,3.25rem)] leading-tight text-ink dark:text-white">
+          <h2 className="mt-2 font-serif text-[clamp(1.9rem,4.5vw,3.25rem)] leading-tight text-ink">
             Why you’ll <span className="italic text-gradient-glow">love</span> aura.skin
           </h2>
         </div>
@@ -36,13 +36,13 @@ export default function WhyAura() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, amount: 0.3 }}
               transition={{ duration: 0.5, delay: i * 0.08, ease: [0.22, 1, 0.36, 1] }}
-              className="rounded-[1.5rem] bg-white p-7 text-center ring-1 ring-line transition-shadow duration-500 hover:shadow-soft dark:bg-white/[0.03] dark:ring-white/10"
+              className="rounded-[1.5rem] bg-white p-7 text-center ring-1 ring-line transition-shadow duration-500 hover:shadow-soft"
             >
-              <span className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-petal text-magenta dark:bg-white/5 dark:text-rose">
+              <span className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-petal text-magenta">
                 <p.icon className="h-6 w-6" strokeWidth={1.7} />
               </span>
-              <h3 className="mt-4 font-serif text-xl text-ink dark:text-white">{p.title}</h3>
-              <p className="mt-1.5 text-sm leading-relaxed text-ink-soft dark:text-white/65">{p.text}</p>
+              <h3 className="mt-4 font-serif text-xl text-ink">{p.title}</h3>
+              <p className="mt-1.5 text-sm leading-relaxed text-ink-soft">{p.text}</p>
             </motion.div>
           ))}
         </div>

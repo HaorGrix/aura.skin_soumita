@@ -79,7 +79,7 @@ export default function Gallery({ product }) {
           image never swallows the fold (key polish for small phones). The
           `mx-auto + max-w` keeps it centered if the cap shrinks the width. */}
       <div className="order-1 flex-1 lg:order-2">
-        <div className="relative mx-auto aspect-[4/5] w-full max-w-[28rem] overflow-hidden rounded-2xl ring-1 ring-line sm:aspect-square sm:max-w-md lg:max-w-none lg:rounded-[1.5rem] dark:ring-white/10">
+        <div className="relative mx-auto aspect-[4/5] w-full max-w-[28rem] overflow-hidden rounded-2xl ring-1 ring-line sm:aspect-square sm:max-w-md lg:max-w-none lg:rounded-[1.5rem]">
           {/* Tab pills */}
           <div className="absolute left-3 top-3 z-20 flex gap-1.5">
             <button

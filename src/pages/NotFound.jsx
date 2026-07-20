@@ -2,7 +2,7 @@ import EmptyState from "../components/ui/EmptyState.jsx";
 
 export default function NotFound() {
   return (
-    <div className="min-h-screen pt-28 sm:pt-32">
+    <div className="min-h-screen">
       <EmptyState
         emoji="🫙"
         title="Page not found"

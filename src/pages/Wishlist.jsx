@@ -18,6 +18,12 @@ export default function Wishlist() {
     .filter(Boolean);
 
   const handleMoveToCart = (product) => {
+    // The cart refuses sold-out items, so removing it from the wishlist here
+    // would silently destroy the save and never add anything to the bag.
+    if (!product.inStock) {
+      toast.error("This one's sold out — we'll keep it saved for you.", "Out of stock");
+      return;
+    }
     addItem(product, 1);
     toggle(product.id);
     toast.cart(`${product.brand} — ${product.name}`);
@@ -25,7 +31,7 @@ export default function Wishlist() {
   };
 
   return (
-    <div className="min-h-screen pb-28 pt-28 sm:pt-32">
+    <div className="min-h-screen pb-28">
       <div className="mx-auto max-w-6xl px-5 sm:px-8">
 
         {/* Header */}
@@ -39,11 +45,11 @@ export default function Wishlist() {
             <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-magenta">
               Your favorites
             </p>
-            <h1 className="mt-2 font-serif text-[clamp(2rem,5vw,3.25rem)] leading-tight text-ink dark:text-white">
+            <h1 className="mt-2 font-serif text-[clamp(2rem,5vw,3.25rem)] leading-tight text-ink">
               Wishlist 🤍
             </h1>
             {savedProducts.length > 0 && (
-              <p className="mt-2 text-sm text-ink-soft dark:text-white/60">
+              <p className="mt-2 text-sm text-ink-soft">
                 {savedProducts.length} {savedProducts.length === 1 ? "item" : "items"} saved
               </p>
             )}
@@ -51,7 +57,7 @@ export default function Wishlist() {
           {savedProducts.length > 0 && (
             <button
               onClick={clear}
-              className="inline-flex items-center gap-1.5 text-sm font-medium text-ink-soft transition-colors hover:text-rose dark:text-white/50"
+              className="inline-flex items-center gap-1.5 text-sm font-medium text-ink-soft transition-colors hover:text-rose"
             >
               <Trash2 className="h-4 w-4" strokeWidth={1.8} />
               Clear all
@@ -77,7 +83,7 @@ export default function Wishlist() {
                 exit={{ opacity: 0, scale: 0.95 }}
                 transition={{ delay: i * 0.04, duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
                 layout
-                className="group relative flex flex-col overflow-hidden rounded-[1.25rem] bg-white ring-1 ring-line transition-shadow hover:shadow-[var(--shadow-glow-pink)] dark:bg-white/[0.03] dark:ring-white/10"
+                className="group relative flex flex-col overflow-hidden rounded-[1.25rem] bg-white ring-1 ring-line transition-shadow hover:shadow-[var(--shadow-glow-pink)]"
               >
                 {/* Remove button */}
                 <button
@@ -85,7 +91,7 @@ export default function Wishlist() {
                     toggle(p.id);
                     toast.show({ title: "Removed", message: p.name, variant: "info" });
                   }}
-                  className="absolute right-3 top-3 z-10 grid h-8 w-8 place-items-center rounded-full bg-white/80 text-ink-soft backdrop-blur transition-colors hover:bg-rose/10 hover:text-rose dark:bg-ink/50 dark:text-white/60"
+                  className="absolute right-3 top-3 z-10 grid h-8 w-8 place-items-center rounded-full bg-white/80 text-ink-soft backdrop-blur transition-colors hover:bg-rose/10 hover:text-rose"
                   aria-label="Remove from wishlist"
                 >
                   <X className="h-4 w-4" strokeWidth={2} />
@@ -94,7 +100,7 @@ export default function Wishlist() {
                 {/* Product image */}
                 <a
                   href={`#/product/${p.id}`}
-                  className="relative aspect-square w-full overflow-hidden bg-snow dark:bg-white/5"
+                  className="relative aspect-square w-full overflow-hidden bg-snow"
                   style={{
                     background: `radial-gradient(120% 100% at 50% 0%, #fff 0%, ${p.tone} 75%, #ffe1ec 100%)`,
                   }}
@@ -104,7 +110,7 @@ export default function Wishlist() {
                       src={p.image}
                       alt={p.name}
                       loading="lazy"
-                      className="absolute inset-0 h-full w-full object-contain p-4 transition-transform duration-500 group-hover:scale-105 mix-blend-multiply dark:mix-blend-normal"
+                      className="absolute inset-0 h-full w-full object-contain p-4 transition-transform duration-500 group-hover:scale-105 mix-blend-multiply"
                     />
                   )}
                 </a>
@@ -116,11 +122,11 @@ export default function Wishlist() {
                   </p>
                   <a
                     href={`#/product/${p.id}`}
-                    className="mt-1 line-clamp-2 font-serif text-base leading-snug text-ink transition-colors hover:text-magenta dark:text-white"
+                    className="mt-1 line-clamp-2 font-serif text-base leading-snug text-ink transition-colors hover:text-magenta"
                   >
                     {p.name}
                   </a>
-                  <p className="mt-2 text-sm font-semibold text-ink dark:text-white">
+                  <p className="mt-2 text-sm font-semibold text-ink">
                     {formatPrice(p.price)}
                   </p>
 

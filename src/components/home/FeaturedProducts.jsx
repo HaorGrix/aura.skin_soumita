@@ -33,13 +33,13 @@ export default function FeaturedProducts() {
             <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-magenta">
               Loved by 12k+ glowing humans
             </p>
-            <h2 className="mt-2 font-serif text-[clamp(1.9rem,4.5vw,3.25rem)] leading-tight text-ink dark:text-white">
+            <h2 className="mt-2 font-serif text-[clamp(1.9rem,4.5vw,3.25rem)] leading-tight text-ink">
               Shelf <span className="italic text-gradient-glow">favourites</span>
             </h2>
           </div>
 
           {/* Tab switch */}
-          <div className="flex rounded-full bg-snow p-1 ring-1 ring-line dark:bg-white/5 dark:ring-white/10">
+          <div className="flex rounded-full bg-snow p-1 ring-1 ring-line">
             {TABS.map((t) => (
               <button
                 key={t.id}
@@ -53,7 +53,7 @@ export default function FeaturedProducts() {
                     transition={{ type: "spring", stiffness: 360, damping: 30 }}
                   />
                 )}
-                <span className={`relative z-10 ${tab === t.id ? "text-white" : "text-ink-soft dark:text-white/60"}`}>
+                <span className={`relative z-10 ${tab === t.id ? "text-white" : "text-ink-soft"}`}>
                   {t.label}
                 </span>
               </button>
@@ -79,7 +79,7 @@ export default function FeaturedProducts() {
         <div className="mt-12 text-center">
           <a
             href="#/shop"
-            className="inline-flex items-center gap-2 rounded-full border border-ink/15 px-8 py-3.5 text-sm font-semibold text-ink transition-colors hover:border-magenta/50 hover:text-magenta dark:border-white/15 dark:text-white"
+            className="inline-flex items-center gap-2 rounded-full border border-ink/15 px-8 py-3.5 text-sm font-semibold text-ink transition-colors hover:border-magenta/50 hover:text-magenta"
           >
             Shop all products <ArrowRight className="h-4 w-4" strokeWidth={2} />
           </a>

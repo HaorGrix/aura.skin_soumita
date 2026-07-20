@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { ChevronLeft, ChevronRight, ArrowRight } from "lucide-react";
+import { CONCERNS, SKIN_TYPES } from "../../data/products.js";
 
 /* ------------------------------------------------------------------ *
  * Concern image registry — each file lives at /assests/{name}.
@@ -31,7 +32,21 @@ const CONCERN_TILES = [
   { label: "Sun Protection",   emoji: "☀️", tone: "var(--color-gold-soft)",  blurb: "Daily SPF shield" },
 ];
 
-const SKIN_TILES = ["Dry", "Oily", "Combination", "Sensitive", "Normal"];
+// Skin-type pills come straight from the catalog's canonical SKIN_TYPES so they
+// can never drift from what the filter engine actually recognises.
+const SKIN_TILES = SKIN_TYPES;
+
+// Dev guard — every concern tile's label MUST be a real catalog concern, or its
+// link would land on Shop with zero matches. Fails loud in dev, no-ops in prod.
+if (import.meta.env?.DEV) {
+  const orphanConcerns = CONCERN_TILES.filter((t) => !CONCERNS.includes(t.label));
+  if (orphanConcerns.length) {
+    console.warn(
+      "[ShopByConcern] These tiles have no matching catalog concern (clicks would return empty):",
+      orphanConcerns.map((t) => t.label)
+    );
+  }
+}
 
 /** A single dimensional, edge-to-edge concern card. The image fills a fixed
  *  3:4 frame with `object-cover` (perfect ratio, no awkward clipping) and the
@@ -45,7 +60,7 @@ function ConcernCard({ tile }) {
       href={`#/shop?concern=${encodeURIComponent(tile.label)}`}
       whileHover={{ y: -6 }}
       transition={{ type: "spring", stiffness: 300, damping: 24 }}
-      className="group relative w-[15.5rem] shrink-0 snap-start overflow-hidden rounded-[1.75rem] shadow-soft ring-1 ring-line transition-shadow duration-500 hover:shadow-lift sm:w-[17.5rem] dark:ring-white/10"
+      className="group relative w-[15.5rem] shrink-0 snap-start overflow-hidden rounded-[1.75rem] shadow-soft ring-1 ring-line transition-shadow duration-500 hover:shadow-lift sm:w-[17.5rem]"
     >
       <div className="relative aspect-[3/4] overflow-hidden">
         {/* Branded gradient — always painted (fallback + soft glow base) */}
@@ -74,7 +89,7 @@ function ConcernCard({ tile }) {
         />
 
         {/* Emoji chip — frosted glass, top-right */}
-        <span className="absolute right-3 top-3 grid h-10 w-10 place-items-center rounded-full bg-white/75 text-lg shadow-sm ring-1 ring-white/60 backdrop-blur transition-transform duration-500 group-hover:scale-110 group-hover:-rotate-6 dark:bg-white/15 dark:ring-white/30">
+        <span className="absolute right-3 top-3 grid h-10 w-10 place-items-center rounded-full bg-white/75 text-lg shadow-sm ring-1 ring-white/60 backdrop-blur transition-transform duration-500 group-hover:scale-110 group-hover:-rotate-6">
           {tile.emoji}
         </span>
 
@@ -109,8 +124,7 @@ export default function ShopByConcern() {
 
   const arrowBtn =
     "grid h-10 w-10 place-items-center rounded-full bg-white text-ink ring-1 ring-line " +
-    "transition-colors hover:bg-petal hover:text-magenta active:scale-95 " +
-    "dark:bg-white/5 dark:text-white/80 dark:ring-white/10 dark:hover:bg-white/10";
+    "transition-colors hover:bg-petal hover:text-magenta active:scale-95";
 
   return (
     <section className="py-10 sm:py-14">
@@ -121,7 +135,7 @@ export default function ShopByConcern() {
             <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-magenta">
               Signature solutions
             </p>
-            <h2 className="mt-2 font-serif text-[clamp(1.9rem,4.5vw,3.25rem)] leading-tight text-ink dark:text-white">
+            <h2 className="mt-2 font-serif text-[clamp(1.9rem,4.5vw,3.25rem)] leading-tight text-ink">
               Shop by <span className="italic text-gradient-glow">concern</span>
             </h2>
           </div>
@@ -151,14 +165,14 @@ export default function ShopByConcern() {
 
         {/* Skin type row */}
         <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-          <span className="text-sm font-medium text-ink-soft dark:text-white/55">
+          <span className="text-sm font-medium text-ink-soft">
             Or by skin type:
           </span>
           {SKIN_TILES.map((s) => (
             <a
               key={s}
               href={`#/shop?skinType=${encodeURIComponent(s)}`}
-              className="rounded-full bg-white px-4 py-2 text-sm font-medium text-ink ring-1 ring-line transition-colors hover:ring-magenta hover:text-magenta dark:bg-white/5 dark:text-white/80 dark:ring-white/10"
+              className="rounded-full bg-white px-4 py-2 text-sm font-medium text-ink ring-1 ring-line transition-colors hover:ring-magenta hover:text-magenta"
             >
               {s}
             </a>

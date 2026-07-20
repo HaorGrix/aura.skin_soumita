@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Star, X, Sparkles } from "lucide-react";
 import { useUser } from "../../context/UserContext.jsx";
+import { POINTS_PER_REVIEW } from "../../data/reviews.js";
 import { useToast } from "../ui/Toast.jsx";
 import Button from "../ui/Button.jsx";
 import { Input } from "../ui/index.js";
@@ -49,7 +50,12 @@ export default function WriteReviewModal({ product, open, onClose }) {
     if (!canSubmit) return;
     const ok = addReview({ productId: product.id, stars, title, body });
     if (ok) {
-      toast.success(`+1 point earned · ${points + 1} total ✨`, "Review published");
+      // Read the rate from the config — hardcoding "+1" silently lied the
+      // moment POINTS_PER_REVIEW changed.
+      toast.success(
+        `+${POINTS_PER_REVIEW} point${POINTS_PER_REVIEW > 1 ? "s" : ""} earned · ${points + POINTS_PER_REVIEW} total ✨`,
+        "Review published"
+      );
       onClose();
     } else {
       toast.error("You can only review a purchased product once.");
@@ -75,12 +81,12 @@ export default function WriteReviewModal({ product, open, onClose }) {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 30, scale: 0.97 }}
             transition={{ type: "spring", stiffness: 280, damping: 30 }}
-            className="relative z-10 w-full max-w-lg overflow-hidden rounded-t-[1.75rem] bg-white p-6 shadow-lift ring-1 ring-line sm:rounded-[1.75rem] sm:p-8 dark:bg-[var(--color-ink-deep)] dark:ring-white/10"
+            className="relative z-10 w-full max-w-lg overflow-hidden rounded-t-[1.75rem] bg-white p-6 shadow-lift ring-1 ring-line sm:rounded-[1.75rem] sm:p-8"
           >
             <button
               onClick={onClose}
               aria-label="Close"
-              className="absolute right-4 top-4 grid h-9 w-9 place-items-center rounded-full bg-snow text-ink/70 transition-colors hover:text-magenta dark:bg-white/5 dark:text-white/70"
+              className="absolute right-4 top-4 grid h-9 w-9 place-items-center rounded-full bg-snow text-ink/70 transition-colors hover:text-magenta"
             >
               <X className="h-4 w-4" strokeWidth={2} />
             </button>
@@ -88,7 +94,7 @@ export default function WriteReviewModal({ product, open, onClose }) {
             <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-magenta">
               {product.brand}
             </p>
-            <h2 className="mt-1 font-serif text-2xl leading-snug text-ink dark:text-white">
+            <h2 className="mt-1 font-serif text-2xl leading-snug text-ink">
               Review · {product.name}
             </h2>
             <p className="mt-1 inline-flex items-center gap-1.5 text-xs font-medium text-cyan">
@@ -97,7 +103,7 @@ export default function WriteReviewModal({ product, open, onClose }) {
 
             {/* Star picker */}
             <div className="mt-5">
-              <label className="text-sm font-semibold text-ink dark:text-white">Your rating</label>
+              <label className="text-sm font-semibold text-ink">Your rating</label>
               <div className="mt-2 flex items-center gap-1.5" onMouseLeave={() => setHover(0)}>
                 {[1, 2, 3, 4, 5].map((n) => {
                   const filled = (hover || stars) >= n;
@@ -124,7 +130,7 @@ export default function WriteReviewModal({ product, open, onClose }) {
 
             {/* Title */}
             <div className="mt-4">
-              <label className="text-sm font-semibold text-ink dark:text-white">Title <span className="font-normal text-ink-soft">(optional)</span></label>
+              <label className="text-sm font-semibold text-ink">Title <span className="font-normal text-ink-soft">(optional)</span></label>
               <Input
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
@@ -136,21 +142,21 @@ export default function WriteReviewModal({ product, open, onClose }) {
 
             {/* Body */}
             <div className="mt-4">
-              <label className="text-sm font-semibold text-ink dark:text-white">Your review</label>
+              <label className="text-sm font-semibold text-ink">Your review</label>
               <textarea
                 value={body}
                 onChange={(e) => setBody(e.target.value)}
                 rows={4}
                 maxLength={600}
                 placeholder="How did it work for your skin? Texture, results, delivery…"
-                className="mt-2 w-full resize-none rounded-xl bg-snow px-4 py-3 text-sm leading-relaxed text-ink ring-1 ring-line outline-none focus:ring-2 focus:ring-magenta/50 dark:bg-white/5 dark:text-white dark:ring-white/10"
+                className="mt-2 w-full resize-none rounded-xl bg-snow px-4 py-3 text-sm leading-relaxed text-ink ring-1 ring-line outline-none focus:ring-2 focus:ring-magenta/50"
               />
             </div>
 
             <div className="mt-5 flex items-center justify-end gap-3">
               <button
                 onClick={onClose}
-                className="rounded-full px-4 py-2.5 text-sm font-medium text-ink-soft transition-colors hover:text-ink dark:text-white/60 dark:hover:text-white"
+                className="rounded-full px-4 py-2.5 text-sm font-medium text-ink-soft transition-colors hover:text-ink"
               >
                 Cancel
               </button>

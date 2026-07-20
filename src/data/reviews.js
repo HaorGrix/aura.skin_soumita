@@ -6,8 +6,8 @@
  * generator in product-details.js tops each PDP up to ~6 reviews so no
  * product ever looks empty (scales to the full catalog).
  *
- * Also: the mock signed-in user's ORDER HISTORY — only products that
- * appear here are eligible for a "verified review + 1 point".
+ * Also: the mock signed-in user's ORDER HISTORY — only purchased products
+ * are eligible for a verified review (worth POINTS_PER_REVIEW points).
  * =================================================================== */
 import { PRODUCTS } from "./products.js";
 import { MILESTONES } from "../lib/rewards-config.js";
@@ -15,7 +15,22 @@ import { MILESTONES } from "../lib/rewards-config.js";
 /* Fast id → product lookup for order history / thumbnails. */
 export const productById = Object.fromEntries(PRODUCTS.map((p) => [p.id, p]));
 
-export const POINTS_PER_REVIEW = 1;
+/* ------------------------------------------------------------------ *
+ * Loyalty economy
+ * -------------------------------------------------------------------
+ * Two earn paths, so the milestone tiers in lib/coupons.js are actually
+ * reachable (review-only earning capped you at 1pt per purchased product,
+ * which made the top tier need more products than the catalog holds):
+ *   1. Reviews  — POINTS_PER_REVIEW per verified review (engagement)
+ *   2. Purchase — 1pt per TAKA_PER_POINT spent (the primary driver)
+ * ------------------------------------------------------------------ */
+export const POINTS_PER_REVIEW = 5;
+export const TAKA_PER_POINT = 1000;
+
+/** Points earned by an order of `total` taka. */
+export function pointsForOrder(total = 0) {
+  return Math.max(0, Math.floor(total / TAKA_PER_POINT));
+}
 
 /* ------------------------------------------------------------------ *
  * Curated reviews (24) — distributed across products.

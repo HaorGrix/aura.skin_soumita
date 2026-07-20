@@ -36,12 +36,17 @@ export function WishlistProvider({ children }) {
     const handleLogin = (e) => {
       const { email } = e.detail;
       const key = `wishlist_${email}`;
-      const saved = localStorage.getItem(key);
-      if (saved) {
-        setIds(JSON.parse(saved));
-      } else {
-        setIds([]);
-      }
+      // Merge, don't overwrite: anything the user hearted while browsing as a
+      // guest must survive login rather than being silently dropped.
+      setIds((guestIds) => {
+        let saved = [];
+        try {
+          saved = JSON.parse(localStorage.getItem(key) || "[]");
+        } catch {
+          /* non-fatal */
+        }
+        return [...new Set([...saved, ...guestIds])];
+      });
     };
     const handleLogout = (e) => {
       const { email } = e.detail;

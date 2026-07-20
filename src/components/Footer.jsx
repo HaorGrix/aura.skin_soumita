@@ -15,8 +15,8 @@ const COLUMNS = [
         title: "About",
         links: [
       { label: "Our Story", href: "#/about" },
-      { label: "Rituals", href: "#rituals" },
-      { label: "Journal", href: "#journal" },
+      { label: "Offers", href: "#/offers" },
+      { label: "Journal", href: "#/journal" },
       { label: "Sustainability", href: "#/about" },
     ],
   },
@@ -50,15 +50,15 @@ export default function Footer() {
   }
 
   return (
-    <footer className="border-t border-line bg-snow dark:border-white/10 dark:bg-[var(--color-ink)]">
+    <footer className="border-t border-line bg-snow">
       {/* Newsletter */}
       <div className="mx-auto max-w-7xl px-5 py-16 sm:px-8">
-        <div className="grid gap-8 rounded-[1.75rem] bg-gradient-to-br from-petal via-white to-cyan-soft/40 p-8 ring-1 ring-line dark:from-white/[0.05] dark:via-transparent dark:to-white/[0.02] dark:ring-white/10 sm:p-12 lg:grid-cols-2 lg:items-center">
+        <div className="grid gap-8 rounded-[1.75rem] bg-gradient-to-br from-petal via-white to-cyan-soft/40 p-8 ring-1 ring-line sm:p-12 lg:grid-cols-2 lg:items-center">
           <div>
-            <h2 className="font-serif text-[clamp(1.75rem,4vw,2.75rem)] leading-tight text-ink dark:text-white">
+            <h2 className="font-serif text-[clamp(1.75rem,4vw,2.75rem)] leading-tight text-ink">
               Join the <span className="italic text-gradient-glow">glow letter</span> 🌸
             </h2>
-            <p className="mt-3 max-w-md text-ink-soft dark:text-white/70">
+            <p className="mt-3 max-w-md text-ink-soft">
               Soulful skincare tips, early drops, and a little daily affirmation.
               Plus <strong>10% off</strong> your first ritual.
             </p>
@@ -72,13 +72,13 @@ export default function Footer() {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="your@email.com"
                 aria-label="Email address"
-                className="flex-1 rounded-full bg-white px-5 py-4 text-sm text-ink ring-1 ring-line outline-none focus:ring-2 focus:ring-magenta/50 dark:bg-white/5 dark:text-white dark:ring-white/10"
+                className="flex-1 rounded-full bg-white px-5 py-4 text-sm text-ink ring-1 ring-line outline-none focus:ring-2 focus:ring-magenta/50"
               />
               <button
                 type="submit"
                 disabled={!ok || sent}
                 className={`inline-flex items-center justify-center gap-2 rounded-full px-7 py-4 text-sm font-semibold text-white transition-all ${
-                  ok && !sent ? "bg-magenta hover:shadow-[var(--shadow-glow-pink)]" : "bg-ink/30 dark:bg-white/20"
+                  ok && !sent ? "bg-magenta hover:shadow-[var(--shadow-glow-pink)]" : "bg-ink/30"
                 }`}
               >
                 <AnimatePresence mode="wait" initial={false}>
@@ -112,14 +112,14 @@ export default function Footer() {
 
       {/* Links */}
       <div className="mx-auto max-w-7xl px-5 pb-12 sm:px-8">
-        <div className="grid gap-10 border-t border-line pt-12 dark:border-white/10 sm:grid-cols-2 lg:grid-cols-5">
+        <div className="grid gap-10 border-t border-line pt-12 sm:grid-cols-2 lg:grid-cols-5">
           <div className="lg:col-span-2">
-            <a href="#/" className="font-serif text-2xl text-ink dark:text-white">
+            <a href="#/" className="font-serif text-2xl text-ink">
               aura<span className="text-magenta">.</span>skin
             </a>
-            <p className="mt-3 max-w-xs text-sm leading-relaxed text-ink-soft dark:text-white/60">
-              Authentic K & J-Beauty, curated into rituals that help your skin —
-              and your spirit — glow from within.
+            <p className="mt-3 max-w-xs text-sm leading-relaxed text-ink-soft">
+              K- and J-Beauty, sourced honestly and sold without the theatre.
+              Bangladesh-based, shipping nationwide.
             </p>
             <div className="mt-5 flex gap-2">
               {SOCIALS.map((Icon, i) => (
@@ -127,7 +127,7 @@ export default function Footer() {
                   key={i}
                   href="#/about"
                   aria-label="Social link"
-                  className="grid h-10 w-10 place-items-center rounded-full bg-white text-ink-soft ring-1 ring-line transition-colors hover:text-magenta hover:ring-magenta/40 dark:bg-white/5 dark:text-white/60 dark:ring-white/10"
+                  className="grid h-10 w-10 place-items-center rounded-full bg-white text-ink-soft ring-1 ring-line transition-colors hover:text-magenta hover:ring-magenta/40"
                 >
                   <Icon className="h-[18px] w-[18px]" strokeWidth={1.7} />
                 </a>
@@ -137,11 +137,11 @@ export default function Footer() {
 
           {COLUMNS.map((col) => (
             <div key={col.title}>
-              <h3 className="text-sm font-semibold text-ink dark:text-white">{col.title}</h3>
+              <h3 className="text-sm font-semibold text-ink">{col.title}</h3>
               <ul className="mt-4 space-y-2.5">
                 {col.links.map((l) => (
                   <li key={l.label}>
-                    <a href={l.href} className="text-sm text-ink-soft transition-colors hover:text-magenta dark:text-white/60">
+                    <a href={l.href} className="text-sm text-ink-soft transition-colors hover:text-magenta">
                       {l.label}
                     </a>
                   </li>
@@ -152,7 +152,7 @@ export default function Footer() {
         </div>
 
         {/* Bottom bar */}
-        <div className="mt-12 flex flex-col items-center justify-between gap-4 border-t border-line pt-6 text-xs text-ink-soft dark:border-white/10 dark:text-white/45 sm:flex-row">
+        <div className="mt-12 flex flex-col items-center justify-between gap-4 border-t border-line pt-6 text-xs text-ink-soft sm:flex-row">
           <p>© {new Date().getFullYear()} aura.skin — Glow within, bloom daily. 🌸</p>
           <div className="flex gap-5">
             <a href="#/about" className="hover:text-magenta">Privacy</a>

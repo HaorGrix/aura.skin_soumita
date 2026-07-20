@@ -15,7 +15,7 @@ export default function Home() {
           no more bands of plain white. Dark mode keeps its own dark canvas. */}
       <div
         aria-hidden
-        className="pointer-events-none fixed inset-0 -z-20 dark:hidden"
+        className="pointer-events-none fixed inset-0 -z-20"
         style={{
           background:
             "linear-gradient(180deg, var(--color-petal) 0%, #fff5ef 38%, #ffe9f1 70%, #ffeef5 100%)",

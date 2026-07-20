@@ -67,7 +67,7 @@ export function ToastProvider({ children }) {
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: 10, scale: 0.92 }}
                 transition={{ type: "spring", stiffness: 420, damping: 30 }}
-                className="pointer-events-auto flex w-full max-w-sm items-start gap-3 rounded-[1.25rem] bg-white p-4 shadow-lift ring-1 ring-line dark:bg-[var(--color-ink-lift)] dark:ring-white/10"
+                className="pointer-events-auto flex w-full max-w-sm items-start gap-3 rounded-[1.25rem] bg-white p-4 shadow-lift ring-1 ring-line"
               >
                 <span
                   className={`mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-full ring-1 ${ACCENT[t.variant]}`}
@@ -76,12 +76,12 @@ export function ToastProvider({ children }) {
                 </span>
                 <div className="min-w-0 flex-1">
                   {t.title && (
-                    <p className="text-sm font-semibold text-ink dark:text-white">
+                    <p className="text-sm font-semibold text-ink">
                       {t.title}
                     </p>
                   )}
                   {t.message && (
-                    <p className="text-sm text-ink-soft dark:text-white/70">
+                    <p className="text-sm text-ink-soft">
                       {t.message}
                     </p>
                   )}
@@ -89,7 +89,7 @@ export function ToastProvider({ children }) {
                 <button
                   onClick={() => remove(t.id)}
                   aria-label="Dismiss"
-                  className="grid h-7 w-7 shrink-0 place-items-center rounded-full text-ink/50 transition-colors hover:bg-line hover:text-ink dark:text-white/50 dark:hover:bg-white/10 dark:hover:text-white"
+                  className="grid h-7 w-7 shrink-0 place-items-center rounded-full text-ink/50 transition-colors hover:bg-line hover:text-ink"
                 >
                   <X className="h-3.5 w-3.5" strokeWidth={2} />
                 </button>

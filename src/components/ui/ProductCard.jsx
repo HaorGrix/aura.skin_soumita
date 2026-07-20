@@ -111,7 +111,7 @@ export default function ProductCard({ product, onQuickView }) {
         {/* Out-of-stock overlay */}
         {!inStock && (
           <div className="absolute inset-0 z-[2] grid place-items-center bg-ink/45 backdrop-blur-[1px]">
-            <span className="rounded-full bg-white/90 px-4 py-1.5 text-xs font-bold uppercase tracking-[0.14em] text-ink dark:bg-black/70 dark:text-white">
+            <span className="rounded-full bg-white/90 px-4 py-1.5 text-xs font-bold uppercase tracking-[0.14em] text-ink">
               Out of Stock
             </span>
           </div>
@@ -129,7 +129,7 @@ export default function ProductCard({ product, onQuickView }) {
           }}
           aria-label={wished ? "Remove from wishlist" : "Add to wishlist"}
           aria-pressed={wished}
-          className="absolute right-3 top-3 z-10 grid h-9 w-9 place-items-center rounded-full bg-white/80 text-ink/70 backdrop-blur transition-colors hover:text-magenta dark:bg-black/40 dark:text-white/70"
+          className="absolute right-3 top-3 z-10 grid h-9 w-9 place-items-center rounded-full bg-white/80 text-ink/70 backdrop-blur transition-colors hover:text-magenta"
         >
           <motion.span
             key={String(wished)}
@@ -151,7 +151,7 @@ export default function ProductCard({ product, onQuickView }) {
           <div className="absolute inset-x-3 bottom-3 z-10 translate-y-3 opacity-0 transition-all duration-500 group-hover:translate-y-0 group-hover:opacity-100">
             <button
               onClick={() => onQuickView(product)}
-              className="flex w-full items-center justify-center gap-2 rounded-full bg-white/90 py-2.5 text-xs font-semibold text-ink backdrop-blur transition-colors hover:bg-white dark:bg-black/50 dark:text-white"
+              className="flex w-full items-center justify-center gap-2 rounded-full bg-white/90 py-2.5 text-xs font-semibold text-ink backdrop-blur transition-colors hover:bg-white"
             >
               <Eye className="h-4 w-4" strokeWidth={1.8} /> Quick View
             </button>
@@ -164,16 +164,16 @@ export default function ProductCard({ product, onQuickView }) {
         <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-magenta">
           {brand}
         </p>
-        <h3 className="mt-1 line-clamp-2 font-serif text-lg leading-snug text-ink dark:text-white">
+        <h3 className="mt-1 line-clamp-2 font-serif text-lg leading-snug text-ink">
           <a href={`#/product/${product.id}`} className="transition-colors hover:text-magenta">
             {name}
           </a>
         </h3>
 
         {/* Rating */}
-        <div className="mt-1.5 flex items-center gap-1.5 text-xs text-ink-soft dark:text-white/60">
+        <div className="mt-1.5 flex items-center gap-1.5 text-xs text-ink-soft">
           <Star className="h-3.5 w-3.5 text-gold" fill="var(--color-gold)" strokeWidth={0} />
-          <span className="font-medium text-ink dark:text-white">{rating.toFixed(1)}</span>
+          <span className="font-medium text-ink">{rating.toFixed(1)}</span>
           {reviews > 0 && <span>({reviews.toLocaleString()})</span>}
         </div>
 
@@ -183,13 +183,13 @@ export default function ProductCard({ product, onQuickView }) {
           <div className="flex items-baseline gap-2">
             <span
               className={`text-base font-semibold tabular-nums ${
-                onSale ? "text-magenta" : "text-ink dark:text-white"
+                onSale ? "text-magenta" : "text-ink"
               }`}
             >
               {formatPrice(price)}
             </span>
             {onSale && wasPrice && (
-              <span className="text-xs text-ink-soft line-through dark:text-white/50">
+              <span className="text-xs text-ink-soft line-through">
                 {formatPrice(wasPrice)}
               </span>
             )}

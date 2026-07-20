@@ -136,6 +136,8 @@ function p(brand, name, opts) {
     popularity, // drives "Featured"
     salesCount,  // drives "Best Selling" sort (correlated with popularity)
     inStock,
+    stock: 0,       // units on hand — assigned by the inventory pass below
+    isLowStock: false, // derived from `stock` by the inventory pass below
     rating,
     reviews,
   };
@@ -362,16 +364,40 @@ export const PRODUCTS = [
  * Sale fields are DERIVED from `compareAt` here in ONE place (single source
  * of truth) so cards & filters never recompute discounts ad-hoc.
  * ------------------------------------------------------------------ */
+/* product id → percent off (sets a struck `compareAt` above the active price).
+ * Values are hand-tuned into three coherent tiers so the homepage promo banners
+ * ("30% off", "Up to 50% off", "Up to 75% off") each land on a real, matching
+ * set of products. Tiers map to DISCOUNT_TIERS below:
+ *   • 30 tier  → 25–39%   • 50 tier → 40–50%   • 75 tier → 51–80%
+ * Every id here is verified in-stock (not in OUT_OF_STOCK) so a markdown never
+ * points at a sold-out product. */
 const PROMO = {
-  // product id → percent off (sets a struck `compareAt` above the active price)
-  "missha-all-around-safe-block-essence-sun-milk-spf50": 33,
-  "cosrx-advanced-snail-96-mucin-power-essence": 20,
-  "beauty-of-joseon-relief-sun-rice-probiotics-spf50": 15,
-  "the-ordinary-niacinamide-10-zinc-1": 25,
-  "cerave-moisturizing-cream": 18,
+  // —— 30% tier (25–39%) ——
+  "cosrx-advanced-snail-96-mucin-power-essence": 30,
+  "the-ordinary-niacinamide-10-zinc-1": 33,
+  "anua-niacinamide-10-txa-4-serum": 28,
+  "cerave-moisturizing-cream": 35,
+  "beauty-of-joseon-relief-sun-rice-probiotics-spf50": 30,
+  "skin1004-madagascar-centella-ampoule": 25,
   "isntree-hyaluronic-acid-watery-sun-gel-spf50": 30,
-  "anua-niacinamide-10-txa-4-serum": 22,
-  "missha-time-revolution-the-first-treatment-essence": 35,
+
+  // —— 50% tier (40–50%) ——
+  "missha-time-revolution-the-first-treatment-essence": 45,
+  "cosrx-low-ph-good-morning-gel-cleanser": 50,
+  "anua-heartleaf-77-soothing-toner": 40,
+  "the-ordinary-hyaluronic-acid-2-b5": 50,
+  "missha-all-around-safe-block-essence-sun-milk-spf50": 45,
+  "dr-althea-345-relief-cream": 42,
+  "isntree-hyper-vitamin-c-23-serum": 48,
+
+  // —— 75% tier (51–80%) — deep clearance ——
+  "missha-airy-fit-sheet-mask": 70,
+  "cosrx-clear-fit-master-patch": 60,
+  "the-ordinary-natural-moisturizing-factors-ha": 55,
+  "isntree-real-rose-calming-mask": 65,
+  "missha-premium-cica-aloe-soothing-gel": 72,
+  "anua-heartleaf-70-soothing-collagen-mask-4ea": 60,
+  "dr-althea-pure-grinding-cleansing-balm": 75,
 };
 const OUT_OF_STOCK = new Set([
   "beauty-of-joseon-dynasty-cream",
@@ -382,6 +408,33 @@ const OUT_OF_STOCK = new Set([
   "cosrx-centella-blemish-cream",
   "cosrx-bha-blackhead-power-liquid",
 ]);
+
+/* Hand-tuned low-stock units — drives the "Only N left" urgency state and the
+ * per-line quantity cap. Anything unlisted gets a healthy popularity-derived
+ * count; OUT_OF_STOCK items are forced to 0. `stock` is the single source of
+ * truth — `inStock` is derived from it below. */
+const LOW_STOCK = {
+  "cosrx-advanced-snail-96-mucin-power-essence": 3,
+  "the-ordinary-niacinamide-10-zinc-1": 2,
+  "beauty-of-joseon-relief-sun-rice-probiotics-spf50": 5,
+  "anua-heartleaf-77-soothing-toner": 4,
+  "cerave-moisturizing-cream": 1,
+  "missha-time-revolution-the-first-treatment-essence": 6,
+};
+
+/* A line can never exceed this, even when stock is deep — standard retail
+ * per-order cap that keeps the stepper sane. */
+export const MAX_PER_ORDER = 10;
+
+/** Live units available for a product id (0 when sold out / unknown). */
+export function stockFor(id) {
+  return PRODUCTS.find((p) => p.id === id)?.stock ?? 0;
+}
+
+/** How many units of `id` a single cart line may hold. */
+export function maxQtyFor(id) {
+  return Math.min(stockFor(id), MAX_PER_ORDER);
+}
 
 /* ------------------------------------------------------------------ *
  * Curated sales — hand-tuned, believable lifetime-units-sold numbers
@@ -419,7 +472,19 @@ const CURATED_SALES = {
 for (const item of PRODUCTS) {
   const pct = PROMO[item.id];
   if (pct) item.compareAt = +(item.price / (1 - pct / 100)).toFixed(2);
-  if (OUT_OF_STOCK.has(item.id)) item.inStock = false;
+
+  // —— Inventory —— `stock` (units) is the source of truth; `inStock` derives.
+  if (OUT_OF_STOCK.has(item.id) || item.inStock === false) {
+    item.stock = 0;
+  } else if (LOW_STOCK[item.id] != null) {
+    item.stock = LOW_STOCK[item.id];
+  } else {
+    // Deterministic healthy count, correlated with popularity (12–60 units).
+    item.stock = 12 + Math.round((item.popularity / 100) * 48);
+  }
+  item.inStock = item.stock > 0;
+  item.isLowStock = item.stock > 0 && item.stock <= 5;
+
   item.isOnSale = !!item.compareAt && item.compareAt > item.price;
   item.discountPercent = item.isOnSale ? Math.round((1 - item.price / item.compareAt) * 100) : 0;
   item.originalPrice = item.compareAt ?? null;
@@ -542,6 +607,18 @@ export const PRICE_RANGES = [
   { id: "40+", label: "৳4800+", min: 40, max: Infinity },
 ];
 
+/* Discount tiers — power the homepage promo banners AND the sidebar "Discount"
+ * facet. A product matches a tier when its computed `discountPercent` falls in
+ * [min, max]. Ranges are inclusive and non-overlapping, so each banner surfaces
+ * a distinct, accurate edit (clicking "Up to 50% off" can never show a 15%
+ * item). `min ≥ 25` on every tier means non-discounted products (percent 0) are
+ * excluded automatically — a tier implies "on sale". */
+export const DISCOUNT_TIERS = [
+  { id: "30", label: "30% Off", min: 25, max: 39 },
+  { id: "50", label: "Up to 50% Off", min: 40, max: 50 },
+  { id: "75", label: "Up to 75% Off", min: 51, max: 80 },
+];
+
 export const SORTS = [
   { id: "featured", label: "Featured" },
   { id: "best", label: "Best Selling" },
@@ -567,10 +644,11 @@ export { matchesSearch };
 export function queryProducts(all, { search = "", filters = {}, sort = "featured" }) {
   const q = search.trim().toLowerCase();
   const terms = tokenize(q);
-  const { skinType = [], concern = [], brand = [], category = [], price = [], availability = [] } =
+  const { skinType = [], concern = [], brand = [], category = [], price = [], availability = [], discount = [] } =
     filters;
 
   const priceRanges = PRICE_RANGES.filter((r) => price.includes(r.id));
+  const discountTiers = DISCOUNT_TIERS.filter((t) => discount.includes(t.id));
 
   // Non-search predicates — used to gate both strict + fuzzy passes.
   const passesFilters = (item) => {
@@ -582,6 +660,13 @@ export function queryProducts(all, { search = "", filters = {}, sort = "featured
     if (brand.length && !brand.includes(item.brand)) return false;
     if (category.length && !category.includes(item.category)) return false;
     if (priceRanges.length && !priceRanges.some((r) => item.price >= r.min && item.price < r.max)) return false;
+    // Discount tier — matches only products whose discountPercent lands in a
+    // selected tier's [min, max]. Non-sale items (percent 0) never qualify.
+    if (
+      discountTiers.length &&
+      !discountTiers.some((t) => item.discountPercent >= t.min && item.discountPercent <= t.max)
+    )
+      return false;
     return true;
   };
 
@@ -629,7 +714,8 @@ export function queryProducts(all, { search = "", filters = {}, sort = "featured
     brand.length ||
     category.length ||
     price.length ||
-    availability.length;
+    availability.length ||
+    discount.length;
   if (hasFilters || sort !== "featured") return ordered;
 
   // Generic catalog → float image-backed products to the top (stable).

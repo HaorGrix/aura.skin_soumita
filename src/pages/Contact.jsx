@@ -85,7 +85,7 @@ export default function Contact() {
 
   return (
     <>
-      <main className="min-h-screen bg-snow pt-28 text-ink dark:bg-[#050506] dark:text-white sm:pt-36">
+      <main className="min-h-screen bg-snow pt-40 text-ink sm:pt-44">
         <section className="mx-auto mt-12 grid max-w-7xl gap-10 px-5 pb-14 sm:px-8 lg:grid-cols-[0.9fr_1.1fr] lg:items-start">
           <motion.div
             initial={{ opacity: 0, y: 18 }}
@@ -98,7 +98,7 @@ export default function Contact() {
             <h1 className="mt-4 max-w-2xl font-serif text-[clamp(2.55rem,7vw,5.4rem)] leading-[0.96]">
               Need routine help, order care, or a brand question?
             </h1>
-            <p className="mt-6 max-w-xl text-base leading-relaxed text-ink-soft dark:text-white/68 sm:text-lg">
+            <p className="mt-6 max-w-xl text-base leading-relaxed text-ink-soft sm:text-lg">
               Send a note to the care desk. The form handles routine requests,
               order questions, collaboration notes, and ingredient guidance in
               one tidy place.
@@ -109,11 +109,11 @@ export default function Contact() {
                 <a
                   key={card.title}
                   href={card.href}
-                  className="rounded-[1.25rem] bg-white p-5 ring-1 ring-line transition-colors hover:text-magenta dark:bg-white/[0.035] dark:ring-white/10"
+                  className="rounded-[1.25rem] bg-white p-5 ring-1 ring-line transition-colors hover:text-magenta"
                 >
                   <card.icon className="h-5 w-5 text-magenta" strokeWidth={1.8} />
                   <p className="mt-4 text-sm font-semibold">{card.title}</p>
-                  <p className="mt-1 text-sm text-ink-soft dark:text-white/60">{card.text}</p>
+                  <p className="mt-1 text-sm text-ink-soft">{card.text}</p>
                 </a>
               ))}
             </div>
@@ -135,7 +135,7 @@ export default function Contact() {
             initial={{ opacity: 0, scale: 0.97 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.65, delay: 0.08, ease: [0.22, 1, 0.36, 1] }}
-            className="rounded-[1.75rem] bg-white p-5 shadow-soft ring-1 ring-line dark:bg-[#101014] dark:ring-white/10 sm:p-7"
+            className="rounded-[1.75rem] bg-white p-5 shadow-soft ring-1 ring-line sm:p-7"
           >
             <div className="grid gap-4 sm:grid-cols-2">
               <Field label="Name" error={errors.name}>
@@ -169,7 +169,7 @@ export default function Contact() {
               <select
                 value={form.topic}
                 onChange={(e) => update("topic", e.target.value)}
-                className="mt-1 w-full rounded-xl bg-snow px-4 py-3 text-sm text-ink ring-1 ring-line outline-none transition-shadow focus:ring-2 focus:ring-magenta/50 dark:bg-white/5 dark:text-white dark:ring-white/10"
+                className="mt-1 w-full rounded-xl bg-snow px-4 py-3 text-sm text-ink ring-1 ring-line outline-none transition-shadow focus:ring-2 focus:ring-magenta/50"
               >
                 <option>Routine help</option>
                 <option>Order support</option>
@@ -182,7 +182,7 @@ export default function Contact() {
               <textarea
                 value={form.message}
                 onChange={(e) => update("message", e.target.value)}
-                className={`w-full rounded-xl bg-snow px-4 py-3 text-sm text-ink ring-1 outline-none transition-shadow focus:ring-2 focus:ring-magenta/50 dark:bg-white/5 dark:text-white dark:ring-white/10 min-h-40 resize-y ${errors.message ? "ring-magenta" : "ring-line dark:ring-white/10"}`}
+                className={`w-full rounded-xl bg-snow px-4 py-3 text-sm text-ink ring-1 outline-none transition-shadow focus:ring-2 focus:ring-magenta/50 min-h-40 resize-y ${errors.message ? "ring-magenta" : "ring-line"}`}
                 placeholder="Tell us your skin type, concern, order number, or question."
               />
             </Field>
@@ -194,7 +194,7 @@ export default function Contact() {
           </motion.form>
         </section>
 
-        <section className="border-y border-line bg-white py-14 dark:border-white/10 dark:bg-white/[0.025] sm:py-20">
+        <section className="border-y border-line bg-white py-14 sm:py-20">
           <div className="mx-auto grid max-w-7xl gap-8 px-5 sm:px-8 lg:grid-cols-[0.85fr_1.15fr]">
             <div>
               <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-magenta">
@@ -203,7 +203,7 @@ export default function Contact() {
               <h2 className="mt-3 font-serif text-[clamp(2rem,5vw,3.4rem)] leading-tight">
                 The questions care usually answers first.
               </h2>
-              <p className="mt-4 max-w-md text-sm leading-relaxed text-ink-soft dark:text-white/62">
+              <p className="mt-4 max-w-md text-sm leading-relaxed text-ink-soft">
                 A little clarity before you write in, so the next step feels
                 simple.
               </p>
@@ -215,7 +215,7 @@ export default function Contact() {
                 return (
                   <div
                     key={faq.q}
-                    className="overflow-hidden rounded-[1.25rem] bg-snow ring-1 ring-line dark:bg-[#101014] dark:ring-white/10"
+                    className="overflow-hidden rounded-[1.25rem] bg-snow ring-1 ring-line"
                   >
                     <button
                       type="button"
@@ -236,7 +236,7 @@ export default function Contact() {
                           exit={{ height: 0, opacity: 0 }}
                           transition={{ duration: 0.25 }}
                         >
-                          <p className="px-5 pb-5 text-sm leading-relaxed text-ink-soft dark:text-white/62">
+                          <p className="px-5 pb-5 text-sm leading-relaxed text-ink-soft">
                             {faq.a}
                           </p>
                         </motion.div>
@@ -250,13 +250,13 @@ export default function Contact() {
         </section>
 
         <section className="mx-auto max-w-7xl px-5 py-14 sm:px-8 sm:py-20">
-          <div className="grid gap-6 rounded-[1.75rem] bg-gradient-to-br from-petal via-white to-cyan-soft/35 p-6 ring-1 ring-line dark:from-white/[0.06] dark:via-white/[0.025] dark:to-cyan/10 dark:ring-white/10 sm:p-8 lg:grid-cols-[1fr_auto] lg:items-center">
+          <div className="grid gap-6 rounded-[1.75rem] bg-gradient-to-br from-petal via-white to-cyan-soft/35 p-6 ring-1 ring-line sm:p-8 lg:grid-cols-[1fr_auto] lg:items-center">
             <div>
               <MessageCircle className="h-7 w-7 text-magenta" strokeWidth={1.8} />
               <h2 className="mt-4 font-serif text-[clamp(1.9rem,4vw,3rem)] leading-tight">
                 Building a routine for sensitive skin?
               </h2>
-              <p className="mt-3 max-w-2xl text-sm leading-relaxed text-ink-soft dark:text-white/62">
+              <p className="mt-3 max-w-2xl text-sm leading-relaxed text-ink-soft">
                 Start with cleanser, barrier support, and sunscreen. The shop
                 filters can narrow by concern, skin type, brand, and stock state.
               </p>
@@ -275,7 +275,7 @@ export default function Contact() {
 function Field({ label, error, children }) {
   return (
     <label className="mt-4 block">
-      <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em] text-ink-soft dark:text-white/50">
+      <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em] text-ink-soft">
         {label}
       </span>
       {children}

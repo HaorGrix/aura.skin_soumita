@@ -28,13 +28,13 @@ export default function SortMenu({ value, onChange }) {
         onClick={() => setOpen((v) => !v)}
         aria-haspopup="listbox"
         aria-expanded={open}
-        className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2.5 text-sm font-medium text-ink ring-1 ring-line transition-colors hover:ring-magenta/50 dark:bg-white/5 dark:text-white dark:ring-white/10"
+        className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2.5 text-sm font-medium text-ink ring-1 ring-line transition-colors hover:ring-magenta/50"
       >
         <ArrowUpDown className="h-4 w-4 text-magenta" strokeWidth={1.8} />
-        <span className="hidden sm:inline text-ink-soft dark:text-white/60">Sort:</span>
+        <span className="hidden sm:inline text-ink-soft">Sort:</span>
         {current.label}
         <ChevronDown
-          className={`h-4 w-4 text-ink-soft transition-transform dark:text-white/60 ${open ? "rotate-180" : ""}`}
+          className={`h-4 w-4 text-ink-soft transition-transform ${open ? "rotate-180" : ""}`}
           strokeWidth={1.8}
         />
       </button>
@@ -47,7 +47,7 @@ export default function SortMenu({ value, onChange }) {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -6, scale: 0.97 }}
             transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
-            className="absolute right-0 z-30 mt-2 w-56 overflow-hidden rounded-[1rem] bg-white p-1.5 shadow-lift ring-1 ring-line dark:bg-[var(--color-ink-lift)] dark:ring-white/10"
+            className="absolute right-0 z-30 mt-2 w-56 overflow-hidden rounded-[1rem] bg-white p-1.5 shadow-lift ring-1 ring-line"
           >
             {SORTS.map((s) => {
               const active = s.id === value;
@@ -60,8 +60,8 @@ export default function SortMenu({ value, onChange }) {
                     }}
                     className={`flex w-full items-center justify-between rounded-[0.7rem] px-3 py-2 text-sm transition-colors ${
                       active
-                        ? "bg-petal text-magenta dark:bg-white/10 dark:text-rose"
-                        : "text-ink-soft hover:bg-snow hover:text-ink dark:text-white/65 dark:hover:bg-white/5 dark:hover:text-white"
+                        ? "bg-petal text-magenta"
+                        : "text-ink-soft hover:bg-snow hover:text-ink"
                     }`}
                   >
                     {s.label}

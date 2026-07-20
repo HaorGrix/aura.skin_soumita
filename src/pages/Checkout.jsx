@@ -16,6 +16,7 @@ import {
   Tag,
   Truck as TrackIcon,
 } from "lucide-react";
+import { stockFor, maxQtyFor } from "../data/products.js";
 import { useCart } from "../context/CartContext.jsx";
 import { useUser } from "../context/UserContext.jsx";
 import { useToast } from "../components/ui/Toast.jsx";
@@ -23,6 +24,7 @@ import Button from "../components/ui/Button.jsx";
 import { Field, OptionCard, Input } from "../components/ui/index.js";
 import { FREE_SHIPPING_THRESHOLD, STANDARD_SHIPPING, EXPRESS_SHIPPING } from "../lib/shop-config.js";
 import { formatPrice } from "../lib/format.js";
+import { smartNavigate } from "../lib/nav-history.js";
 import { surface } from "../lib/design-system.js";
 import LineItem from "../components/cart/LineItem.jsx";
 import OrderSummary from "../components/cart/OrderSummary.jsx";
@@ -59,8 +61,8 @@ function saveCheckoutState(state) {
 }
 
 export default function Checkout() {
-  const { items, subtotal, count, clear, discountAmount, appliedCoupon, applyPromo, removeCoupon: cartRemoveCoupon } = useCart();
-  const { authed, openAuth, email: userEmail, name: userName, coupons, addOrder, usedCoupons, markCouponUsed, orders } = useUser();
+  const { items, subtotal, count, clear, removeItem, setQty, discountAmount, appliedCoupon, applyPromo, removeCoupon: cartRemoveCoupon } = useCart();
+  const { authed, openAuth, email: userEmail, name: userName, points, coupons, addOrder, usedCoupons, markCouponUsed, orders } = useUser();
   const { toast } = useToast();
   const savedCheckout = loadCheckoutState();
 
@@ -124,7 +126,9 @@ export default function Checkout() {
 
   // discountAmount comes from CartContext and auto-recalculates when subtotal changes.
   const newSubtotal = subtotal - discountAmount;
-  const isFreeShippingCoupon = appliedCoupon?.code.includes("FS");
+  // Read the coupon's own flag — matching on the code string would hand free
+  // shipping to any future code that happens to contain "FS" (GIFTS, OFFSEASON…).
+  const isFreeShippingCoupon = !!appliedCoupon?.freeShipping;
 
   const shipping =
     delivery === "express"
@@ -138,10 +142,13 @@ export default function Checkout() {
     e.preventDefault();
     const code = couponInput.trim().toUpperCase();
     if (!code) return;
-    // applyPromo checks general PROMOS; coupons (loyalty) passed as extra so
-    // context can verify both types without importing UserContext itself.
-    const result = applyPromo(code, coupons, usedCoupons, orders);
-    if (result?.alreadyUsed) {
+    // applyPromo checks general PROMOS; the loyalty account is passed through
+    // so context can verify both types without importing UserContext itself.
+    const result = applyPromo(code, { authed, points, coupons, usedCoupons, orders });
+    if (result?.requiresAuth) {
+      toast.error("Sign in to use your welcome code — it's tied to your account.", "Login required");
+      openAuth("login");
+    } else if (result?.alreadyUsed) {
       toast.error("This coupon has already been used on a previous order.", "Already redeemed");
     } else if (result?.firstOrderOnly) {
       toast.error("These codes are exclusive to your first order.", "First order only");
@@ -197,6 +204,28 @@ export default function Checkout() {
   }
 
   function placeOrder() {
+    // Re-validate inventory at the moment of purchase — units can drop while
+    // the bag sits idle (the cart snapshot doesn't carry stock).
+    const soldOut = items.filter((i) => stockFor(i.id) === 0);
+    const overQty = items.filter((i) => stockFor(i.id) > 0 && i.qty > maxQtyFor(i.id));
+
+    if (soldOut.length > 0) {
+      soldOut.forEach((i) => removeItem(i.id));
+      toast.error(
+        `${soldOut.map((i) => i.name).join(", ")} just sold out and ${soldOut.length > 1 ? "were" : "was"} removed from your bag.`,
+        "Out of stock"
+      );
+      return;
+    }
+    if (overQty.length > 0) {
+      overQty.forEach((i) => setQty(i.id, maxQtyFor(i.id)));
+      toast.error(
+        `We only have enough of ${overQty.map((i) => i.name).join(", ")} left — quantities updated.`,
+        "Limited stock"
+      );
+      return;
+    }
+
     setProcessing(true);
     setTimeout(() => {
       const orderNumber = "AUR-" + Math.floor(100000 + Math.random() * 900000);
@@ -240,7 +269,7 @@ export default function Checkout() {
   // —— Empty guard ——
   if (count === 0) {
     return (
-      <div className="min-h-screen pt-28 sm:pt-32">
+      <div className="min-h-screen">
         <EmptyState
           emoji="🧾"
           title="Nothing to check out"
@@ -258,16 +287,20 @@ export default function Checkout() {
   }
 
   return (
-    <div className="min-h-screen pt-28 sm:pt-32">
+    <div className="min-h-screen">
       <div className="mx-auto max-w-6xl px-5 sm:px-8">
         <a
           href="#/cart"
-          className="mt-12 inline-flex items-center gap-1.5 text-sm font-medium text-ink-soft transition-colors hover:text-magenta dark:text-white/60"
+          onClick={(e) => {
+            e.preventDefault();
+            smartNavigate("#/cart", "cart", "checkout");
+          }}
+          className="mt-12 inline-flex items-center gap-1.5 text-sm font-medium text-ink-soft transition-colors hover:text-magenta"
         >
           <ChevronLeft className="h-4 w-4" strokeWidth={1.8} /> Back to bag
         </a>
 
-        <h1 className="mt-4 font-serif text-[clamp(2rem,5vw,3rem)] leading-tight text-ink dark:text-white">
+        <h1 className="mt-4 font-serif text-[clamp(2rem,5vw,3rem)] leading-tight text-ink">
           Checkout
         </h1>
 
@@ -275,13 +308,13 @@ export default function Checkout() {
         <div className="mt-6 lg:hidden">
           <button
             onClick={() => setSummaryOpen((v) => !v)}
-            className="flex w-full items-center justify-between rounded-2xl bg-snow px-4 py-3 ring-1 ring-line dark:bg-white/[0.04] dark:ring-white/10"
+            className="flex w-full items-center justify-between rounded-2xl bg-snow px-4 py-3 ring-1 ring-line"
           >
-            <span className="inline-flex items-center gap-2 text-sm font-medium text-ink dark:text-white">
+            <span className="inline-flex items-center gap-2 text-sm font-medium text-ink">
               <ChevronDown className={`h-4 w-4 transition-transform ${summaryOpen ? "rotate-180" : ""}`} strokeWidth={1.8} />
               {summaryOpen ? "Hide" : "Show"} order summary
             </span>
-            <span className="font-serif text-lg text-ink dark:text-white">{formatPrice(total)}</span>
+            <span className="font-serif text-lg text-ink">{formatPrice(total)}</span>
           </button>
           <AnimatePresence>
             {summaryOpen && (
@@ -326,18 +359,18 @@ export default function Checkout() {
                           done
                             ? "bg-magenta text-white"
                             : current
-                            ? "bg-ink text-white dark:bg-white dark:text-ink"
-                            : "bg-snow text-ink-soft ring-1 ring-line dark:bg-white/5 dark:text-white/50 dark:ring-white/10"
+                            ? "bg-ink text-white"
+                            : "bg-snow text-ink-soft ring-1 ring-line"
                         }`}
                       >
                         {done ? <Check className="h-4 w-4" strokeWidth={3} /> : i + 1}
                       </span>
-                      <span className={`hidden text-sm font-medium sm:inline ${current || done ? "text-ink dark:text-white" : "text-ink-soft dark:text-white/45"}`}>
+                      <span className={`hidden text-sm font-medium sm:inline ${current || done ? "text-ink" : "text-ink-soft"}`}>
                         {s.label}
                       </span>
                     </button>
                     {i < STEPS.length - 1 && (
-                      <span className={`mx-3 h-px flex-1 ${done ? "bg-magenta" : "bg-line dark:bg-white/10"}`} />
+                      <span className={`mx-3 h-px flex-1 ${done ? "bg-magenta" : "bg-line"}`} />
                     )}
                   </li>
                 );
@@ -374,7 +407,7 @@ export default function Checkout() {
               {step > 0 ? (
                 <button
                   onClick={() => setStep((s) => s - 1)}
-                  className="text-sm font-medium text-ink-soft hover:text-magenta dark:text-white/60"
+                  className="text-sm font-medium text-ink-soft hover:text-magenta"
                 >
                   ← Back
                 </button>
@@ -386,7 +419,7 @@ export default function Checkout() {
                 disabled={(step === 0 && !isPhoneValid) || processing}
                 className={`inline-flex items-center justify-center gap-2 rounded-full px-8 py-3.5 text-sm font-semibold text-white transition-all ${
                   processing
-                    ? "cursor-not-allowed bg-ink/20 dark:bg-white/15"
+                    ? "cursor-not-allowed bg-ink/20"
                     : "bg-magenta hover:shadow-[var(--shadow-glow-pink)]"
                 }`}
               >
@@ -431,11 +464,15 @@ export default function Checkout() {
 /* ---------- Auth gate (checkout-only) ---------- */
 function AuthGate({ onGuest, openAuth }) {
   return (
-    <div className="min-h-screen pt-28 sm:pt-32">
+    <div className="min-h-screen">
       <div className="mx-auto max-w-md px-5 sm:px-8">
         <a
           href="#/cart"
-          className="mt-12 inline-flex items-center gap-1.5 text-sm font-medium text-ink-soft transition-colors hover:text-magenta dark:text-white/60"
+          onClick={(e) => {
+            e.preventDefault();
+            smartNavigate("#/cart", "cart", "checkout");
+          }}
+          className="mt-12 inline-flex items-center gap-1.5 text-sm font-medium text-ink-soft transition-colors hover:text-magenta"
         >
           <ChevronLeft className="h-4 w-4" strokeWidth={1.8} /> Back to bag
         </a>
@@ -444,15 +481,15 @@ function AuthGate({ onGuest, openAuth }) {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-          className="mt-6 rounded-[1.75rem] bg-white p-7 text-center shadow-soft ring-1 ring-line dark:bg-[#0f0f12] dark:ring-white/10 sm:p-9"
+          className="mt-6 rounded-[1.75rem] bg-white p-7 text-center shadow-soft ring-1 ring-line sm:p-9"
         >
-          <span className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-petal text-magenta dark:bg-white/10 dark:text-rose">
+          <span className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-petal text-magenta">
             <Lock className="h-6 w-6" strokeWidth={1.7} />
           </span>
-          <h1 className="mt-5 font-serif text-[clamp(1.8rem,5vw,2.4rem)] leading-tight text-ink dark:text-white">
+          <h1 className="mt-5 font-serif text-[clamp(1.8rem,5vw,2.4rem)] leading-tight text-ink">
             Almost there
           </h1>
-          <p className="mt-2 text-sm leading-relaxed text-ink-soft dark:text-white/60">
+          <p className="mt-2 text-sm leading-relaxed text-ink-soft">
             Sign in to check out faster, save your details, and track your order
             — or breeze through as a guest.
           </p>
@@ -466,13 +503,13 @@ function AuthGate({ onGuest, openAuth }) {
             </Button>
           </div>
 
-          <div className="my-5 flex items-center gap-3 text-xs uppercase tracking-wide text-ink-soft dark:text-white/45">
-            <span className="h-px flex-1 bg-line dark:bg-white/10" /> or <span className="h-px flex-1 bg-line dark:bg-white/10" />
+          <div className="my-5 flex items-center gap-3 text-xs uppercase tracking-wide text-ink-soft">
+            <span className="h-px flex-1 bg-line" /> or <span className="h-px flex-1 bg-line" />
           </div>
 
           <button
             onClick={onGuest}
-            className="text-sm font-semibold text-ink-soft underline-offset-4 transition-colors hover:text-magenta hover:underline dark:text-white/60 dark:hover:text-rose"
+            className="text-sm font-semibold text-ink-soft underline-offset-4 transition-colors hover:text-magenta hover:underline"
           >
             Continue as guest →
           </button>
@@ -487,7 +524,7 @@ function AuthGate({ onGuest, openAuth }) {
 function InfoStep({ form, set, setForm, setIsPhoneValid, errors }) {
   return (
     <div>
-      <h2 className="font-serif text-2xl text-ink dark:text-white">Contact & shipping</h2>
+      <h2 className="font-serif text-2xl text-ink">Contact & shipping</h2>
       <div className="mt-5 grid gap-4 sm:grid-cols-2">
         <Field label="Email" full error={errors.email}>
           <Input type="email" value={form.email} onChange={set("email")} placeholder="you@email.com" />
@@ -558,7 +595,7 @@ function DeliveryStep({ delivery, setDelivery, payMethod, setPayMethod, subtotal
   return (
     <div className="space-y-9">
       <div>
-        <h2 className="font-serif text-2xl text-ink dark:text-white">Delivery method</h2>
+        <h2 className="font-serif text-2xl text-ink">Delivery method</h2>
         <div className="mt-5 space-y-3">
           {deliveryOptions.map((o) => (
             <OptionCard
@@ -575,7 +612,7 @@ function DeliveryStep({ delivery, setDelivery, payMethod, setPayMethod, subtotal
       </div>
 
       <div>
-        <h2 className="font-serif text-2xl text-ink dark:text-white">Payment method</h2>
+        <h2 className="font-serif text-2xl text-ink">Payment method</h2>
         <div className="mt-5 space-y-3">
           {payOptions.map((o) => (
             <OptionCard
@@ -598,19 +635,19 @@ function PaymentStep({ pay, setPay, payMethod, total, errors, setErrors }) {
   if (payMethod === "cod") {
     return (
       <div>
-        <h2 className="font-serif text-2xl text-ink dark:text-white">Cash on Delivery</h2>
-        <p className="mt-1 flex items-center gap-1.5 text-sm text-ink-soft dark:text-white/55">
+        <h2 className="font-serif text-2xl text-ink">Cash on Delivery</h2>
+        <p className="mt-1 flex items-center gap-1.5 text-sm text-ink-soft">
           <Banknote className="h-3.5 w-3.5" strokeWidth={2} /> No card needed — pay at your doorstep.
         </p>
 
-        <div className="mt-5 flex items-start gap-4 rounded-2xl bg-petal/50 p-5 ring-1 ring-line dark:bg-white/[0.04] dark:ring-white/10">
+        <div className="mt-5 flex items-start gap-4 rounded-2xl bg-petal/50 p-5 ring-1 ring-line">
           <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-magenta text-white">
             <Banknote className="h-5 w-5" strokeWidth={1.7} />
           </span>
           <div>
-            <p className="text-sm font-medium text-ink-soft dark:text-white/60">Amount due on delivery</p>
-            <p className="font-serif text-3xl text-magenta dark:text-rose">{formatPrice(total)}</p>
-            <p className="mt-1.5 text-sm leading-relaxed text-ink-soft dark:text-white/55">
+            <p className="text-sm font-medium text-ink-soft">Amount due on delivery</p>
+            <p className="font-serif text-3xl text-magenta">{formatPrice(total)}</p>
+            <p className="mt-1.5 text-sm leading-relaxed text-ink-soft">
               Please keep the exact amount ready. Our courier will collect it when
               your order arrives.
             </p>
@@ -636,8 +673,8 @@ function PaymentStep({ pay, setPay, payMethod, total, errors, setErrors }) {
 
   return (
     <div>
-      <h2 className="font-serif text-2xl text-ink dark:text-white">Payment</h2>
-      <p className="mt-1 flex items-center gap-1.5 text-sm text-ink-soft dark:text-white/55">
+      <h2 className="font-serif text-2xl text-ink">Payment</h2>
+      <p className="mt-1 flex items-center gap-1.5 text-sm text-ink-soft">
         <Lock className="h-3.5 w-3.5" strokeWidth={2} /> Encrypted & secure · this is a demo, no real charge
       </p>
 
@@ -647,7 +684,7 @@ function PaymentStep({ pay, setPay, payMethod, total, errors, setErrors }) {
         </Field>
         <Field label="Card number" full error={errors.payNumber}>
           <div className="relative">
-            <CreditCard className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-soft dark:text-white/45" strokeWidth={1.7} />
+            <CreditCard className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-soft" strokeWidth={1.7} />
             <Input
               value={pay.number}
               onChange={update("number", fmtCard)}
@@ -672,24 +709,24 @@ function PaymentStep({ pay, setPay, payMethod, total, errors, setErrors }) {
 function SummaryPanel({ items, subtotal, shipping, total, discountAmount, appliedCoupon, couponInput, setCouponInput, applyCoupon, removeCoupon, authed, openAuth, orders, coupons, usedCoupons }) {
   return (
     <div className="space-y-4">
-      <div className="max-h-72 space-y-4 overflow-y-auto rounded-[1.5rem] bg-snow p-5 ring-1 ring-line dark:bg-white/[0.03] dark:ring-white/10">
+      <div className="max-h-72 space-y-4 overflow-y-auto rounded-[1.5rem] bg-snow p-5 ring-1 ring-line">
         {items.map((item) => (
           <LineItem key={item.id} item={item} compact readOnly />
         ))}
       </div>
 
-      <div className="rounded-[1.5rem] bg-white p-5 ring-1 ring-line dark:bg-[#0a0a0b] dark:ring-white/10">
+      <div className="rounded-[1.5rem] bg-white p-5 ring-1 ring-line">
         {appliedCoupon ? (
-          <div className="flex items-center justify-between rounded-xl bg-petal/50 p-3 ring-1 ring-line dark:bg-white/[0.04] dark:ring-white/10">
+          <div className="flex items-center justify-between rounded-xl bg-petal/50 p-3 ring-1 ring-line">
             <div className="flex items-center gap-2">
               <Tag className="h-4 w-4 text-magenta" strokeWidth={2} />
-              <span className="text-sm font-semibold text-ink dark:text-white">{appliedCoupon.code}</span>
+              <span className="text-sm font-semibold text-ink">{appliedCoupon.code}</span>
             </div>
-            <button onClick={removeCoupon} className="text-xs font-medium text-ink-soft hover:text-magenta dark:text-white/60">Remove</button>
+            <button onClick={removeCoupon} className="text-xs font-medium text-ink-soft hover:text-magenta">Remove</button>
           </div>
         ) : (
           <form onSubmit={applyCoupon} className="flex flex-col gap-3">
-            <p className="text-sm font-medium text-ink dark:text-white">Discount Code</p>
+            <p className="text-sm font-medium text-ink">Discount Code</p>
             <div className="flex items-center gap-2">
               <Input
                 type="text"
@@ -707,14 +744,15 @@ function SummaryPanel({ items, subtotal, shipping, total, discountAmount, applie
           coupons={coupons}
           usedCoupons={usedCoupons}
           appliedCoupon={appliedCoupon}
+          authed={authed}
         />
         {!authed && !appliedCoupon && (
-          <p className="mt-3 text-center text-xs text-ink-soft dark:text-white/50">
+          <p className="mt-3 text-center text-xs text-ink-soft">
             Have an account?{" "}
             <button
               type="button"
               onClick={() => openAuth("login")}
-              className="font-semibold text-magenta underline-offset-2 hover:underline dark:text-rose"
+              className="font-semibold text-magenta underline-offset-2 hover:underline"
             >
               Log in
             </button>{" "}
@@ -740,7 +778,7 @@ function Success({ order }) {
   };
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center overflow-hidden px-5 pt-28">
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden px-5">
       {SPARKLES.map((s, i) => (
         <motion.span
           key={i}
@@ -758,7 +796,7 @@ function Success({ order }) {
         initial={{ opacity: 0, y: 24 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-        className="relative z-10 w-full max-w-lg rounded-[1.75rem] bg-white p-8 text-center shadow-lift ring-1 ring-line dark:bg-[#0f0f12] dark:ring-white/10 sm:p-10"
+        className="relative z-10 w-full max-w-lg rounded-[1.75rem] bg-white p-8 text-center shadow-lift ring-1 ring-line sm:p-10"
       >
         <motion.div
           initial={{ scale: 0, rotate: -30 }}
@@ -769,34 +807,34 @@ function Success({ order }) {
           <Check className="h-10 w-10" strokeWidth={3} />
         </motion.div>
 
-        <h1 className="mt-6 font-serif text-3xl text-ink dark:text-white">
+        <h1 className="mt-6 font-serif text-3xl text-ink">
           Your ritual is on its way! <PartyPopper className="inline h-6 w-6 text-magenta" />
         </h1>
-        <p className="mt-3 text-ink-soft dark:text-white/65">
+        <p className="mt-3 text-ink-soft">
           Thank you for glowing with us. A confirmation has been sent to{" "}
-          <span className="font-medium text-ink dark:text-white">{order.email}</span>.
+          <span className="font-medium text-ink">{order.email}</span>.
         </p>
 
-        <div className="mt-6 rounded-2xl bg-snow p-4 text-left ring-1 ring-line dark:bg-white/[0.04] dark:ring-white/10">
+        <div className="mt-6 rounded-2xl bg-snow p-4 text-left ring-1 ring-line">
           <div className="flex justify-between text-sm">
-            <span className="text-ink-soft dark:text-white/60">Order number</span>
-            <span className="font-semibold text-ink dark:text-white">{order.number}</span>
+            <span className="text-ink-soft">Order number</span>
+            <span className="font-semibold text-ink">{order.number}</span>
           </div>
           <div className="mt-2 flex justify-between text-sm">
-            <span className="text-ink-soft dark:text-white/60">Items</span>
-            <span className="font-semibold text-ink dark:text-white">{order.count}</span>
+            <span className="text-ink-soft">Items</span>
+            <span className="font-semibold text-ink">{order.count}</span>
           </div>
           <div className="mt-2 flex justify-between text-sm">
-            <span className="text-ink-soft dark:text-white/60">Payment</span>
-            <span className="font-semibold text-ink dark:text-white">
+            <span className="text-ink-soft">Payment</span>
+            <span className="font-semibold text-ink">
               {order.payMethod === "cod" ? "Cash on Delivery" : "Card"}
             </span>
           </div>
           <div className="mt-2 flex justify-between text-sm">
-            <span className="text-ink-soft dark:text-white/60">
+            <span className="text-ink-soft">
               {order.payMethod === "cod" ? "Amount due" : "Total paid"}
             </span>
-            <span className="font-semibold text-ink dark:text-white">{formatPrice(order.total)}</span>
+            <span className="font-semibold text-ink">{formatPrice(order.total)}</span>
           </div>
         </div>
 
@@ -810,13 +848,13 @@ function Success({ order }) {
           </button>
           <a
             href="#/shop"
-            className="flex-1 rounded-full border border-ink/15 py-3.5 text-sm font-semibold text-ink transition-colors hover:border-magenta/50 dark:border-white/15 dark:text-white"
+            className="flex-1 rounded-full border border-ink/15 py-3.5 text-sm font-semibold text-ink transition-colors hover:border-magenta/50"
           >
             Continue shopping
           </a>
           <a
             href="#/"
-            className="flex-1 rounded-full border border-ink/15 py-3.5 text-sm font-semibold text-ink transition-colors hover:border-magenta/50 dark:border-white/15 dark:text-white"
+            className="flex-1 rounded-full border border-ink/15 py-3.5 text-sm font-semibold text-ink transition-colors hover:border-magenta/50"
           >
             Back home
           </a>

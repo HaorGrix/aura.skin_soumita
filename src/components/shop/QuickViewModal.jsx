@@ -42,7 +42,7 @@ export default function QuickViewModal({ product, onClose }) {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 30, scale: 0.97 }}
             transition={{ type: "spring", stiffness: 280, damping: 30 }}
-            className="relative z-10 grid w-full max-w-3xl grid-cols-1 overflow-hidden rounded-t-[1.75rem] bg-white shadow-lift ring-1 ring-line sm:grid-cols-2 sm:rounded-[1.75rem] dark:bg-[var(--color-ink-deep)] dark:ring-white/10"
+            className="relative z-10 grid w-full max-w-3xl grid-cols-1 overflow-hidden rounded-t-[1.75rem] bg-white shadow-lift ring-1 ring-line sm:grid-cols-2 sm:rounded-[1.75rem]"
           >
             {/* Media */}
             <div className="relative aspect-square sm:aspect-auto">
@@ -75,7 +75,7 @@ export default function QuickViewModal({ product, onClose }) {
               {/* Out-of-stock overlay */}
               {product.inStock === false && (
                 <div className="absolute inset-0 z-[2] grid place-items-center bg-ink/45 backdrop-blur-[1px]">
-                  <span className="rounded-full bg-white/90 px-4 py-1.5 text-xs font-bold uppercase tracking-[0.14em] text-ink dark:bg-black/70 dark:text-white">
+                  <span className="rounded-full bg-white/90 px-4 py-1.5 text-xs font-bold uppercase tracking-[0.14em] text-ink">
                     Out of Stock
                   </span>
                 </div>
@@ -87,19 +87,19 @@ export default function QuickViewModal({ product, onClose }) {
               <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-magenta">
                 {product.brand}
               </p>
-              <h2 className="mt-1 font-serif text-2xl leading-snug text-ink dark:text-white">
+              <h2 className="mt-1 font-serif text-2xl leading-snug text-ink">
                 {product.name}
               </h2>
 
-              <div className="mt-2 flex items-center gap-2 text-sm text-ink-soft dark:text-white/60">
+              <div className="mt-2 flex items-center gap-2 text-sm text-ink-soft">
                 <Star className="h-4 w-4 text-gold" fill="var(--color-gold)" strokeWidth={0} />
-                <span className="font-medium text-ink dark:text-white">
+                <span className="font-medium text-ink">
                   {product.rating.toFixed(1)}
                 </span>
                 <span>({product.reviews.toLocaleString()} reviews)</span>
               </div>
 
-              <p className="mt-4 text-sm leading-relaxed text-ink-soft dark:text-white/70">
+              <p className="mt-4 text-sm leading-relaxed text-ink-soft">
                 A {product.category.toLowerCase()} loved for{" "}
                 {product.concern.slice(0, 2).join(" & ").toLowerCase()}. Formulated with{" "}
                 {product.ingredients.join(", ")} for that lit-from-within glow. ✨
@@ -110,7 +110,7 @@ export default function QuickViewModal({ product, onClose }) {
                 {product.concern.map((c) => (
                   <span
                     key={c}
-                    className="rounded-full bg-petal px-2.5 py-1 text-[11px] font-medium text-magenta dark:bg-white/5 dark:text-rose"
+                    className="rounded-full bg-petal px-2.5 py-1 text-[11px] font-medium text-magenta"
                   >
                     {c}
                   </span>
@@ -129,13 +129,13 @@ export default function QuickViewModal({ product, onClose }) {
                 <div className="flex items-baseline gap-2">
                   <span
                     className={`text-2xl font-semibold tabular-nums ${
-                      product.isOnSale ? "text-magenta" : "text-ink dark:text-white"
+                      product.isOnSale ? "text-magenta" : "text-ink"
                     }`}
                   >
                     {formatPrice(product.price)}
                   </span>
                   {product.isOnSale && product.originalPrice && (
-                    <span className="text-sm text-ink-soft line-through dark:text-white/50">
+                    <span className="text-sm text-ink-soft line-through">
                       {formatPrice(product.originalPrice)}
                     </span>
                   )}
@@ -143,7 +143,7 @@ export default function QuickViewModal({ product, onClose }) {
                 {product.inStock === false ? (
                   <button
                     disabled
-                    className="inline-flex cursor-not-allowed items-center gap-2 rounded-full bg-ink/10 px-5 py-2.5 text-sm font-semibold text-ink-soft dark:bg-white/10 dark:text-white/40"
+                    className="inline-flex cursor-not-allowed items-center gap-2 rounded-full bg-ink/10 px-5 py-2.5 text-sm font-semibold text-ink-soft"
                   >
                     Out of Stock
                   </button>
@@ -177,7 +177,7 @@ export default function QuickViewModal({ product, onClose }) {
             <button
               onClick={onClose}
               aria-label="Close quick view"
-              className="absolute right-4 top-4 z-20 grid h-9 w-9 place-items-center rounded-full bg-white/85 text-ink/70 backdrop-blur transition-colors hover:text-magenta dark:bg-black/40 dark:text-white/70"
+              className="absolute right-4 top-4 z-20 grid h-9 w-9 place-items-center rounded-full bg-white/85 text-ink/70 backdrop-blur transition-colors hover:text-magenta"
             >
               <X className="h-4 w-4" strokeWidth={2} />
             </button>

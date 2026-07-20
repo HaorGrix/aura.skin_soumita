@@ -1,7 +1,17 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { SlidersHorizontal, Loader2 } from "lucide-react";
-import { PRODUCTS, CONCERNS, BRANDS, CATEGORIES, queryProducts } from "../data/products.js";
+import {
+  PRODUCTS,
+  CONCERNS,
+  BRANDS,
+  CATEGORIES,
+  SKIN_TYPES,
+  PRICE_RANGES,
+  DISCOUNT_TIERS,
+  AVAILABILITY,
+  queryProducts,
+} from "../data/products.js";
 import {
   FilterPanel,
   ActiveChips,
@@ -16,19 +26,43 @@ import { useSmoothScroll } from "../lib/useSmoothScroll.js";
 import { ProductCardSkeleton } from "../components/ui/Skeleton.jsx";
 import EmptyState from "../components/ui/EmptyState.jsx";
 import Button from "../components/ui/Button.jsx";
+import BackButton from "../components/ui/BackButton.jsx";
 
 const PAGE = 12;
 
-/* Read pre-filters from the hash query, e.g. #/shop?concern=Hydration&skinType=Dry&q=snail */
+/* Valid values per facet — the single source of truth for what a URL param may
+ * legally hold. Parsing filters incoming values through these sets so a stale,
+ * misspelled, or renamed param (e.g. an old "Acne" link vs "Acne & Blemishes")
+ * is dropped instead of silently producing an empty grid. */
+const FACET_VALUES = {
+  skinType: new Set(SKIN_TYPES),
+  concern: new Set(CONCERNS),
+  brand: new Set(BRANDS),
+  category: new Set(CATEGORIES),
+  price: new Set(PRICE_RANGES.map((r) => r.id)),
+  discount: new Set(DISCOUNT_TIERS.map((t) => t.id)),
+  availability: new Set(AVAILABILITY.map((a) => a.id)),
+};
+
+/* Read pre-filters from the hash query, e.g. #/shop?concern=Hydration&skinType=Dry&q=snail
+ * Values are validated against FACET_VALUES so any junk param resolves to "no
+ * filter" (full catalog) rather than an empty result set. Multiple values per
+ * facet (comma-separated) combine, and different facets combine too — so
+ * concern + skinType logically AND together in the query engine. */
 function parseHashQuery() {
-  const filters = { ...EMPTY_FILTERS };
+  const filters = structuredClone(EMPTY_FILTERS);
   let search = "";
-  const qs = window.location.hash.split("?")[1];
-  if (!qs) return { filters, search };
-  const params = new URLSearchParams(qs);
-  for (const key of ["skinType", "concern", "brand", "category", "price", "availability"]) {
-    const v = params.get(key);
-    if (v) filters[key] = v.split(",");
+  // indexOf (not split) so a value that ever contains "?" can't truncate the rest.
+  const hash = window.location.hash;
+  const qi = hash.indexOf("?");
+  if (qi === -1) return { filters, search };
+  const params = new URLSearchParams(hash.slice(qi + 1));
+  for (const key of Object.keys(FACET_VALUES)) {
+    const raw = params.get(key);
+    if (!raw) continue;
+    // Split, decode-safe (URLSearchParams already decoded), keep only known values.
+    const valid = raw.split(",").map((v) => v.trim()).filter((v) => FACET_VALUES[key].has(v));
+    if (valid.length) filters[key] = valid;
   }
   search = params.get("q") || "";
   return { filters, search };
@@ -37,17 +71,27 @@ function parseHashQuery() {
 export default function Shop() {
   // <PredictiveSearch /> owns the input + 300ms debounce and reports the
   // committed query via onQueryChange — Shop just stores it for the grid.
-  const [search, setSearch] = useState("");
-  const [filters, setFilters] = useState(EMPTY_FILTERS);
+  //
+  // Initialise filters/search DIRECTLY from the URL (lazy useState) so the very
+  // first render is already filtered. This must NOT be a mount effect: child
+  // effects run before parent mount effects, so <PredictiveSearch> reports its
+  // empty query first → handleQueryChange("") → syncHash() rewrites the hash to
+  // bare "#/shop", stripping ?concern=… before a mount-effect read could catch
+  // it. Seeding at render time means `filters` already holds the concern when
+  // that empty-query callback fires, so syncHash preserves it.
+  const [search, setSearch] = useState(() => parseHashQuery().search);
+  const [filters, setFilters] = useState(() => parseHashQuery().filters);
 
-  // Sync state from URL on mount and on browser back/forward navigation
+  // Re-sync on REAL navigation only — browser back/forward, or clicking another
+  // concern card while already on Shop. In-page filter toggles use
+  // history.replaceState (see syncHash), which does not emit hashchange, so they
+  // never round-trip through here and can't clobber React state.
   useEffect(() => {
     const syncFromUrl = () => {
       const { filters: parsedFilters, search: parsedSearch } = parseHashQuery();
       setFilters(parsedFilters);
       setSearch(parsedSearch);
     };
-    syncFromUrl();
     window.addEventListener("hashchange", syncFromUrl);
     return () => window.removeEventListener("hashchange", syncFromUrl);
   }, []);
@@ -185,7 +229,7 @@ export default function Shop() {
     // rides the page scroll; the sidebar is sticky with its own scroll.
     // Mobile: normal scrolling page (filters in the off-canvas drawer).
     // Desktop (lg+): a fixed-height flex shell whose two panes scroll on their own.
-    <div className="min-h-screen pt-28 sm:pt-32 lg:flex lg:h-screen lg:flex-col lg:overflow-hidden">
+    <div className="min-h-screen lg:flex lg:h-screen lg:flex-col lg:overflow-hidden">
       <div className="mx-auto flex w-full max-w-7xl flex-col px-5 sm:px-8 lg:min-h-0 lg:flex-1">
         {/* Header — compact on desktop to give the panes vertical room */}
         <motion.div
@@ -194,13 +238,14 @@ export default function Shop() {
           transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
           className="lg:shrink-0"
         >
+          <BackButton route="shop" />
           <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-magenta">
             Shop the ritual
           </p>
-          <h1 className="mt-2 font-serif text-[clamp(2.25rem,6vw,4rem)] leading-[1.02] text-ink dark:text-white lg:text-3xl xl:text-4xl">
+          <h1 className="mt-2 font-serif text-[clamp(2.25rem,6vw,4rem)] leading-[1.02] text-ink lg:text-3xl xl:text-4xl">
             All <span className="italic text-gradient-glow">glass-skin</span> essentials
           </h1>
-          <p className="mt-3 max-w-xl text-ink-soft dark:text-white/65 lg:hidden">
+          <p className="mt-3 max-w-xl text-ink-soft lg:hidden">
             Authentic K & J-Beauty from the brands you love — filtered to your skin,
             your concern, your glow. 🌸
           </p>
@@ -212,7 +257,7 @@ export default function Shop() {
             (the PredictiveSearch dropdown at z-dropdown) paints ABOVE the body
             grid — fixing the dropdown-behind-cards bug. */}
         <div className="sticky top-20 z-[var(--z-sticky)] mt-8 -mx-5 px-5 py-3 sm:top-24 sm:mx-0 sm:px-0 lg:static lg:relative lg:z-[var(--z-sticky)] lg:mt-4 lg:shrink-0">
-          <div className="flex flex-col gap-3 rounded-[1.25rem] bg-snow/70 p-3 backdrop-blur ring-1 ring-line sm:flex-row sm:items-center sm:bg-transparent sm:p-0 sm:ring-0 sm:backdrop-blur-0 dark:bg-white/[0.03] dark:ring-white/10 dark:sm:bg-transparent">
+          <div className="flex flex-col gap-3 rounded-[1.25rem] bg-snow/70 p-3 backdrop-blur ring-1 ring-line sm:flex-row sm:items-center sm:bg-transparent sm:p-0 sm:ring-0 sm:backdrop-blur-0">
             {/* Predictive search — owns input, debounce, dropdown.
                 onApplyFilter wraps the same toggleFilter the sidebar uses,
                 so clicking a "Brand · Anua" hint just toggles that filter. */}
@@ -229,7 +274,7 @@ export default function Shop() {
               {/* Mobile filter trigger */}
               <button
                 onClick={() => setSheetOpen(true)}
-                className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2.5 text-sm font-medium text-ink ring-1 ring-line lg:hidden dark:bg-white/5 dark:text-white dark:ring-white/10"
+                className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2.5 text-sm font-medium text-ink ring-1 ring-line lg:hidden"
               >
                 <SlidersHorizontal className="h-4 w-4 text-magenta" strokeWidth={1.8} />
                 Filters
@@ -254,7 +299,7 @@ export default function Shop() {
                   className={`shrink-0 rounded-full px-3.5 py-1.5 text-xs font-medium ring-1 transition-colors ${
                     on
                       ? "bg-magenta text-white ring-magenta"
-                      : "bg-white text-ink-soft ring-line dark:bg-white/5 dark:text-white/65 dark:ring-white/10"
+                      : "bg-white text-ink-soft ring-line"
                   }`}
                 >
                   {c}
@@ -278,7 +323,7 @@ export default function Shop() {
             /* `relative` makes this the containing block so the filters'
                `sr-only` (position:absolute) checkboxes can't escape the pane's
                overflow and inflate the document height. */
-            className="relative hidden lg:flex lg:h-full lg:min-h-0 lg:flex-col lg:overflow-y-auto lg:overscroll-contain lg:rounded-2xl lg:bg-snow lg:p-4 lg:ring-1 lg:ring-line scrollbar-thin dark:lg:bg-white/[0.025] dark:lg:ring-white/10"
+            className="relative hidden lg:flex lg:h-full lg:min-h-0 lg:flex-col lg:overflow-y-auto lg:overscroll-contain lg:rounded-2xl lg:bg-snow lg:p-4 lg:ring-1 lg:ring-line scrollbar-thin"
           >
             <FilterPanel filters={filters} onToggle={toggleFilter} onClear={clearFilters} />
           </aside>
@@ -292,7 +337,7 @@ export default function Shop() {
             <div>
             {/* Result count + active chips */}
             <div className="mb-5 flex flex-col gap-3">
-              <p className="text-sm text-ink-soft dark:text-white/60">
+              <p className="text-sm text-ink-soft">
                 {loading ? "Curating…" : `${results.length} products`}
               </p>
               <ActiveChips filters={filters} onToggle={toggleFilter} onClear={clearFilters} />
@@ -347,7 +392,7 @@ export default function Shop() {
                   </div>
                 )}
                 {!hasMore && results.length > PAGE && (
-                  <p className="mt-12 text-center text-sm text-ink-soft dark:text-white/50">
+                  <p className="mt-12 text-center text-sm text-ink-soft">
                     You’ve seen it all — that’s your full glow shelf. 🌺
                   </p>
                 )}
@@ -377,7 +422,7 @@ export default function Shop() {
                 Safari's collapsing address bar doesn't push the footer
                 off-screen. */}
             <motion.div
-              className="fixed inset-x-0 bottom-0 z-[var(--z-modal)] flex max-h-[85dvh] flex-col overflow-hidden rounded-t-[1.75rem] bg-white shadow-lift lg:hidden dark:bg-[#0f0f12]"
+              className="fixed inset-x-0 bottom-0 z-[var(--z-modal)] flex max-h-[85dvh] flex-col overflow-hidden rounded-t-[1.75rem] bg-white shadow-lift lg:hidden"
               initial={{ y: "100%" }}
               animate={{ y: 0 }}
               exit={{ y: "100%" }}
@@ -385,7 +430,7 @@ export default function Shop() {
             >
               {/* Non-scrolling header — drag handle */}
               <div className="shrink-0 px-6 pt-5">
-                <div className="mx-auto mb-4 h-1.5 w-12 rounded-full bg-line dark:bg-white/15" />
+                <div className="mx-auto mb-4 h-1.5 w-12 rounded-full bg-line" />
               </div>
 
               {/* Scrollable body — the ONLY scrollable region in the sheet.
@@ -415,7 +460,7 @@ export default function Shop() {
               </div>
 
               {/* Non-scrolling footer — always visible, even on tall filter lists */}
-              <div className="shrink-0 border-t border-line bg-white px-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-3 dark:border-white/10 dark:bg-[#0f0f12]">
+              <div className="shrink-0 border-t border-line bg-white px-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-3">
                 <Button
                   variant="primary"
                   magnetic={false}

@@ -27,6 +27,7 @@ import { ProductCardSkeleton } from "../components/ui/Skeleton.jsx";
 import EmptyState from "../components/ui/EmptyState.jsx";
 import Button from "../components/ui/Button.jsx";
 import BackButton from "../components/ui/BackButton.jsx";
+import { useBodyScrollLock } from "../lib/scrollLock.js";
 
 const PAGE = 12;
 
@@ -110,13 +111,10 @@ export default function Shop() {
   // Lock body scroll while the mobile filter sheet is open. Defense-in-depth
   // alongside `data-lenis-prevent` on the sheet's scroll body: even if a
   // native touch/wheel event escaped the sheet, the body itself can't move.
-  // Desktop (lg+) doesn't render the sheet, so this no-ops there.
-  useEffect(() => {
-    if (!sheetOpen) return;
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => { document.body.style.overflow = prev; };
-  }, [sheetOpen]);
+  // Desktop (lg+) doesn't render the sheet, so this no-ops there. Uses the
+  // shared ref-counted lock so it can't leave the body stuck if it overlaps
+  // with another overlay's lock.
+  useBodyScrollLock(sheetOpen);
 
   const results = useMemo(
     () => queryProducts(PRODUCTS, { search, filters, sort }),

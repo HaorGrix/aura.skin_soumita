@@ -6,6 +6,7 @@ import { useToast } from "../ui/Toast.jsx";
 import Button from "../ui/Button.jsx";
 import { Input } from "../ui/index.js";
 import { useFocusTrap } from "../../lib/useFocusTrap.js";
+import { useBodyScrollLock } from "../../lib/scrollLock.js";
 
 /**
  * AuthModal — the single, shared login / sign-up surface. Light and
@@ -42,16 +43,15 @@ export default function AuthModal() {
     }
   }, [open, initialMode]);
 
-  // Esc to close + lock body scroll while open.
+  // Lock page scroll while open (shared ref-counted lock).
+  useBodyScrollLock(open);
+
+  // Esc to close.
   useEffect(() => {
     if (!open) return;
     const onKey = (e) => e.key === "Escape" && closeAuth();
     document.addEventListener("keydown", onKey);
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.removeEventListener("keydown", onKey);
-      document.body.style.overflow = "";
-    };
+    return () => document.removeEventListener("keydown", onKey);
   }, [open, closeAuth]);
 
   function submit(e) {

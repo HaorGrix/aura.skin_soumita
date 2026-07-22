@@ -6,6 +6,7 @@ import { POINTS_PER_REVIEW } from "../../data/reviews.js";
 import { useToast } from "../ui/Toast.jsx";
 import Button from "../ui/Button.jsx";
 import { Input } from "../ui/index.js";
+import { useBodyScrollLock } from "../../lib/scrollLock.js";
 
 /**
  * WriteReviewModal — verified-buyer review composer. Reused by the PDP and the
@@ -30,16 +31,13 @@ export default function WriteReviewModal({ product, open, onClose }) {
     }
   }, [open, product?.id]);
 
+  useBodyScrollLock(open);
+
   useEffect(() => {
+    if (!open) return;
     const onKey = (e) => e.key === "Escape" && onClose();
-    if (open) {
-      document.addEventListener("keydown", onKey);
-      document.body.style.overflow = "hidden";
-    }
-    return () => {
-      document.removeEventListener("keydown", onKey);
-      document.body.style.overflow = "";
-    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
   }, [open, onClose]);
 
   if (!product) return null;

@@ -14,6 +14,7 @@ import { useCart } from "../context/CartContext.jsx";
 import { useUser } from "../context/UserContext.jsx";
 import { useWishlist } from "../context/WishlistContext.jsx";
 import { useFocusTrap } from "../lib/useFocusTrap.js";
+import { useBodyScrollLock } from "../lib/scrollLock.js";
 
 const LINKS = [
   { label: "Shop", href: "#/shop" },
@@ -57,7 +58,10 @@ export default function Navbar({ onOpenSearch }) {
   const [open, setOpen] = useState(false);
   
   const drawerRef = useRef(null);
+  const headerRef = useRef(null);
   useFocusTrap(drawerRef, open);
+  // Shared ref-counted lock — safe to overlap with a modal opened from the drawer.
+  useBodyScrollLock(open);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 24);
@@ -66,12 +70,24 @@ export default function Navbar({ onOpenSearch }) {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
+  // Publish the header's real height as `--header-h` so page clearance tracks it
+  // instead of a hardcoded pt-40/44 (which breaks if the marquee grows or the
+  // type scale changes). Capture the EXPANDED height only — at scroll top the
+  // bar is full-size; the scrolled/compact state is shorter and would pull
+  // content up under the header. A ResizeObserver keeps it correct across
+  // breakpoints and content changes; the CSS fallback covers first paint.
   useEffect(() => {
-    document.body.style.overflow = open ? "hidden" : "";
-    return () => {
-      document.body.style.overflow = "";
+    const el = headerRef.current;
+    if (!el) return;
+    const measure = () => {
+      if (window.scrollY > 24) return; // only trust the expanded layout
+      document.documentElement.style.setProperty("--header-h", `${el.offsetHeight}px`);
     };
-  }, [open]);
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
 
   const iconBtn =
     "relative grid h-11 w-11 place-items-center rounded-full p-2 text-ink/75 " +
@@ -80,6 +96,7 @@ export default function Navbar({ onOpenSearch }) {
   return (
     <>
       <motion.header
+        ref={headerRef}
         initial={{ y: -90, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.9, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}

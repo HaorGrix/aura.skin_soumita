@@ -6,21 +6,23 @@ import Button from "../ui/Button.jsx";
 import { useCart } from "../../context/CartContext.jsx";
 import { useToast } from "../ui/Toast.jsx";
 import { formatPrice } from "../../lib/format.js";
+import { useBodyScrollLock } from "../../lib/scrollLock.js";
 
 /** QuickViewModal — lightweight peek at a product without leaving the grid. */
 export default function QuickViewModal({ product, onClose }) {
   const { addItem, openCart } = useCart();
   const { toast } = useToast();
 
+  // Only lock while a product is actually open — this component is always
+  // mounted on Shop, so an unconditional lock would freeze the page itself.
+  useBodyScrollLock(!!product);
+
   useEffect(() => {
+    if (!product) return;
     const onKey = (e) => e.key === "Escape" && onClose();
     document.addEventListener("keydown", onKey);
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.removeEventListener("keydown", onKey);
-      document.body.style.overflow = "";
-    };
-  }, [onClose]);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [product, onClose]);
 
   return (
     <AnimatePresence>

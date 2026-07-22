@@ -164,8 +164,17 @@ export default function App() {
           )}
 
           {/* Full-bleed pages (home/about/contact) own their top spacing; every
-              other route inherits uniform navbar clearance here. */}
-          <main className={`relative w-full overflow-x-hidden ${["home", "about", "contact"].includes(route.name) ? "" : "pt-40 sm:pt-44 md:pt-44"}`}>
+              other route clears the fixed header dynamically via --header-h
+              (published by <Navbar>). The 11rem fallback matches the old pt-44
+              so first paint (before measurement) never overlaps. */}
+          <main
+            className="relative w-full overflow-x-hidden"
+            style={
+              ["home", "about", "contact"].includes(route.name)
+                ? undefined
+                : { paddingTop: "var(--header-h, 11rem)" }
+            }
+          >
             <Suspense fallback={<RouteFallback />}>
               {route.name === "product" ? (
                 <ErrorBoundary><Product id={route.id} /></ErrorBoundary>

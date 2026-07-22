@@ -119,6 +119,10 @@
     -webkit-text-size-adjust: 100%;
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
+    /* Reserve the scrollbar gutter so locking body scroll (modals/menus, via
+     * lib/scrollLock.js) can't shift the layout sideways when the scrollbar
+     * disappears. No-op on mobile (overlay scrollbars). */
+    scrollbar-gutter: stable;
   }
 
   body {

@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { X, BellRing, Check, Mail } from "lucide-react";
 import Button from "./Button.jsx";
 import { Input } from "./index.js";
+import { useBodyScrollLock } from "../../lib/scrollLock.js";
 
 /**
  * NotifyMeModal — back-in-stock waitlist (mock). Reused by ProductCard, the PDP
@@ -25,16 +26,13 @@ export default function NotifyMeModal({ product, open, onClose }) {
     }
   }, [open, product?.id]);
 
+  useBodyScrollLock(open);
+
   useEffect(() => {
+    if (!open) return;
     const onKey = (e) => e.key === "Escape" && onClose();
-    if (open) {
-      document.addEventListener("keydown", onKey);
-      document.body.style.overflow = "hidden";
-    }
-    return () => {
-      document.removeEventListener("keydown", onKey);
-      document.body.style.overflow = "";
-    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
   }, [open, onClose]);
 
   if (!product || !mounted) return null;

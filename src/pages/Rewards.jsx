@@ -224,7 +224,7 @@ function HowToEarn() {
       </div>
       <div className="mt-5 border-t border-line pt-5">
         <a
-          href="#/shop"
+          href="/shop"
           className="inline-flex items-center gap-2 rounded-full bg-magenta px-5 py-2.5 text-sm font-semibold text-white transition-all hover:bg-magenta-deep hover:shadow-[var(--shadow-glow-pink)]"
         >
           Shop to earn points →

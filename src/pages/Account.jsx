@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { User, Package, Sparkles, Heart, ChevronRight, ChevronLeft, LogOut } from "lucide-react";
 import { useUser } from "../context/UserContext.jsx";
+import { navigate, onRouteChange } from "../lib/navigate.js";
 import ProfileTab from "../components/account/ProfileTab.jsx";
 import LoyaltyTab from "../components/account/LoyaltyTab.jsx";
 import OrdersTab from "../components/account/OrdersTab.jsx";
@@ -14,13 +15,10 @@ const TABS = [
   { id: "wishlist", label: "Saved Items", icon: Heart },
 ];
 
-// Resolve a valid tab id from the hash query (e.g. #/account?tab=orders).
-// Returns null for plain #/account so mobile still opens on the tab menu.
+// Resolve a valid tab id from the URL query (e.g. /account?tab=orders).
+// Returns null for plain /account so mobile still opens on the tab menu.
 function readTabFromHash() {
-  const h = window.location.hash;
-  const qi = h.indexOf("?");
-  if (qi === -1) return null;
-  const tab = new URLSearchParams(h.slice(qi + 1)).get("tab");
+  const tab = new URLSearchParams(window.location.search).get("tab");
   return TABS.some((t) => t.id === tab) ? tab : null;
 }
 
@@ -36,15 +34,11 @@ export default function Account() {
   }, [activeTab]);
 
   // Honor tab changes that arrive while the page is already mounted — e.g. the
-  // PDP "review to earn" CTA navigating to #/account?tab=orders.
-  useEffect(() => {
-    const onHash = () => {
-      const t = readTabFromHash();
-      if (t) setActiveTab(t);
-    };
-    window.addEventListener("hashchange", onHash);
-    return () => window.removeEventListener("hashchange", onHash);
-  }, []);
+  // PDP "review to earn" CTA navigating to /account?tab=orders.
+  useEffect(() => onRouteChange(() => {
+    const t = readTabFromHash();
+    if (t) setActiveTab(t);
+  }), []);
 
   // Guests can reach #/account by deep link — never show a dashboard (or a
   // Sign Out button) for a session that doesn't exist.
@@ -141,7 +135,7 @@ export default function Account() {
               <button
                 onClick={() => {
                   logout();
-                  window.location.hash = "#/";
+                  navigate("/");
                 }}
                 className="flex items-center gap-3 rounded-2xl p-4 text-left font-medium text-ink-soft transition-colors hover:bg-rose/10 hover:text-rose"
               >

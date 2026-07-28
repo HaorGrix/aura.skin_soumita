@@ -1,3 +1,4 @@
+import { navigate } from "../../lib/navigate.js";
 import { motion } from "framer-motion";
 import { Heart, ShoppingBag, X } from "lucide-react";
 import { useWishlist } from "../../context/WishlistContext.jsx";
@@ -60,7 +61,7 @@ export default function WishlistTab() {
           title="Your wishlist is empty"
           message="Found something you love? Tap the heart icon to save it for later."
           actionLabel="Discover favorites"
-          onAction={() => (window.location.hash = "#/shop")}
+          onAction={() => (navigate("/shop"))}
         />
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -80,7 +81,7 @@ export default function WishlistTab() {
               </button>
 
               <a
-                href={`#/product/${p.id}`}
+                href={`/product/${p.id}`}
                 className="relative aspect-square w-full overflow-hidden rounded-xl bg-snow"
               >
                 <div
@@ -92,7 +93,7 @@ export default function WishlistTab() {
 
               <div className="mt-4 flex flex-1 flex-col">
                 <p className="text-[10px] font-semibold uppercase tracking-widest text-magenta">{p.brand}</p>
-                <a href={`#/product/${p.id}`} className="mt-1 line-clamp-2 text-sm font-medium leading-tight text-ink hover:text-magenta">
+                <a href={`/product/${p.id}`} className="mt-1 line-clamp-2 text-sm font-medium leading-tight text-ink hover:text-magenta">
                   {p.name}
                 </a>
                 <p className="mt-2 text-sm font-semibold text-ink">{formatPrice(p.price)}</p>

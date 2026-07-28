@@ -196,7 +196,7 @@ export default function Hero() {
             transition={{ delay: 1.15, duration: 0.85, ease: EASE }}
             className="mt-9 flex justify-center lg:justify-start"
           >
-            <MagneticButton variant="accent" as="a" href="#/shop" className="w-full sm:w-auto">
+            <MagneticButton variant="accent" as="a" href="/shop" className="w-full sm:w-auto">
               Start Your Ritual
               <ArrowRight className="h-4 w-4" strokeWidth={2} />
             </MagneticButton>
@@ -269,7 +269,7 @@ export default function Hero() {
       {/* Scroll indicator */}
       {!reduce && (
         <motion.a
-          href="#best-sellers"
+          href="#featured"
           aria-label="Scroll to explore"
           className="absolute bottom-6 left-1/2 z-10 hidden -translate-x-1/2 flex-col items-center gap-2 text-ink/60 lg:flex"
           initial={{ opacity: 0 }}

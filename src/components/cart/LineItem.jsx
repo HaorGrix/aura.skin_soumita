@@ -22,7 +22,7 @@ export default function LineItem({ item, compact = false, readOnly = false }) {
       className="flex gap-3.5"
     >
       <a
-        href={`#/product/${item.id}`}
+        href={`/product/${item.id}`}
         className={`${thumb} shrink-0 overflow-hidden rounded-xl ring-1 ring-line`}
         style={{
           background: `radial-gradient(120% 100% at 50% 0%, var(--color-white) 0%, ${item.tone} 75%, var(--color-petal-deep) 100%)`,
@@ -41,7 +41,7 @@ export default function LineItem({ item, compact = false, readOnly = false }) {
               {item.brand}
             </p>
             <a
-              href={`#/product/${item.id}`}
+              href={`/product/${item.id}`}
               className={`block truncate font-serif text-ink hover:text-magenta ${
                 compact ? "text-sm" : "text-base sm:text-lg"
               }`}

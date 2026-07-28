@@ -1,3 +1,4 @@
+import { navigate } from "../lib/navigate.js";
 import EmptyState from "../components/ui/EmptyState.jsx";
 
 export default function NotFound() {
@@ -8,7 +9,7 @@ export default function NotFound() {
         title="Page not found"
         message="This page seems to have evaporated. Let's get you back to your glowing routine."
         actionLabel="Return Home"
-        onAction={() => (window.location.hash = "#/")}
+        onAction={() => (navigate("/"))}
       />
     </div>
   );

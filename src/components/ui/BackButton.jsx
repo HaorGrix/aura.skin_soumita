@@ -1,5 +1,6 @@
 import { ChevronLeft } from "lucide-react";
 import { backTargetFor } from "../../lib/nav-history.js";
+import { navigate } from "../../lib/navigate.js";
 
 /**
  * BackButton — inline, in-flow back link.
@@ -16,9 +17,9 @@ import { backTargetFor } from "../../lib/nav-history.js";
 export default function BackButton({ route, label = "Back", className = "" }) {
   const goBack = () => {
     const target = backTargetFor(route);
-    // Assign, don't history.back(): the entry behind us is the loop.
-    if (window.location.hash === target) window.location.hash = "#/";
-    else window.location.hash = target;
+    // Navigate, don't history.back(): the entry behind us is the loop.
+    if (window.location.pathname === target) navigate("/");
+    else navigate(target);
   };
 
   return (

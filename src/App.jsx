@@ -15,6 +15,7 @@ import CartDrawer from "./components/cart/CartDrawer.jsx";
 import AuthModal from "./components/auth/AuthModal.jsx";
 import FloatingCart from "./components/FloatingCart.jsx";
 import { recordRoute } from "./lib/nav-history.js";
+import { navigate, onRouteChange } from "./lib/navigate.js";
 
 // Route-level code splitting — the home page loads eagerly; the rest lazy-load.
 const Shop = lazy(() => import("./pages/Shop.jsx"));
@@ -39,35 +40,37 @@ function RouteFallback() {
   );
 }
 
-// Minimal hash router — keeps the SPA tiny while we add pages.
+// Minimal History-API router — clean paths (/shop, /product/slug), no hash.
+// Query (?concern=…) lives in location.search and fragments (#section) in
+// location.hash; the route is derived purely from the pathname.
 function useRoute() {
   const parse = useCallback(() => {
-    const h = window.location.hash;
-    if (h === "" || h === "#/" || h.startsWith("#/?")) return { name: "home" };
-    if (h.startsWith("#/product/"))
-      return { name: "product", id: decodeURIComponent(h.slice("#/product/".length)) };
-    if (h.startsWith("#/shop")) return { name: "shop" };
-    if (h.startsWith("#/cart")) return { name: "cart" };
-    if (h.startsWith("#/checkout")) return { name: "checkout" };
-    if (h.startsWith("#/account")) return { name: "account" };
-    if (h.startsWith("#/wishlist")) return { name: "wishlist" };
-    if (h.startsWith("#/contact")) return { name: "contact" };
-    if (h.startsWith("#/about")) return { name: "about" };
-    if (h.startsWith("#/rewards")) return { name: "rewards" };
-    if (h.startsWith("#/offers")) return { name: "offers" };
-    if (h.startsWith("#/journal")) return { name: "journal" };
-    // Plain anchor (e.g. #rituals) — not a SPA route.
-    // Return "home" so the home page stays/mounts; the scroll-to-id useEffect
-    // in <App> then scrolls to the matching section after React finishes painting.
-    if (h.startsWith("#") && !h.startsWith("#/")) return { name: "home" };
+    // Normalize a trailing slash away (except root); query + fragment are ignored.
+    let p = window.location.pathname.replace(/\/+$/, "");
+    if (p === "") p = "/";
+    if (p === "/") return { name: "home" };
+    if (p.startsWith("/product/")) {
+      let id = p.slice("/product/".length);
+      // Guard: a malformed %-sequence must not throw and kill route parsing.
+      try { id = decodeURIComponent(id); } catch { /* keep raw slug */ }
+      return { name: "product", id };
+    }
+    if (p === "/shop") return { name: "shop" };
+    if (p === "/cart") return { name: "cart" };
+    if (p === "/checkout") return { name: "checkout" };
+    if (p === "/account") return { name: "account" };
+    if (p === "/wishlist") return { name: "wishlist" };
+    if (p === "/contact") return { name: "contact" };
+    if (p === "/about") return { name: "about" };
+    if (p === "/rewards") return { name: "rewards" };
+    if (p === "/offers") return { name: "offers" };
+    if (p === "/journal") return { name: "journal" };
     return { name: "404" };
   }, []);
   const [route, setRoute] = useState(parse);
-  useEffect(() => {
-    const onChange = () => setRoute(parse());
-    window.addEventListener("hashchange", onChange);
-    return () => window.removeEventListener("hashchange", onChange);
-  }, [parse]);
+  // onRouteChange listens on popstate (browser back/forward) + our synthetic
+  // navigate() event; it returns the matching cleanup fn for the effect.
+  useEffect(() => onRouteChange(() => setRoute(parse())), [parse]);
   return route;
 }
 
@@ -83,14 +86,13 @@ export default function App() {
     recordRoute(route.name);
   }, [route.name]);
 
-  // When a plain anchor (e.g. #offers, #rituals) routes back to "home", scroll
-  // to the matching section after React finishes painting. rAF gives one frame
-  // for the DOM to settle before querying the element.
+  // Honour a #fragment in the URL (e.g. the hero's #featured) by smooth-scrolling
+  // to the matching element after React paints. rAF gives one frame for the DOM
+  // to settle before querying. Clean-URL routes carry no hash, so this only
+  // fires for genuine in-page anchors.
   useEffect(() => {
-    if (route.name !== "home") return;
-    const h = window.location.hash;
-    if (!h.startsWith("#") || h.startsWith("#/") || h.length <= 1) return;
-    const id = h.slice(1);
+    const id = window.location.hash.slice(1);
+    if (!id) return;
     const raf = requestAnimationFrame(() => {
       document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
     });
@@ -140,9 +142,9 @@ export default function App() {
                     <PredictiveSearch 
                       products={PRODUCTS} brands={BRANDS} categories={CATEGORIES} trending={trending}
                       onQueryChange={() => {}} onApplyFilter={(key, val) => {
-                        window.location.hash = `#/shop?${key}=${val}`;
+                        navigate(`/shop?${key}=${val}`);
                         setIsSearchOpen(false);
-                      }} 
+                      }}
                     />
                   </div>
                 </motion.div>

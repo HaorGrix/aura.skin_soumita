@@ -92,7 +92,7 @@ export default function ProductCard({ product, onQuickView }) {
 
         {/* Stretched link to the PDP (sits beneath the action buttons) */}
         <a
-          href={`#/product/${product.id}`}
+          href={`/product/${product.id}`}
           aria-label={`View ${brand} ${name}`}
           className="absolute inset-0 z-[1]"
         />
@@ -165,7 +165,7 @@ export default function ProductCard({ product, onQuickView }) {
           {brand}
         </p>
         <h3 className="mt-1 line-clamp-2 font-serif text-lg leading-snug text-ink">
-          <a href={`#/product/${product.id}`} className="transition-colors hover:text-magenta">
+          <a href={`/product/${product.id}`} className="transition-colors hover:text-magenta">
             {name}
           </a>
         </h3>

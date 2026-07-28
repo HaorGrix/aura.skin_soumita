@@ -1,3 +1,4 @@
+import { navigate } from "../../lib/navigate.js";
 import { useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Search, X, SlidersHorizontal, ShieldCheck, Sparkles, ChevronRight } from "lucide-react";
@@ -34,7 +35,7 @@ export default function ReviewsSection({ product }) {
 
   // Deep-link straight to the Orders tab — the only place reviews are authored.
   const goToOrders = () => {
-    window.location.hash = "#/account?tab=orders";
+    navigate("/account?tab=orders");
   };
 
   const handleReviewCta = (e) => {

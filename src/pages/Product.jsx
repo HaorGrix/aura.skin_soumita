@@ -1,3 +1,4 @@
+import { navigate } from "../lib/navigate.js";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { ChevronLeft, Home } from "lucide-react";
@@ -49,7 +50,7 @@ export default function Product({ id }) {
           title="We couldn’t find that product"
           message="It may have sold out or moved. Let’s get you back to the good stuff."
           actionLabel="Back to Shop"
-          onAction={() => (window.location.hash = "#/shop")}
+          onAction={() => (navigate("/shop"))}
         />
       </div>
     );
@@ -69,20 +70,20 @@ export default function Product({ id }) {
           className="flex items-center gap-2 text-sm text-ink-soft"
           aria-label="Breadcrumb"
         >
-          <a href="#/" className="inline-flex items-center gap-1 hover:text-magenta">
+          <a href="/" className="inline-flex items-center gap-1 hover:text-magenta">
             <Home className="h-3.5 w-3.5" strokeWidth={1.8} /> Home
           </a>
           <span>/</span>
-          <a href="#/shop" className="hover:text-magenta">Shop</a>
+          <a href="/shop" className="hover:text-magenta">Shop</a>
           <span>/</span>
           <span className="truncate text-ink">{product.name}</span>
         </motion.nav>
 
         <a
-          href="#/shop"
+          href="/shop"
           onClick={(e) => {
             e.preventDefault();
-            smartNavigate("#/shop", "shop", "product");
+            smartNavigate("/shop", "shop", "product");
           }}
           className="mt-4 inline-flex items-center gap-1.5 text-sm font-medium text-ink-soft transition-colors hover:text-magenta"
         >

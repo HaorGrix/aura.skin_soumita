@@ -6,27 +6,27 @@ const COLUMNS = [
   {
     title: "Shop",
     links: [
-      { label: "All Products", href: "#/shop" },
-      { label: "Best Sellers", href: "#/shop" },
-      { label: "New Arrivals", href: "#/shop" },
+      { label: "All Products", href: "/shop" },
+      { label: "Best Sellers", href: "/shop" },
+      { label: "New Arrivals", href: "/shop" },
     ],
   },
       {
         title: "About",
         links: [
-      { label: "Our Story", href: "#/about" },
-      { label: "Offers", href: "#/offers" },
-      { label: "Journal", href: "#/journal" },
-      { label: "Sustainability", href: "#/about" },
+      { label: "Our Story", href: "/about" },
+      { label: "Offers", href: "/offers" },
+      { label: "Journal", href: "/journal" },
+      { label: "Sustainability", href: "/about" },
     ],
   },
   {
     title: "Help",
     links: [
-      { label: "Shipping & Returns", href: "#/about" },
-      { label: "Track Order", href: "#/about" },
-      { label: "FAQs", href: "#/contact" },
-      { label: "Contact", href: "#/contact" },
+      { label: "Shipping & Returns", href: "/about" },
+      { label: "Track Order", href: "/about" },
+      { label: "FAQs", href: "/contact" },
+      { label: "Contact", href: "/contact" },
     ],
   },
 ];
@@ -114,7 +114,7 @@ export default function Footer() {
       <div className="mx-auto max-w-7xl px-5 pb-12 sm:px-8">
         <div className="grid gap-10 border-t border-line pt-12 sm:grid-cols-2 lg:grid-cols-5">
           <div className="lg:col-span-2">
-            <a href="#/" className="font-serif text-2xl text-ink">
+            <a href="/" className="font-serif text-2xl text-ink">
               aura<span className="text-magenta">.</span>skin
             </a>
             <p className="mt-3 max-w-xs text-sm leading-relaxed text-ink-soft">
@@ -125,7 +125,7 @@ export default function Footer() {
               {SOCIALS.map((Icon, i) => (
                 <a
                   key={i}
-                  href="#/about"
+                  href="/about"
                   aria-label="Social link"
                   className="grid h-10 w-10 place-items-center rounded-full bg-white text-ink-soft ring-1 ring-line transition-colors hover:text-magenta hover:ring-magenta/40"
                 >
@@ -155,9 +155,9 @@ export default function Footer() {
         <div className="mt-12 flex flex-col items-center justify-between gap-4 border-t border-line pt-6 text-xs text-ink-soft sm:flex-row">
           <p>© {new Date().getFullYear()} aura.skin — Glow within, bloom daily. 🌸</p>
           <div className="flex gap-5">
-            <a href="#/about" className="hover:text-magenta">Privacy</a>
-            <a href="#/about" className="hover:text-magenta">Terms</a>
-            <a href="#/about" className="hover:text-magenta">Cookies</a>
+            <a href="/about" className="hover:text-magenta">Privacy</a>
+            <a href="/about" className="hover:text-magenta">Terms</a>
+            <a href="/about" className="hover:text-magenta">Cookies</a>
           </div>
         </div>
       </div>

@@ -1,3 +1,4 @@
+import { navigate } from "../../lib/navigate.js";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Search, X, Sparkles, TrendingUp, Tag } from "lucide-react";
@@ -88,7 +89,7 @@ export default function PredictiveSearch({
   }
 
   function pickProduct(p) {
-    window.location.hash = `#/product/${p.id}`;
+    navigate(`/product/${p.id}`);
     setOpen(false);
   }
 

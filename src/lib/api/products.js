@@ -23,9 +23,7 @@
  *      for the static catalog's placeholder USD-ish numbers).
  * =================================================================== */
 import { supabase } from "./client.js";
-
-// Must match the Supabase Storage bucket you create for product photos.
-const IMAGE_BUCKET = "product-images";
+import { publicImageUrl } from "./media.js";
 
 // Mirrors the TONE map in data/products.js — the DB stores the short key
 // ('pink', 'sage', …); the frontend wants the resolved hex for gradients.
@@ -39,11 +37,6 @@ const TONE = {
   lilac: "#ece4fb",
   sage: "#e3efe0",
 };
-
-function publicImageUrl(storagePath) {
-  if (!storagePath) return null;
-  return supabase.storage.from(IMAGE_BUCKET).getPublicUrl(storagePath).data.publicUrl;
-}
 
 /** Map one `products_public` row (snake_case, DB-shaped) into the camelCase
  *  object shape the rest of the app expects from a "product". */

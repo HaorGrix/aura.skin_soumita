@@ -68,7 +68,15 @@ if (!url || !serviceKey) {
   );
   process.exit(1);
 }
-const supabase = createClient(url, serviceKey);
+// persistSession/autoRefreshToken are browser-session concerns (localStorage,
+// a background refresh timer) that don't apply to a one-shot server script —
+// and that lingering refresh timer is exactly the kind of open handle that
+// can make Node crash instead of exiting cleanly on Windows if the process
+// is torn down while it's still armed. Disabling both keeps this script's
+// shutdown clean.
+const supabase = createClient(url, serviceKey, {
+  auth: { persistSession: false, autoRefreshToken: false },
+});
 
 /* ------------------------------------------------------------------ *
  * 1. Local image index — mirrors data/product-images.js's byFile map,
@@ -256,11 +264,14 @@ async function run() {
     .from("categories")
     .upsert(categoryRows, { onConflict: "slug", ignoreDuplicates: true })
     .select("id, name");
-  if (catErr) { console.error("Category upsert failed:", catErr.message); process.exit(1); }
+  // process.exitCode (not process.exit()) — sets the exit status but lets
+  // Node shut down naturally once pending network handles finish settling,
+  // instead of forcing an abrupt kill mid-request (the Windows/libuv crash).
+  if (catErr) { console.error("Category upsert failed:", catErr.message); process.exitCode = 1; return; }
 
   // ignoreDuplicates means pre-existing categories aren't returned — fetch the full set.
   const { data: allCats, error: allCatErr } = await supabase.from("categories").select("id, name");
-  if (allCatErr) { console.error("Category read-back failed:", allCatErr.message); process.exit(1); }
+  if (allCatErr) { console.error("Category read-back failed:", allCatErr.message); process.exitCode = 1; return; }
   const categoryIdByName = Object.fromEntries(allCats.map((c) => [c.name, c.id]));
 
   let upserted = 0, imagesLinked = 0, failed = 0;
@@ -337,4 +348,7 @@ async function run() {
   if (withNoImage) console.log(`  Products with NO matched image (will show the SVG fallback): ${withNoImage}`);
 }
 
-run();
+run().catch((err) => {
+  console.error("\nUnexpected error:", err.message || err);
+  process.exitCode = 1;
+});

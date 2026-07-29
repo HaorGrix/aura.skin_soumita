@@ -44,7 +44,12 @@ if (!url || !serviceKey) {
   process.exit(1);
 }
 
-const supabase = createClient(url, serviceKey);
+// Disabled for the same reason as migrate-catalog.mjs: a one-shot script has
+// no use for session persistence or a background token-refresh timer, and a
+// lingering handle from either can interfere with clean process shutdown.
+const supabase = createClient(url, serviceKey, {
+  auth: { persistSession: false, autoRefreshToken: false },
+});
 
 const MIME = {
   ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".png": "image/png",

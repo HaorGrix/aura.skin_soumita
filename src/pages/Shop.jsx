@@ -2,7 +2,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { SlidersHorizontal, Loader2 } from "lucide-react";
 import {
-  PRODUCTS,
   CONCERNS,
   BRANDS,
   CATEGORIES,
@@ -12,6 +11,7 @@ import {
   AVAILABILITY,
   queryProducts,
 } from "../data/products.js";
+import { listProducts } from "../lib/api/products.js";
 import {
   FilterPanel,
   ActiveChips,
@@ -98,10 +98,12 @@ export default function Shop() {
   }, []);
   const [sort, setSort] = useState("featured");
   const [visible, setVisible] = useState(PAGE);
-  const [loading, setLoading] = useState(true); // initial / re-filter
+  const [loading, setLoading] = useState(true); // true until the initial fetch settles
   const [loadingMore, setLoadingMore] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [quickView, setQuickView] = useState(null);
+  const [products, setProducts] = useState([]);
+  const [fetchError, setFetchError] = useState(null);
 
   // Land at the top when entering the page.
   useEffect(() => {
@@ -117,15 +119,35 @@ export default function Shop() {
   useBodyScrollLock(sheetOpen);
 
   const results = useMemo(
-    () => queryProducts(PRODUCTS, { search, filters, sort }),
-    [search, filters, sort]
+    () => queryProducts(products, { search, filters, sort }),
+    [products, search, filters, sort]
   );
 
-  // Curation skeleton is shown ONCE on mount only — never on keystrokes/sort —
-  // so incremental search & re-sorts update the grid instantly (no flashing).
+  // Fetch the live catalog. The skeleton (existing `loading` state — same UI
+  // as before) now reflects a REAL fetch instead of a fixed timer. Extracted
+  // so both the initial mount effect AND the error state's "Retry" button
+  // share one code path. `fetchToken` guards against a stale request (e.g. a
+  // retry fired, then the component unmounted, then the OLD request resolves)
+  // clobbering newer state.
+  const fetchToken = useRef(0);
+  const fetchProducts = useCallback(() => {
+    const token = ++fetchToken.current;
+    setLoading(true);
+    setFetchError(null);
+    listProducts().then(({ data, error }) => {
+      if (fetchToken.current !== token) return; // superseded or unmounted
+      if (error) setFetchError(error);
+      else setProducts(data);
+      setLoading(false);
+    });
+  }, []);
+
   useEffect(() => {
-    const t = setTimeout(() => setLoading(false), 450);
-    return () => clearTimeout(t);
+    fetchProducts();
+    return () => {
+      fetchToken.current++; // invalidate any in-flight request on unmount
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- fetch once on mount only
   }, []);
 
   // Query/filter/sort changes only reset paging; results re-render immediately.
@@ -218,8 +240,8 @@ export default function Shop() {
 
   // Trending = top 3 most-popular catalog items (drives the dropdown's empty state).
   const trending = useMemo(
-    () => [...PRODUCTS].sort((a, b) => b.popularity - a.popularity).slice(0, 3),
-    []
+    () => [...products].sort((a, b) => b.popularity - a.popularity).slice(0, 3),
+    [products]
   );
 
   return (
@@ -260,7 +282,7 @@ export default function Shop() {
                 onApplyFilter wraps the same toggleFilter the sidebar uses,
                 so clicking a "Brand · Anua" hint just toggles that filter. */}
             <PredictiveSearch
-              products={PRODUCTS}
+              products={products}
               brands={BRANDS}
               categories={CATEGORIES}
               trending={trending}
@@ -336,9 +358,11 @@ export default function Shop() {
             {/* Result count + active chips */}
             <div className="mb-5 flex flex-col gap-3">
               <p className="text-sm text-ink-soft">
-                {loading ? "Curating…" : `${results.length} products`}
+                {loading ? "Curating…" : fetchError ? "" : `${results.length} products`}
               </p>
-              <ActiveChips filters={filters} onToggle={toggleFilter} onClear={clearFilters} />
+              {!fetchError && (
+                <ActiveChips filters={filters} onToggle={toggleFilter} onClear={clearFilters} />
+              )}
             </div>
 
             {/* States */}
@@ -348,6 +372,14 @@ export default function Shop() {
                   <ProductCardSkeleton key={i} />
                 ))}
               </Grid>
+            ) : fetchError ? (
+              <EmptyState
+                emoji="🔌"
+                title="Couldn't load the shop"
+                message="Something went wrong reaching our catalog. Please check your connection and try again."
+                actionLabel="Retry"
+                onAction={fetchProducts}
+              />
             ) : results.length === 0 ? (
               <EmptyState
                 emoji="🔍"

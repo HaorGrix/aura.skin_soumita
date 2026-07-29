@@ -11,16 +11,25 @@
  * lean on the existing <ErrorBoundary>/<Toast> to surface failures instead
  * of wrapping every call site in try/catch.
  *
- * NOT WIRED INTO THE STOREFRONT YET. `data/products.js` (the static catalog)
- * is still what every page renders from. This file is the first piece of the
- * eventual swap — see ADMIN-PANEL-PLAN.md §3.1/§3.3 for the cutover plan.
- * Two shape differences to know about before wiring it in:
- *   1. `id` is now a real UUID (was the human-readable slug). Routing must
- *      switch from `product.id` to `product.slug` for URLs at cutover time.
- *   2. Price is `priceMinor`/`compareAtMinor` (integer BDT paisa) — display
- *      with `formatPriceMinor()` from lib/format.js, NOT the existing
- *      `formatPrice()` (which still multiplies by the old CONVERSION_RATE
- *      for the static catalog's placeholder USD-ish numbers).
+ * mapProduct() deliberately outputs the SAME shape the static catalog
+ * (data/products.js) already produces — verified field-by-field against
+ * ProductCard, QuickViewModal, CartContext.addItem, and queryProducts — so
+ * Shop.jsx can swap its data SOURCE without any downstream component
+ * changing. Two shape decisions this requires, both intentional:
+ *   1. `id` is the legacy slug string (== `legacy_id`/`slug`, identical for
+ *      every migrated product), NOT the real UUID. Cart line items, the
+ *      still-static PDP lookup (data/product-details.js), wishlist, and
+ *      order history all key by this string today — feeding them a UUID
+ *      would silently break every one of those until they're migrated too.
+ *      The real UUID is still available as `dbId`, for that future work.
+ *   2. `price`/`compareAt` are converted BACK from `price_minor` (integer
+ *      BDT paisa) into the old "USD-ish" float scale (`price_minor / 12000`
+ *      — the exact inverse of the migration's `price * 120 * 100`), because
+ *      `formatPrice()`, `PRICE_RANGES`, and every price sort/filter in
+ *      queryProducts still operate in that scale. This is a deliberate
+ *      bridge, not the long-term shape — once PDP/cart/checkout migrate off
+ *      the static catalog, this conversion (and formatPrice's ×120) should
+ *      be retired in favour of `formatPriceMinor()` throughout.
  * =================================================================== */
 import { supabase } from "./client.js";
 import { publicImageUrl } from "./media.js";
@@ -38,17 +47,23 @@ const TONE = {
   sage: "#e3efe0",
 };
 
-/** Map one `products_public` row (snake_case, DB-shaped) into the camelCase
- *  object shape the rest of the app expects from a "product". */
+// The old CONVERSION_RATE(120) × 100 minor-unit factor, inverted here to
+// bridge back into the scale formatPrice()/PRICE_RANGES/cart math expect.
+// See the file header for why this bridge exists.
+const LEGACY_PRICE_SCALE = 120 * 100;
+
+/** Map one `products_public` row (snake_case, DB-shaped) into the exact
+ *  object shape the storefront already expects from a "product" (see file
+ *  header — this is a deliberate compatibility bridge, not the DB's native
+ *  shape). Every field here was verified against an actual consumer. */
 function mapProduct(row) {
-  const gallery = (row.gallery ?? []).map((g) => ({
-    url: publicImageUrl(g.path),
-    alt: g.alt || row.name,
-  }));
+  const gallery = (row.gallery ?? []).map((g) => publicImageUrl(g.path));
+  const compareAt = row.compare_at_minor != null ? row.compare_at_minor / LEGACY_PRICE_SCALE : undefined;
 
   return {
-    id: row.id, // real UUID — needed for cart/order product_id FKs later
-    slug: row.slug, // URL-facing id; routing switches to this at cutover
+    id: row.slug, // legacy string id — see header note 1
+    dbId: row.id, // real UUID, for future FK-based (cart/order) work
+    slug: row.slug,
     brand: row.brand,
     name: row.name,
     subtitle: row.subtitle,
@@ -61,17 +76,22 @@ function mapProduct(row) {
     ingredients: row.ingredients ?? [],
     isNew: row.is_new,
     popularity: row.popularity,
-    priceMinor: row.price_minor,
-    compareAtMinor: row.compare_at_minor,
+    price: row.price_minor / LEGACY_PRICE_SCALE, // see header note 2
+    compareAt,
+    originalPrice: compareAt ?? null,
     maxPerOrder: row.max_per_order,
     inStock: row.in_stock,
     isLowStock: row.is_low_stock,
     isOnSale: row.is_on_sale,
     discountPercent: row.discount_percent,
     salesCount: row.sales_count,
-    isBestSeller: row.is_best_seller,
-    image: gallery[0]?.url ?? null,
-    gallery,
+    rating: row.rating,
+    reviews: row.review_count, // legacy field name
+    // Decorative badges (barrier/exfoliation/dewy/…) aren't migrated yet —
+    // only the one badge fully derivable from DB data today.
+    badge: row.is_best_seller ? { variant: "bestseller", label: "Best Seller" } : undefined,
+    image: gallery[0] ?? null,
+    gallery, // plain URL strings, matching the static catalog's shape
   };
 }
 

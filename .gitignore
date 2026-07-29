@@ -9,6 +9,12 @@ dist
 dist-ssr
 *.local
 
+# Environment variables (Supabase keys, etc.) — *.local above already covers
+# .env.local / .env.*.local; this explicitly covers a bare ".env" too.
+.env
+.env.*
+!.env.example
+
 # Editor
 .vscode/*
 !.vscode/extensions.json

@@ -16,6 +16,7 @@ import AuthModal from "./components/auth/AuthModal.jsx";
 import FloatingCart from "./components/FloatingCart.jsx";
 import { recordRoute } from "./lib/nav-history.js";
 import { navigate, onRouteChange } from "./lib/navigate.js";
+import { applySeo } from "./lib/seo.js";
 
 // Route-level code splitting — the home page loads eagerly; the rest lazy-load.
 const Shop = lazy(() => import("./pages/Shop.jsx"));
@@ -91,6 +92,11 @@ export default function App() {
   useEffect(() => {
     recordRoute(route.name);
   }, [route.name]);
+
+  // Per-route SEO: title, description, canonical, OG tags + robots noindex.
+  useEffect(() => {
+    applySeo(route);
+  }, [route]);
 
   // Honour a #fragment in the URL (e.g. the hero's #featured) by smooth-scrolling
   // to the matching element after React paints. rAF gives one frame for the DOM

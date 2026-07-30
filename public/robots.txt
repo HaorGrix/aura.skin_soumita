@@ -1,0 +1,13 @@
+# skin.script — robots policy
+# NOTE: replace skinscript.example.com below with your real production domain.
+
+User-agent: *
+Allow: /
+
+# Private / utility routes — no SEO value, keep them out of the index.
+Disallow: /cart
+Disallow: /checkout
+Disallow: /account
+Disallow: /wishlist
+
+Sitemap: https://skinscript.example.com/sitemap.xml

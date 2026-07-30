@@ -1,0 +1,227 @@
+/* =================================================================== *
+ * skin.script admin — flash & seasonal sales
+ * -------------------------------------------------------------------
+ * The important part of this screen is the scope preview: before a
+ * campaign goes live it shows exactly which products it touches and what
+ * each new price would be. "20% off everything" and "20% off everything,
+ * including the six items I sell near cost" look identical until you can
+ * see the list.
+ * =================================================================== */
+import { useState } from "react";
+import { Plus } from "lucide-react";
+import { deactivateSale, listSales, previewSaleScope, saveSale } from "../../lib/api/admin/promos.js";
+import { listCategories, listBrands } from "../../lib/api/admin/catalog.js";
+import { useAdmin } from "../context.js";
+import {
+  Btn, ConfirmModal, DataTable, Modal, PageHeader, Pill, SelectField, Spinner,
+  TextField, Toggle, money, useAsync,
+} from "../components/kit.jsx";
+
+const BLANK = {
+  name: "", kind: "percent", value_percent: 20,
+  starts_at: "", ends_at: "",
+  scope: { all: true, products: [], categories: [], brands: [] },
+  banner_text: "", show_countdown: true, priority: 0, is_active: true,
+};
+
+export default function Sales() {
+  const { can } = useAdmin();
+  const [editing, setEditing] = useState(null);
+  const [ending, setEnding] = useState(null);
+  const list = useAsync(() => listSales(), []);
+
+  const state = (s) => {
+    const now = new Date();
+    if (!s.is_active) return { tone: "grey", label: "Off" };
+    if (new Date(s.starts_at) > now) return { tone: "sky", label: "Scheduled" };
+    if (new Date(s.ends_at) < now) return { tone: "grey", label: "Finished" };
+    return { tone: "green", label: "Running now" };
+  };
+
+  return (
+    <>
+      <PageHeader
+        title="Flash sales"
+        subtitle="Time-limited campaigns across a group of products."
+        actions={can("editor") && (
+          <Btn onClick={() => setEditing(BLANK)}><Plus className="h-4 w-4" /> New sale</Btn>
+        )}
+      />
+
+      <DataTable
+        loading={list.loading} error={list.error} rows={list.data}
+        onRowClick={can("editor") ? setEditing : undefined}
+        empty="No sales yet. Create one to run a seasonal or flash promotion."
+        columns={[
+          { key: "name", header: "Campaign", render: (s) => <span className="font-medium text-ink">{s.name}</span> },
+          { key: "value", header: "Discount", render: (s) =>
+              s.kind === "percent" ? `${s.value_percent}% off` : `${money(s.value_minor)} off` },
+          { key: "window", header: "Runs", render: (s) => (
+              <span className="text-ink-soft text-xs">
+                {new Date(s.starts_at).toLocaleDateString()} → {new Date(s.ends_at).toLocaleDateString()}
+              </span>
+            ) },
+          { key: "scope", header: "Applies to", render: (s) =>
+              s.scope?.all ? "Whole catalog"
+              : [
+                  s.scope?.products?.length && `${s.scope.products.length} products`,
+                  s.scope?.categories?.length && `${s.scope.categories.length} categories`,
+                  s.scope?.brands?.length && `${s.scope.brands.length} brands`,
+                ].filter(Boolean).join(", ") || "Nothing selected" },
+          { key: "state", header: "Status", render: (s) => {
+              const st = state(s);
+              return <Pill tone={st.tone}>{st.label}</Pill>;
+            } },
+        ]}
+      />
+
+      {editing && (
+        <SaleModal
+          sale={editing} onClose={() => setEditing(null)}
+          onSaved={() => { setEditing(null); list.reload(); }}
+          onEnd={() => setEnding(editing)}
+        />
+      )}
+
+      <ConfirmModal
+        open={!!ending} onClose={() => setEnding(null)} danger
+        title="End this sale?" confirmLabel="End it"
+        body="Prices go back to normal and the campaign banner disappears from the storefront."
+        onConfirm={async () => { await deactivateSale(ending.id); setEditing(null); list.reload(); }}
+      />
+    </>
+  );
+}
+
+function SaleModal({ sale, onClose, onSaved, onEnd }) {
+  const [form, setForm] = useState(sale);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState(null);
+  const [preview, setPreview] = useState(null);
+  const [previewing, setPreviewing] = useState(false);
+
+  const categories = useAsync(() => listCategories(), []);
+  const brands = useAsync(() => listBrands(), []);
+
+  const set = (k) => (v) => setForm((f) => ({ ...f, [k]: v }));
+  const setScope = (k) => (v) => setForm((f) => ({ ...f, scope: { ...f.scope, [k]: v } }));
+
+  const toggleIn = (list, id) =>
+    list.includes(id) ? list.filter((x) => x !== id) : [...list, id];
+
+  async function runPreview() {
+    setPreviewing(true);
+    const { data } = await previewSaleScope(form.scope, form.value_percent);
+    setPreview(data ?? []);
+    setPreviewing(false);
+  }
+
+  async function handleSave() {
+    if (!form.name?.trim()) return setError("Give the campaign a name.");
+    if (!form.starts_at || !form.ends_at) return setError("Set both a start and an end time.");
+    if (new Date(form.ends_at) <= new Date(form.starts_at)) return setError("The end must be after the start.");
+
+    setBusy(true); setError(null);
+    const { error } = await saveSale(form);
+    setBusy(false);
+    if (error) setError(error.message);
+    else onSaved();
+  }
+
+  return (
+    <Modal open onClose={onClose} wide title={sale.id ? sale.name : "New flash sale"}
+      footer={
+        <>
+          {sale.id && (
+            <Btn variant="ghost" size="sm" className="mr-auto text-red-600" onClick={onEnd}>End sale</Btn>
+          )}
+          <Btn variant="secondary" size="sm" onClick={onClose}>Cancel</Btn>
+          <Btn size="sm" loading={busy} onClick={handleSave}>Save</Btn>
+        </>
+      }>
+      {error && <p className="mb-4 rounded-xl bg-red-50 px-4 py-2.5 text-sm text-red-700">{error}</p>}
+
+      <div className="grid gap-4 sm:grid-cols-2">
+        <TextField label="Campaign name" hint="Internal — shoppers don't see this" required
+          value={form.name} onChange={(e) => set("name")(e.target.value)} className="sm:col-span-2" />
+        <TextField label="Percentage off" type="number" min="1" max="90"
+          value={form.value_percent ?? ""} onChange={(e) => set("value_percent")(Number(e.target.value))} />
+        <TextField label="Priority" hint="Higher wins when sales overlap" type="number"
+          value={form.priority ?? 0} onChange={(e) => set("priority")(Number(e.target.value))} />
+        <TextField label="Starts" type="datetime-local" required
+          value={form.starts_at?.slice(0, 16) ?? ""} onChange={(e) => set("starts_at")(e.target.value)} />
+        <TextField label="Ends" type="datetime-local" required
+          value={form.ends_at?.slice(0, 16) ?? ""} onChange={(e) => set("ends_at")(e.target.value)} />
+        <TextField label="Banner text" hint="Shown on the storefront while the sale runs"
+          value={form.banner_text ?? ""} onChange={(e) => set("banner_text")(e.target.value)} className="sm:col-span-2" />
+        <div className="sm:col-span-2">
+          <Toggle label="Show a countdown timer" checked={form.show_countdown} onChange={set("show_countdown")} />
+        </div>
+      </div>
+
+      <div className="mt-6 rounded-xl bg-snow p-4">
+        <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-ink-soft">What's included</p>
+        <Toggle label="The whole catalog" checked={form.scope?.all} onChange={setScope("all")} />
+
+        {!form.scope?.all && (
+          <div className="mt-4 grid gap-4 sm:grid-cols-2">
+            <div>
+              <p className="mb-1.5 text-xs font-medium text-ink">Categories</p>
+              <div className="flex flex-wrap gap-1.5">
+                {(categories.data ?? []).map((c) => (
+                  <button key={c.id} onClick={() => setScope("categories")(toggleIn(form.scope.categories ?? [], c.id))}
+                    className={`rounded-full px-2.5 py-1 text-xs ring-1 ${
+                      form.scope.categories?.includes(c.id)
+                        ? "bg-magenta text-white ring-magenta" : "bg-white text-ink-soft ring-line hover:ring-magenta"
+                    }`}>{c.name}</button>
+                ))}
+              </div>
+            </div>
+            <div>
+              <p className="mb-1.5 text-xs font-medium text-ink">Brands</p>
+              <div className="flex flex-wrap gap-1.5">
+                {(brands.data ?? []).map((b) => (
+                  <button key={b} onClick={() => setScope("brands")(toggleIn(form.scope.brands ?? [], b))}
+                    className={`rounded-full px-2.5 py-1 text-xs ring-1 ${
+                      form.scope.brands?.includes(b)
+                        ? "bg-magenta text-white ring-magenta" : "bg-white text-ink-soft ring-line hover:ring-magenta"
+                    }`}>{b}</button>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        <Btn size="sm" variant="secondary" className="mt-4" loading={previewing} onClick={runPreview}>
+          Preview affected products
+        </Btn>
+
+        {preview && (
+          <div className="mt-3 max-h-56 overflow-y-auto rounded-lg bg-white ring-1 ring-line">
+            <p className="border-b border-line px-3 py-2 text-xs font-medium text-ink">
+              {preview.length} product{preview.length === 1 ? "" : "s"} would change price
+            </p>
+            {preview.length === 0 ? (
+              <p className="px-3 py-4 text-center text-xs text-ink-soft">
+                Nothing selected yet — pick at least one category or brand.
+              </p>
+            ) : (
+              <ul className="divide-y divide-line text-xs">
+                {preview.slice(0, 60).map((p) => (
+                  <li key={p.id} className="flex items-center justify-between gap-3 px-3 py-1.5">
+                    <span className="min-w-0 truncate text-ink">{p.name}</span>
+                    <span className="shrink-0 text-ink-soft">
+                      <span className="line-through">{money(p.price_minor)}</span>{" "}
+                      <span className="font-medium text-magenta">{money(p.new_price_minor)}</span>
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        )}
+        {previewing && <Spinner className="mt-3 h-4 w-4" />}
+      </div>
+    </Modal>
+  );
+}

@@ -36,16 +36,10 @@ const BRANDS = [
   "Simple",
 ];
 
-const PILLS = [
-  "You are beautiful 🌸",
-  "Your glow is yours alone ✨",
-  "Soft skin, softer heart 💗",
-  "Radiance from within 🌟",
-  "You are enough, always 💖",
-  "Bloom at your own pace 🌺",
-  "Glass skin, glowing soul 💫",
-  "Self-care is sacred 🕊️",
-];
+// A single, static line — replaces the old scrolling marquee ticker.
+// One considered sentence reads as boutique signage; a looping pill strip
+// read as clutter and was the first thing flagged for removal.
+const ANNOUNCEMENT = "Complimentary shipping over ৳6,000 — Authentic K & J-Beauty, guaranteed";
 
 const MOBILE_QUOTE = "Glass skin is a daily ritual — and you’re already glowing. 🌸";
 
@@ -102,24 +96,18 @@ export default function Navbar({ onOpenSearch }) {
         transition={{ duration: 0.9, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
         className="fixed inset-x-0 top-0 z-50"
       >
-        {/* Brand announcement marquee (replacing the old black announcement bar) */}
-        <div className="marquee-pause relative z-50 isolate flex overflow-hidden border-y border-line bg-white/90 backdrop-blur-md py-5 shadow-sm">
-          <div className="animate-marquee flex shrink-0 items-center gap-4 pr-4">
-            {[...PILLS, ...PILLS].map((p, i) => (
-              <span
-                key={i}
-                className="whitespace-nowrap font-serif text-2xl text-ink-soft sm:text-3xl"
-              >
-                {p}
-                <span className="mx-4 text-magenta">·</span>
-              </span>
-            ))}
-          </div>
+        {/* Static announcement bar — a slim deep-navy strip of boutique
+            signage, replacing the scrolling ticker. No animation, no loop:
+            one considered line, then the glass nav floats below it. */}
+        <div className="relative z-50 bg-magenta-deep py-2.5 text-center">
+          <p className="px-4 text-[11px] font-medium uppercase tracking-[0.18em] text-white/90 sm:text-xs">
+            {ANNOUNCEMENT}
+          </p>
         </div>
 
         <div
-          className={`mx-auto flex max-w-7xl items-center justify-between px-5 transition-all duration-500 sm:px-8 ${
-            scrolled ? "my-2 rounded-full glass shadow-soft py-2.5" : "py-4"
+          className={`mx-auto flex max-w-7xl items-center justify-between px-6 transition-all duration-500 sm:px-9 ${
+            scrolled ? "my-3 rounded-full glass shadow-soft py-3" : "py-5"
           }`}
         >
           {/* Logo */}
@@ -131,7 +119,7 @@ export default function Navbar({ onOpenSearch }) {
           </a>
 
           {/* Desktop nav */}
-          <nav className="hidden items-center gap-1 lg:flex">
+          <nav className="hidden items-center gap-2 lg:flex">
             {LINKS.map((link) => (
               <a
                 key={link.label}
@@ -145,7 +133,7 @@ export default function Navbar({ onOpenSearch }) {
           </nav>
 
           {/* Right cluster */}
-          <div className="flex items-center gap-0.5 sm:gap-1">
+          <div className="flex items-center gap-1 sm:gap-1.5">
             <button className={iconBtn} aria-label="Search" onClick={onOpenSearch}>
               <Search className="h-[18px] w-[18px]" strokeWidth={1.7} />
             </button>

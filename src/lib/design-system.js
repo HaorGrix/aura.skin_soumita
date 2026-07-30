@@ -21,17 +21,17 @@ export const tokens = {
     snow: "#fbf9fa", // off-white background
     line: "#ececef", // hairlines
 
-    // Pink family (signature accent)
-    petal: "#ffeef4", // softest wash
-    rose: "#ff8fa8", // SOFT PINK — primary accent
-    magenta: "#e1306c", // BOLD PINK — primary action
-    magentaDeep: "#b81e54",
+    // Ocean-marine family (signature accent — was pink)
+    petal: "#e7f0f2", // palest ocean wash
+    rose: "#5c8b9c", // MID MARINE BLUE — primary accent
+    magenta: "#0d3a4f", // DEEP NAVY — primary action
+    magentaDeep: "#062430",
 
     // Glow accents
     cyan: "#00c4b4", // TEAL GLOW
     cyanSoft: "#7fe3da",
-    gold: "#d4af37",
-    goldSoft: "#ecd58a",
+    gold: "#b6934f", // muted luxury gold
+    goldSoft: "#ddc99a",
 
     // Feedback
     success: "#34c79a",
@@ -77,10 +77,10 @@ export const tokens = {
    * 5. SHADOWS  (soft, high-end, with glow)
    * ---------------------------------------------------------------- */
   shadow: {
-    soft: "0 8px 30px -12px rgb(10 10 11 / 0.18)",
-    lift: "0 26px 60px -22px rgb(10 10 11 / 0.30)",
-    glowPink: "0 0 44px -8px rgb(225 48 108 / 0.45)",
-    glowCyan: "0 0 44px -8px rgb(0 196 180 / 0.40)",
+    soft: "0 10px 34px -14px rgb(6 20 27 / 0.16)",
+    lift: "0 30px 70px -24px rgb(6 20 27 / 0.28)",
+    glowPink: "0 0 46px -8px rgb(13 58 79 / 0.42)",
+    glowCyan: "0 0 44px -8px rgb(0 196 180 / 0.38)",
   },
 
   /* ---------------------------------------------------------------- *

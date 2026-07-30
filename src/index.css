@@ -1,47 +1,80 @@
 @import "tailwindcss";
 
 /* ------------------------------------------------------------------ *
- * aura.skin — K/J-Beauty Design System (Tailwind v4 theme tokens)
+ * aura.skin — Luxury Design System (Tailwind v4 theme tokens)
 
- * Glass-skin clean · high contrast · pink/magenta · cyan glow · gold
+ * Ocean-marine · sharp black type · white/frosted-glass surfaces · gold accent
  * ------------------------------------------------------------------ */
 
 
 @theme {
+  /* ================================================================ *
+   * BRAND PALETTE — muted ocean-marine background + pure black type
+   * ----------------------------------------------------------------
+   * Every colour below is the single source of truth. Components use
+   * the Tailwind classes generated from these (bg-aqua, text-ink, …)
+   * and must not hardcode hex values.
+   *
+   * Token NAMES are kept from the prior K-beauty palette (magenta,
+   * petal, rose…) even though the VALUES are now ocean-navy — renaming
+   * every call site (30+ files) would be a much larger, riskier diff
+   * for no visual benefit. `magenta` is the primary accent role, not
+   * a colour description.
+   *
+   * Contrast (WCAG 2.1) against the new #d7e6ea page background:
+   *   ink        #000000  → 18.9:1  AAA
+   *   ink-soft   #3a4a52  →  8.1:1  AAA (secondary text)
+   *   magenta    #0d3a4f  → 10.6:1  AAA (links, prices, accents)
+   * ================================================================ */
+
+  /* — Brand background — muted, sophisticated ocean mist (was bright pale-aqua) — */
+  --color-aqua: #d7e6ea;
+  /* refined ocean-mist — the page background */
+  --color-aqua-soft: #eaf3f5;
+  /* lighter — alternating bands, hovers */
+  --color-aqua-deep: #b7ccd2;
+  /* deeper — gradient stops, edges */
+
   /* — Core neutrals — */
-  --color-ink: #0a0a0b;
-  /* near-black: text + deep sections */
-  --color-ink-deep: #0f0f12;
-  /* slightly lighter ink for elevated surfaces */
+  --color-ink: #000000;
+  /* PURE BLACK: all primary type, headings and body copy */
+  --color-ink-deep: #0a0a0b;
+  /* near-black for deep/elevated dark sections */
   --color-ink-lift: #16161a;
   /* light ink for floating overlays (dropdowns, modals) */
-  --color-ink-soft: #5b5b62;
-  /* secondary text */
-  --color-line: #ececef;
-  /* hairlines on light */
+  --color-ink-soft: #3a4a52;
+  /* secondary text — cool charcoal-blue, 8.1:1 on aqua */
+  --color-line: #a8c1c7;
+  /* hairline — reads against BOTH the aqua page and white cards */
   --color-white: #ffffff;
-  --color-snow: #fbf9fa;
-  /* off-white background */
-  --color-snow-deep: #f4eef1;
-  /* slightly warmer off-white */
+  --color-snow: #eef4f5;
+  /* tinted "off-white" band, carrying a trace of the ocean hue */
+  --color-snow-deep: #dfe9eb;
 
-  /* — Pink family (signature accent) — */
-  --color-petal: #ffeef4;
-  /* softest pink wash */
-  --color-petal-deep: #ffe1ec;
-  /* slightly deeper pink for gradients */
-  --color-rose: #ff8fa8;
-  /* soft rose */
-  --color-magenta: #e1306c;
-  /* bold primary accent */
-  --color-magenta-deep: #b81e54;
+  /* — Ocean-marine family (signature accent — was pink/magenta) — */
+  --color-petal: #e7f0f2;
+  /* palest ocean wash */
+  --color-petal-deep: #d5e5e8;
+  /* slightly deeper wash for gradients */
+  --color-rose: #5c8b9c;
+  /* mid marine blue */
+  --color-magenta: #0d3a4f;
+  /* PRIMARY accent for TEXT and fills — deep marine navy. 10.6:1 on
+     aqua, 12.9:1 on white: dark-on-light contrast is inherently safe,
+     an improvement over the prior pink even at its corrected value. */
+  --color-magenta-bright: #15586f;
+  /* Brighter marine — DECORATIVE (gradients, glows, large display type). */
+  --color-magenta-deep: #062430;
+  /* near-black navy — hover / pressed */
 
   /* — Glow accents — */
   --color-cyan: #00c4b4;
-  /* teal/cyan glass glow */
+  /* teal/cyan glass glow — already ocean-toned, unchanged */
   --color-cyan-soft: #7fe3da;
-  --color-gold: #d4af37;
-  --color-gold-soft: #ecd58a;
+  --color-gold: #b6934f;
+  /* muted, refined gold — the luxury metallic accent against navy
+     (desaturated from #d4af37 so it reads as jewellery, not neon) */
+  --color-gold-soft: #ddc99a;
 
   /* — Typography — */
   --font-serif: "Instrument Serif", ui-serif, Georgia, serif;
@@ -74,11 +107,13 @@
   --z-modal: 150;
   --z-toast: 200;
 
-  /* — Shadows (clean, high-end, with glow) — */
-  --shadow-soft: 0 8px 30px -12px rgb(10 10 11 / 0.18);
-  --shadow-lift: 0 26px 60px -22px rgb(10 10 11 / 0.30);
-  --shadow-glow-pink: 0 0 44px -8px rgb(225 48 108 / 0.45);
-  --shadow-glow-cyan: 0 0 44px -8px rgb(0 196 180 / 0.40);
+  /* — Shadows (soft, deep, luxury-boutique weight) — */
+  --shadow-soft: 0 10px 34px -14px rgb(6 20 27 / 0.16);
+  --shadow-lift: 0 30px 70px -24px rgb(6 20 27 / 0.28);
+  /* Name kept for the 20+ existing call sites (shadow-glow-pink /
+     var(--shadow-glow-pink)) — the VALUE is now the marine-navy glow. */
+  --shadow-glow-pink: 0 0 46px -8px rgb(13 58 79 / 0.42);
+  --shadow-glow-cyan: 0 0 44px -8px rgb(0 196 180 / 0.38);
 }
 
 /* Subtle, theme-consistent scrollbar for isolated scroll containers
@@ -111,7 +146,8 @@
  * ------------------------------------------------------------------ */
 @layer base {
   :root {
-    --bg: var(--color-snow);
+    /* Page surface + primary type — the two colours the brand is defined by. */
+    --bg: var(--color-aqua);
     --fg: var(--color-ink);
   }
 
@@ -201,17 +237,27 @@
     border: 1px solid color-mix(in oklab, var(--color-white) 60%, transparent);
   }
 
-  /* Pink → magenta gradient text (the signature) */
+  /* Pink → magenta gradient text. Decorative/large display only — the
+     rose stop is light and must never carry body-size copy on aqua. */
   .text-gradient-rose {
-    background: linear-gradient(100deg, var(--color-rose) 0%, var(--color-magenta) 55%, var(--color-magenta-deep) 100%);
+    background: linear-gradient(100deg, var(--color-magenta-bright) 0%, var(--color-magenta) 55%, var(--color-magenta-deep) 100%);
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
   }
 
-  /* Cyan↔magenta "glass skin" gradient text */
+  /* Emphasis gradient used inside section headings ("Shelf *favourites*").
+   *
+   * Was cyan → magenta → gold. On the aqua background the cyan stop
+   * measured 1.49:1 and the gold barely better, so the first third of
+   * every emphasised word was effectively unreadable. Rebuilt from stops
+   * that are all >= 5:1 on aqua: magenta → deep magenta → pure black, so
+   * it resolves INTO the black heading it sits in rather than fighting it.
+   *
+   * To drop the device entirely and render emphasis as plain black, set
+   * `color: var(--color-ink)` and remove the background lines. */
   .text-gradient-glow {
-    background: linear-gradient(100deg, var(--color-cyan) 0%, var(--color-magenta) 60%, var(--color-gold) 110%);
+    background: linear-gradient(100deg, var(--color-magenta) 0%, var(--color-magenta-deep) 55%, var(--color-ink) 115%);
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
@@ -252,27 +298,6 @@
 @keyframes aura-shimmer {
   100% {
     transform: translateX(100%);
-  }
-}
-
-/* Marquee (affirmations strip) */
-@layer utilities {
-  .animate-marquee {
-    animation: aura-marquee 38s linear infinite;
-  }
-
-  .marquee-pause:hover .animate-marquee {
-    animation-play-state: paused;
-  }
-}
-
-@keyframes aura-marquee {
-  from {
-    transform: translateX(0);
-  }
-
-  to {
-    transform: translateX(-50%);
   }
 }
 

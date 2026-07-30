@@ -19,7 +19,7 @@ import PhoneInput from "../components/ui/PhoneInput.jsx";
 const FAQS = [
   {
     q: "Are your products authentic?",
-    a: "Yes. aura.skin is positioned around authorized sourcing, verified channels, and clear product metadata so customers can buy with confidence.",
+    a: "Yes. skin.script is positioned around authorized sourcing, verified channels, and clear product metadata so customers can buy with confidence.",
   },
   {
     q: "How fast do you dispatch orders?",
@@ -36,9 +36,9 @@ const FAQS = [
 ];
 
 const CONTACT_CARDS = [
-  { icon: Mail, title: "Email", text: "care@aura.skin", href: "mailto:care@aura.skin" },
+  { icon: Mail, title: "Email", text: "care@skinscript.com", href: "mailto:care@skinscript.com" },
   { icon: Phone, title: "Phone", text: "+880 1700 000 000", href: "tel:+8801700000000" },
-  { icon: Instagram, title: "Social", text: "@aura.skin", href: "#" },
+  { icon: Instagram, title: "Social", text: "@skinscript", href: "#" },
 ];
 
 export default function Contact() {
@@ -93,7 +93,7 @@ export default function Contact() {
             transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
           >
             <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-magenta">
-              Contact aura.skin
+              Contact skin.script
             </p>
             <h1 className="mt-4 max-w-2xl font-serif text-[clamp(2.55rem,7vw,5.4rem)] leading-[0.96]">
               Need routine help, order care, or a brand question?

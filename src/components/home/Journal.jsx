@@ -47,7 +47,7 @@ export default function Journal() {
         >
           <span className="text-4xl">🌸</span>
           <blockquote className="mx-auto mt-5 max-w-2xl font-serif text-[clamp(1.4rem,3vw,2.25rem)] leading-snug text-ink">
-            “aura.skin didn’t just change my skin — it gave me ten minutes a day
+            “skin.script didn’t just change my skin — it gave me ten minutes a day
             that feel like self-love. My barrier healed, and so did my confidence.”
           </blockquote>
           <figcaption className="mt-5 text-sm font-medium text-ink-soft">

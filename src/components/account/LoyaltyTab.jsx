@@ -33,7 +33,7 @@ export default function LoyaltyTab() {
         <div className="relative flex flex-wrap items-end justify-between gap-4">
           <div>
             <p className="inline-flex items-center gap-1.5 text-xs font-medium uppercase tracking-[0.16em] text-white/80">
-              <Sparkles className="h-4 w-4" strokeWidth={2} /> Aura Rewards
+              <Sparkles className="h-4 w-4" strokeWidth={2} /> Skin Script Rewards
             </p>
             <p className="mt-2 font-serif text-5xl leading-none">{points}</p>
             <p className="mt-1 text-sm text-white/85">
@@ -93,7 +93,7 @@ export default function LoyaltyTab() {
                 className="flex items-center gap-4 rounded-2xl border border-dashed border-magenta/40 bg-petal/50 p-4"
               >
                 <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-magenta/10 text-magenta">
-                  {c.code === "AURA8FS" ? <Truck className="h-5 w-5" strokeWidth={1.8} /> : <Ticket className="h-5 w-5" strokeWidth={1.8} />}
+                  {c.code === "SKN8FS" ? <Truck className="h-5 w-5" strokeWidth={1.8} /> : <Ticket className="h-5 w-5" strokeWidth={1.8} />}
                 </span>
                 <div>
                   <p className="text-sm font-semibold text-ink">{c.reward}</p>

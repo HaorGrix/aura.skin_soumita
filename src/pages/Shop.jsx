@@ -51,7 +51,7 @@ const FACET_VALUES = {
  * filter" (full catalog) rather than an empty result set. Multiple values per
  * facet (comma-separated) combine, and different facets combine too — so
  * concern + skinType logically AND together in the query engine. */
-function parseHashQuery() {
+function parseUrlQuery() {
   const filters = structuredClone(EMPTY_FILTERS);
   let search = "";
   // Clean-URL routing: the query lives in location.search, not the hash.
@@ -74,19 +74,19 @@ export default function Shop() {
   // Initialise filters/search DIRECTLY from the URL (lazy useState) so the very
   // first render is already filtered. This must NOT be a mount effect: child
   // effects run before parent mount effects, so <PredictiveSearch> reports its
-  // empty query first → handleQueryChange("") → syncHash() rewrites the hash to
-  // bare "#/shop", stripping ?concern=… before a mount-effect read could catch
+  // empty query first → handleQueryChange("") → syncUrl() rewrites the URL to
+  // bare "/shop", stripping ?concern=… before a mount-effect read could catch
   // it. Seeding at render time means `filters` already holds the concern when
-  // that empty-query callback fires, so syncHash preserves it.
-  const [search, setSearch] = useState(() => parseHashQuery().search);
-  const [filters, setFilters] = useState(() => parseHashQuery().filters);
+  // that empty-query callback fires, so syncUrl preserves it.
+  const [search, setSearch] = useState(() => parseUrlQuery().search);
+  const [filters, setFilters] = useState(() => parseUrlQuery().filters);
 
   // Re-sync on REAL navigation only — browser back/forward, or clicking another
   // concern card while already on Shop. In-page filter toggles use
-  // history.replaceState (see syncHash), which emits no route event, so they
+  // history.replaceState (see syncUrl), which emits no route event, so they
   // never round-trip through here and can't clobber React state.
   useEffect(() => onRouteChange(() => {
-    const { filters: parsedFilters, search: parsedSearch } = parseHashQuery();
+    const { filters: parsedFilters, search: parsedSearch } = parseUrlQuery();
     setFilters(parsedFilters);
     setSearch(parsedSearch);
   }), []);
@@ -195,7 +195,7 @@ export default function Shop() {
   }, [hasMore, loadMore]);
 
   // —— filter helpers ——
-  const syncHash = (nextFilters, currentSearch) => {
+  const syncUrl = (nextFilters, currentSearch) => {
     const params = new URLSearchParams();
     if (currentSearch) params.set("q", currentSearch);
     Object.entries(nextFilters).forEach(([key, arr]) => {
@@ -211,14 +211,14 @@ export default function Shop() {
     setFilters((f) => {
       const has = f[key].includes(id);
       const next = { ...f, [key]: has ? f[key].filter((x) => x !== id) : [...f[key], id] };
-      syncHash(next, search);
+      syncUrl(next, search);
       return next;
     });
   };
 
   const clearFilters = () => {
     setFilters(EMPTY_FILTERS);
-    syncHash(EMPTY_FILTERS, search);
+    syncUrl(EMPTY_FILTERS, search);
   };
   const activeCount = countActive(filters);
 
@@ -227,7 +227,7 @@ export default function Shop() {
   const handleQueryChange = useCallback((q) => {
     setSearch(q);
     setFilters((currentFilters) => {
-      syncHash(currentFilters, q);
+      syncUrl(currentFilters, q);
       return currentFilters;
     });
   }, []);

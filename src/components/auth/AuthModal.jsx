@@ -62,7 +62,7 @@ export default function AuthModal() {
 
     if (isSignup) {
       signup({ name: form.name.trim(), email: form.email.trim() });
-      toast.success(`Welcome to aura.skin, ${form.name.trim()} 🌸`, "Account created");
+      toast.success(`Welcome to skin.script, ${form.name.trim()} 🌸`, "Account created");
     } else {
       login({ email: form.email.trim() });
       toast.success("You're glowing — welcome back ✨", "Signed in");
@@ -106,7 +106,7 @@ export default function AuthModal() {
               <Sparkles className="h-5 w-5" strokeWidth={1.8} />
             </span>
             <h2 className="mt-4 font-serif text-[1.8rem] leading-tight text-ink">
-              {isSignup ? "Create your aura" : "Welcome back"}
+              {isSignup ? "Create your Skin Script account" : "Welcome back"}
             </h2>
             <p className="mt-1 text-sm text-ink-soft">
               {isSignup
@@ -194,7 +194,7 @@ export default function AuthModal() {
             </form>
 
             <p className="mt-4 text-center text-xs text-ink-soft">
-              {isSignup ? "Already have an account? " : "New to aura.skin? "}
+              {isSignup ? "Already have an account? " : "New to skin.script? "}
               <button
                 type="button"
                 onClick={() => { setMode(isSignup ? "login" : "signup"); setError(""); }}

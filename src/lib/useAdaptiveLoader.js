@@ -16,7 +16,7 @@ import { useEffect, useRef, useState } from "react";
  * Graceful fallback: if any perf API throws, neutral 600ms per line.
  * Returns { perLine, totalLines, isFirstVisit, markSeen }.
  */
-const SEEN_KEY = "aura-intro-seen";
+const SEEN_KEY = "skinscript-intro-seen";
 
 /* Tunables (ms) */
 const PER_LINE_FIRST = 900;

@@ -1,5 +1,5 @@
 /* =================================================================== *
- * aura.skin — PDP DETAIL BUILDER
+ * skin.script — PDP DETAIL BUILDER
  * -------------------------------------------------------------------
  * Enriches ANY base catalog product into a full product-detail payload
  * (benefits, ingredient stories, how-to ritual, reviews, variants,
@@ -291,18 +291,27 @@ export function getProductDetail(id) {
   return base ? buildPdp(base) : null;
 }
 
-/* "Complete Your Ritual" — related by shared skin type/concern, varied category */
-export function getRelated(product, limit = 6) {
-  return PRODUCTS.filter((p) => p.id !== product.id)
+/* "Complete Your Ritual" — related by shared skin type/concern, varied category.
+ *
+ * `pickRelated` takes the candidate list explicitly so the same scoring works
+ * against the live Supabase catalog as against the static array. `getRelated`
+ * keeps the old signature for callers still on the bundled data. */
+export function pickRelated(all, product, limit = 6) {
+  return (all ?? [])
+    .filter((p) => p.id !== product.id)
     .map((p) => {
       let score = 0;
-      if (p.skinType.some((s) => product.skinType.includes(s))) score += 2;
-      if (p.concern.some((c) => product.concern.includes(c))) score += 2;
+      if (p.skinType?.some((s) => product.skinType?.includes(s))) score += 2;
+      if (p.concern?.some((c) => product.concern?.includes(c))) score += 2;
       if (p.category !== product.category) score += 1; // prefer complementary steps
-      score += p.popularity / 100;
+      score += (p.popularity ?? 0) / 100;
       return { p, score };
     })
     .sort((a, b) => b.score - a.score)
     .slice(0, limit)
     .map((x) => x.p);
+}
+
+export function getRelated(product, limit = 6) {
+  return pickRelated(PRODUCTS, product, limit);
 }

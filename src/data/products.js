@@ -1,5 +1,5 @@
 /* =================================================================== *
- * aura.skin — MOCK CATALOG + FILTER FACETS
+ * skin.script — MOCK CATALOG + FILTER FACETS
  * -------------------------------------------------------------------
  * Authentic K/J-Beauty brands. Each product carries the metadata the
  * Shop page filters/sorts on. `tone` drives the ProductCard gradient
@@ -43,7 +43,7 @@ function placeholderFor({ brand, category, name, tone }) {
       <circle cx="224" cy="744" r="248" fill="#e1306c" fill-opacity="0.08" />
       <circle cx="508" cy="644" r="184" fill="#00c4b4" fill-opacity="0.08" />
       <rect x="72" y="92" width="198" height="34" rx="17" fill="#0a0a0b" fill-opacity="0.12" />
-      <text x="72" y="184" fill="#0a0a0b" font-family="Instrument Serif, Georgia, serif" font-size="58">aura.skin</text>
+      <text x="72" y="184" fill="#0a0a0b" font-family="Instrument Serif, Georgia, serif" font-size="58">skin.script</text>
       <text x="72" y="262" fill="#0a0a0b" font-family="Inter, Arial, sans-serif" font-size="40" font-weight="600">${category}</text>
       <text x="72" y="320" fill="#5b5b62" font-family="Inter, Arial, sans-serif" font-size="28">${shortName}</text>
       <path d="M144 576c72-94 176-140 310-140 136 0 214 44 304 128" fill="none" stroke="#e1306c" stroke-opacity="0.28" stroke-width="18" stroke-linecap="round" />

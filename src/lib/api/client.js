@@ -1,5 +1,5 @@
 /* =================================================================== *
- * aura.skin — Supabase client (single instance)
+ * skin.script — Supabase client (single instance)
  * -------------------------------------------------------------------
  * Reads the two Vite env vars set in `.env.local` (see `.env.example`).
  * Vite inlines VITE_-prefixed vars at BUILD time — changing them requires

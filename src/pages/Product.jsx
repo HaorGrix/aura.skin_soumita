@@ -1,8 +1,9 @@
 import { navigate } from "../lib/navigate.js";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { ChevronLeft, Home } from "lucide-react";
-import { getProductDetail, getRelated } from "../data/product-details.js";
+import { buildPdp, pickRelated } from "../data/product-details.js";
+import { getProductBySlug, listProducts } from "../lib/api/products.js";
 import { useUser } from "../context/UserContext.jsx";
 import { smartNavigate } from "../lib/nav-history.js";
 import Gallery from "../components/pdp/Gallery.jsx";
@@ -20,16 +21,55 @@ export default function Product({ id }) {
   const [quickView, setQuickView] = useState(null);
   const tabsRef = useRef(null);
 
-  const product = useMemo(() => getProductDetail(id), [id]);
-  const related = useMemo(() => (product ? getRelated(product, 8) : []), [product]);
+  const [product, setProduct] = useState(null);
+  const [related, setRelated] = useState([]);
+  const [error, setError] = useState(null);
 
-  // Reset + simulate fetch whenever the product id changes.
+  /**
+   * Load the product from Supabase.
+   *
+   * `id` is the URL slug. getProductBySlug() returns the same legacy-shaped
+   * object the static catalog produced, so buildPdp() — which adds benefits,
+   * ingredient copy, how-to, variants and the review block — is reused
+   * unchanged. Only the data source moved.
+   *
+   * The related rail needs the wider catalog to score against, so it's a
+   * second, non-blocking request: the PDP renders as soon as the product
+   * itself lands rather than waiting on 139 rows it doesn't need yet.
+   */
   useEffect(() => {
+    let alive = true;
     setLoading(true);
+    setError(null);
+    setProduct(null);
+    setRelated([]);
     setTab("description");
     window.scrollTo({ top: 0, behavior: "auto" });
-    const t = setTimeout(() => setLoading(false), 500);
-    return () => clearTimeout(t);
+
+    (async () => {
+      const { data, error } = await getProductBySlug(id);
+      if (!alive) return;
+
+      if (error) {
+        setError(error);
+        setLoading(false);
+        return;
+      }
+      if (!data) {
+        setProduct(null);      // falls through to the not-found state below
+        setLoading(false);
+        return;
+      }
+
+      const pdp = buildPdp(data);
+      setProduct(pdp);
+      setLoading(false);
+
+      const { data: all } = await listProducts();
+      if (alive && all) setRelated(pickRelated(all, pdp, 8));
+    })();
+
+    return () => { alive = false; };
   }, [id]);
 
   const goReviews = () => {
@@ -41,6 +81,23 @@ export default function Product({ id }) {
   };
 
   if (loading) return <PdpSkeleton />;
+
+  /* A failed request is NOT the same as a product that doesn't exist —
+     telling someone their product is gone when the network blipped sends
+     them away for no reason. Offer a retry instead. */
+  if (error) {
+    return (
+      <div>
+        <EmptyState
+          emoji="📡"
+          title="We couldn’t load this product"
+          message="Something went wrong reaching our shelves. Please try again."
+          actionLabel="Try again"
+          onAction={() => window.location.reload()}
+        />
+      </div>
+    );
+  }
 
   if (!product) {
     return (

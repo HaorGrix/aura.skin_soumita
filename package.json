@@ -1,9 +1,9 @@
 {
-  "name": "aura-skin",
+  "name": "skin-script",
   "private": true,
   "version": "0.1.0",
   "type": "module",
-  "description": "aura.skin — a premium, mobile-first skincare e-commerce experience.",
+  "description": "skin.script — a premium, mobile-first skincare e-commerce experience.",
   "scripts": {
     "dev": "vite",
     "build": "vite build",

@@ -21,10 +21,10 @@ export default function WhyAura() {
       <div className="mx-auto max-w-7xl px-5 sm:px-8">
         <div className="mx-auto max-w-2xl text-center">
           <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-magenta">
-            The aura promise
+            The skin script promise
           </p>
           <h2 className="mt-2 font-serif text-[clamp(1.9rem,4.5vw,3.25rem)] leading-tight text-ink">
-            Why you’ll <span className="italic text-gradient-glow">love</span> aura.skin
+            Why you’ll <span className="italic text-gradient-glow">love</span> skin.script
           </h2>
         </div>
 

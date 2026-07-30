@@ -1,5 +1,5 @@
 /* =================================================================== *
- * aura.skin — DESIGN SYSTEM (single source of truth)
+ * skin.script — DESIGN SYSTEM (single source of truth)
  * -------------------------------------------------------------------
  * K/J-Beauty "glass skin" system.
  *
@@ -87,7 +87,7 @@ export const tokens = {
    * 6. MOTION
    * ---------------------------------------------------------------- */
   ease: {
-    aura: [0.22, 1, 0.36, 1], // signature soft-out
+    signature: [0.22, 1, 0.36, 1], // signature soft-out
     soft: [0.16, 1, 0.3, 1],
   },
   duration: { fast: 0.25, base: 0.5, slow: 0.9 },
@@ -217,7 +217,7 @@ export const motionPresets = {
       opacity: 1,
       y: 0,
       filter: "blur(0px)",
-      transition: { duration: 0.8, ease: tokens.ease.aura },
+      transition: { duration: 0.8, ease: tokens.ease.signature },
     },
   },
   stagger: (gap = 0.08, delay = 0) => ({

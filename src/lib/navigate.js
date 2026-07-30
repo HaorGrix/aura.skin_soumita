@@ -1,9 +1,9 @@
 /* =================================================================== *
- * aura.skin — History-API navigation (clean URLs, no hash)
+ * skin.script — History-API navigation (clean URLs, no hash)
  * -------------------------------------------------------------------
  * Replaces the old hash router. The app's router (useRoute in App.jsx)
  * reads window.location.pathname and re-parses on browser `popstate` and
- * this module's synthetic `aura:navigate` event.
+ * this module's synthetic `skinscript:navigate` event.
  *
  * `navigate()` is the single programmatic entry point. `installLinkInterceptor`
  * promotes every internal <a href="/..."> to an SPA navigation WITHOUT
@@ -11,7 +11,7 @@
  * plain <a> tags and only the href STRING changes (#/x → /x).
  * =================================================================== */
 
-const EVENT = "aura:navigate";
+const EVENT = "skinscript:navigate";
 
 /** Programmatic SPA navigation. `replace` swaps the current history entry
  *  (used for non-stacking updates like Shop's filter sync). */
@@ -46,8 +46,8 @@ export function onRouteChange(handler) {
  * call e.preventDefault() (e.g. BackButton, smartNavigate links) are skipped
  * via the defaultPrevented guard, so there's never a double navigation. */
 export function installLinkInterceptor() {
-  if (typeof document === "undefined" || window.__auraLinkInterceptor) return;
-  window.__auraLinkInterceptor = true;
+  if (typeof document === "undefined" || window.__skinscriptLinkInterceptor) return;
+  window.__skinscriptLinkInterceptor = true;
 
   document.addEventListener("click", (e) => {
     if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;

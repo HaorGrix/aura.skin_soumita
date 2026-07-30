@@ -10,15 +10,17 @@ import Footer from "../components/Footer.jsx";
 export default function Home() {
   return (
     <>
-      {/* Full-page soft pinkish-cream wash (light mode only). Fixed so the tone
-          stays consistent through scroll and fills the gaps between sections —
-          no more bands of plain white. Dark mode keeps its own dark canvas. */}
+      {/* Full-page brand wash. Fixed so the tone stays consistent through
+          scroll and fills the gaps between sections — no bands of plain
+          white. Was a pinkish-cream ramp; now the aqua family, matching the
+          #afdcec page background defined in index.css. Stops are drawn from
+          tokens so re-theming stays a one-file change. */}
       <div
         aria-hidden
         className="pointer-events-none fixed inset-0 -z-20"
         style={{
           background:
-            "linear-gradient(180deg, var(--color-petal) 0%, #fff5ef 38%, #ffe9f1 70%, #ffeef5 100%)",
+            "linear-gradient(180deg, var(--color-aqua-soft) 0%, var(--color-aqua) 38%, var(--color-aqua) 70%, var(--color-aqua-deep) 100%)",
         }}
       />
 

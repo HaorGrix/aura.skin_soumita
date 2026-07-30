@@ -1,15 +1,18 @@
 import { motion } from "framer-motion";
 import { Truck, PartyPopper } from "lucide-react";
-import { FREE_SHIPPING_THRESHOLD } from "../../lib/shop-config.js";
+import { useStoreSettings } from "../../lib/api/settings.js";
 import { formatPrice } from "../../lib/format.js";
 
 /** Animated progress toward free shipping.
  *  `couponFreeShipping` — a coupon already covers shipping, so the threshold is
  *  moot; nagging for more spend would contradict the ৳0 shipping line. */
 export default function FreeShippingBar({ subtotal, couponFreeShipping = false }) {
-  const remaining = Math.max(0, FREE_SHIPPING_THRESHOLD - subtotal);
+  // Threshold comes from /admin/settings; falls back to the previous
+  // hardcoded value until the fetch lands or if it fails.
+  const { freeShippingThreshold } = useStoreSettings();
+  const remaining = Math.max(0, freeShippingThreshold - subtotal);
   const unlocked = couponFreeShipping || remaining === 0;
-  const pct = unlocked ? 100 : Math.min(100, (subtotal / FREE_SHIPPING_THRESHOLD) * 100);
+  const pct = unlocked ? 100 : Math.min(100, (subtotal / freeShippingThreshold) * 100);
 
   return (
     <div className="rounded-2xl bg-snow p-3.5 ring-1 ring-line">

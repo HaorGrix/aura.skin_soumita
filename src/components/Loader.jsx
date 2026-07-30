@@ -3,7 +3,7 @@ import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { useAdaptiveLoader } from "../lib/useAdaptiveLoader.js";
 
 /**
- * Loader — the first 5–6 seconds of the aura.skin experience.
+ * Loader — the first 5–6 seconds of the skin.script experience.
  *
  * Clean glowing white→pink veil with drifting glass-skin orbs and floating
  * sparkles. Empowering affirmations (with cute K-beauty emojis) bloom from
@@ -147,7 +147,7 @@ export default function Loader({ onComplete }) {
                 transition={{ type: "spring", stiffness: 140, damping: 18, mass: 0.7 }}
               >
                 {reduce ? (
-                  "Welcome to aura.skin 🌸"
+                  "Welcome to skin.script 🌸"
                 ) : (
                   <>
                     {lines[index].text}{" "}
@@ -186,7 +186,7 @@ export default function Loader({ onComplete }) {
             animate={{ opacity: 0.85 }}
             transition={{ delay: 0.4, duration: 1 }}
           >
-            aura<span className="text-magenta">.</span>skin
+            skin<span className="text-magenta">.</span>script
           </motion.span>
         </motion.div>
       )}

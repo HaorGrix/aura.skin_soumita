@@ -3,8 +3,8 @@ import { POINTS_PER_REVIEW, pointsForOrder } from "../data/reviews.js";
 import { MILESTONES, couponForPoints } from "../lib/rewards-config.js";
 
 const UserContext = createContext(null);
-const SESSION_KEY = "aura-session";
-const STORE_KEY = "aura_users_store";
+const SESSION_KEY = "skinscript-session";
+const STORE_KEY = "skinscript_users_store";
 
 function loadStore() {
   try {

@@ -115,7 +115,7 @@ export default function Navbar({ onOpenSearch }) {
             href="/"
             className="font-serif text-2xl tracking-tight text-ink"
           >
-            aura<span className="text-magenta">.</span>skin
+            skin<span className="text-magenta">.</span>script
           </a>
 
           {/* Desktop nav */}
@@ -196,7 +196,7 @@ export default function Navbar({ onOpenSearch }) {
             ) : (
               <button
                 onClick={() => openAuth("signup")}
-                aria-label="Join Aura Rewards to start earning points"
+                aria-label="Join Skin Script Rewards to start earning points"
                 className="hidden items-center gap-1.5 rounded-full bg-petal px-3 py-1.5 text-xs font-semibold text-magenta transition-colors hover:bg-rose/30 sm:inline-flex"
               >
                 <Sparkles className="h-3.5 w-3.5" strokeWidth={2} />
@@ -262,7 +262,7 @@ export default function Navbar({ onOpenSearch }) {
             >
               <div className="flex items-center justify-between">
                 <span className="font-serif text-2xl text-ink">
-                  aura<span className="text-magenta">.</span>skin
+                  skin<span className="text-magenta">.</span>script
                 </span>
                 <button
                   className={iconBtn}
@@ -326,7 +326,7 @@ export default function Navbar({ onOpenSearch }) {
                   </span>
                 </button>
 
-                {/* Aura Rewards — full-width accent row. Guests get a join CTA
+                {/* Skin Script Rewards — full-width accent row. Guests get a join CTA
                     rather than a points balance they don't have. */}
                 <a
                   href={authed ? "/rewards" : "/account"}
@@ -343,7 +343,7 @@ export default function Navbar({ onOpenSearch }) {
                     <span className="grid h-9 w-9 place-items-center rounded-full bg-white text-magenta">
                       <Sparkles className="h-4 w-4" strokeWidth={2} />
                     </span>
-                    Aura Rewards
+                    Skin Script Rewards
                   </span>
                   <span className="text-sm font-semibold text-magenta-deep">
                     {authed ? `${points} pts →` : "Join & earn →"}

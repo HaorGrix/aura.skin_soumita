@@ -10,7 +10,7 @@ import { createContext, useContext, useEffect, useMemo, useState } from "react";
  * catalog as the source of truth.
  */
 const WishlistContext = createContext(null);
-const STORAGE_KEY = "aura-wishlist";
+const STORAGE_KEY = "skinscript-wishlist";
 
 function load() {
   try {

@@ -3,6 +3,21 @@
 export const CURRENCY = { code: "BDT", symbol: "৳", locale: "en-BD", fractionDigits: 0 };
 export const CONVERSION_RATE = 120; // 1 USD = 120 BDT
 
+/**
+ * Divisor that converts a database `*_minor` value (integer BDT paisa) into
+ * the "USD-ish" float scale the cart, formatPrice() and PRICE_RANGES still
+ * run on. The catalog migration stored `price_minor = usd_ish * 120 * 100`,
+ * so 12000 is its exact inverse.
+ *
+ * This is a BRIDGE, not the destination. Every server figure must pass
+ * through it before reaching formatPrice(), or the number renders 120×
+ * wrong. Retiring it means moving the cart and every price display onto
+ * integer paisa — a single deliberate refactor, not a drive-by change.
+ * It lives here so there is exactly one definition of the conversion.
+ */
+export const MINOR_TO_LEGACY = CONVERSION_RATE * 100;
+export const fromMinor = (minor) => (Number(minor) || 0) / MINOR_TO_LEGACY;
+
 export function formatPrice(amount) {
   const n = Number(amount) || 0;
   const bdt = n * CONVERSION_RATE;

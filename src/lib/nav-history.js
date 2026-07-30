@@ -8,7 +8,7 @@
 
 import { navigate } from "./navigate.js";
 
-const KEY = "aura-nav-stack";
+const KEY = "skinscript-nav-stack";
 const MAX = 20;
 
 /* Routes that form the purchase funnel. Backing into these from a catalog page

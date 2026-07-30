@@ -51,7 +51,7 @@ function PointsCard({ points, nextMilestone, milestones }) {
       <div className="relative flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="inline-flex items-center gap-1.5 text-xs font-medium uppercase tracking-[0.16em] text-white/80">
-            <Sparkles className="h-4 w-4" strokeWidth={2} /> Aura Rewards
+            <Sparkles className="h-4 w-4" strokeWidth={2} /> Skin Script Rewards
           </p>
           <p className="mt-2 font-serif text-5xl leading-none">{points}</p>
           <p className="mt-1 text-sm text-white/85">loyalty points · 1 per verified review</p>
@@ -107,7 +107,7 @@ function GuestTeaser({ openAuth }) {
       <div aria-hidden className="pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full bg-white/15 blur-2xl" />
       <div className="relative space-y-4">
         <p className="inline-flex items-center gap-1.5 text-xs font-medium uppercase tracking-[0.16em] text-white/80">
-          <Sparkles className="h-4 w-4" strokeWidth={2} /> Aura Rewards
+          <Sparkles className="h-4 w-4" strokeWidth={2} /> Skin Script Rewards
         </p>
         <p className="font-serif text-2xl">
           Sign in to track your points and unlock exclusive rewards.
@@ -144,7 +144,7 @@ function CouponGrid({ coupons }) {
             className="flex items-center gap-4 rounded-2xl border border-dashed border-magenta/40 bg-petal/50 p-4"
           >
             <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-magenta/10 text-magenta">
-              {c.code === "AURA8FS"
+              {c.code === "SKN8FS"
                 ? <Truck className="h-5 w-5" strokeWidth={1.8} />
                 : <Ticket className="h-5 w-5" strokeWidth={1.8} />}
             </span>
@@ -252,7 +252,7 @@ export default function Rewards() {
           className="mt-12 mb-8"
         >
           <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-magenta">
-            Aura Rewards
+            Skin Script Rewards
           </p>
           <h1 className="mt-2 font-serif text-[clamp(2rem,5vw,3.25rem)] leading-tight text-ink">
             Your Glow, Rewarded

@@ -12,24 +12,24 @@ const COUPONS = {
      The old 50/100/200 tiers were NOT: points came only from reviews at 1pt
      each — one review per purchased product — so the top tier needed more
      distinct products than the catalog even holds. Keep them reachable. */
-  AURA3: {
-    code: "AURA3",
+  SKN3: {
+    code: "SKN3",
     type: "percent",
     value: 3,
     points: 25,
     reward: "3% discount coupon",
     short: "3% off",
   },
-  AURA5: {
-    code: "AURA5",
+  SKN5: {
+    code: "SKN5",
     type: "percent",
     value: 5,
     points: 60,
     reward: "5% discount coupon",
     short: "5% off",
   },
-  AURA8FS: {
-    code: "AURA8FS",
+  SKN8FS: {
+    code: "SKN8FS",
     type: "percent",
     value: 8,
     points: 120,

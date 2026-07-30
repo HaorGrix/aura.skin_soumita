@@ -5,7 +5,7 @@ import { ChevronLeft, Tag, ArrowRight, Lock, ShieldCheck, Truck } from "lucide-r
 import { useCart } from "../context/CartContext.jsx";
 import { useUser } from "../context/UserContext.jsx";
 import { PRODUCTS } from "../data/products.js";
-import { FREE_SHIPPING_THRESHOLD, STANDARD_SHIPPING } from "../lib/shop-config.js";
+import { useStoreSettings } from "../lib/api/settings.js";
 import { smartNavigate } from "../lib/nav-history.js";
 import LineItem from "../components/cart/LineItem.jsx";
 import FreeShippingBar from "../components/cart/FreeShippingBar.jsx";
@@ -24,13 +24,15 @@ export default function Cart() {
   const [promoInput, setPromoInput] = useState("");
   const [quickView, setQuickView] = useState(null);
 
+  const { freeShippingThreshold, standardShipping } = useStoreSettings();
+
   const discounted = Math.max(0, subtotal - discountAmount);
   // Honour the coupon's free-shipping flag here too — Checkout does, and a bag
   // that quotes one total then charges another at checkout destroys trust.
   const shipping =
-    discounted >= FREE_SHIPPING_THRESHOLD || discounted === 0 || appliedCoupon?.freeShipping
+    discounted >= freeShippingThreshold || discounted === 0 || appliedCoupon?.freeShipping
       ? 0
-      : STANDARD_SHIPPING;
+      : standardShipping;
   const total = discounted + shipping;
 
   const recommended = useMemo(() => {

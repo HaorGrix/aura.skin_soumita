@@ -55,7 +55,21 @@ server {
     #     fonts.googleapis.com (CSS) + fonts.gstatic.com (font files).
     #   • img-src needs data: — product placeholders are inline SVG data URIs.
     #   • script-src 'self' — the app bundles all JS; no external/inline scripts.
-    add_header Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'" always;
+    #
+    #   ⚠ SUPABASE: this policy was written before the backend existed, when
+    #     `connect-src 'self'` and `img-src 'self' data:` were correct. They
+    #     are not any more — the app now calls the Supabase REST/Auth/Realtime
+    #     API and loads every product photo from Supabase Storage. Left as-is,
+    #     this CSP silently blocks ALL data loading and ALL product images in
+    #     production (and only in production — `vite preview` sends no CSP, so
+    #     local testing will not catch it).
+    #
+    #     $supabase MUST stay in sync with VITE_SUPABASE_URL in .env.local.
+    #     If you ever move to a different Supabase project, change it here too
+    #     or the deployed site loads no data and shows no images.
+    #     wss: is required for Realtime; drop it if you never enable Realtime.
+    set $supabase "https://gmhqdurhmmkixjlerdqp.supabase.co";
+    add_header Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: $supabase; connect-src 'self' $supabase wss://gmhqdurhmmkixjlerdqp.supabase.co; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'" always;
     add_header X-Content-Type-Options "nosniff" always;
     add_header X-Frame-Options "DENY" always;
     add_header Referrer-Policy "strict-origin-when-cross-origin" always;

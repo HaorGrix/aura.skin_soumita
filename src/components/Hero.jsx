@@ -75,8 +75,11 @@ export default function Hero() {
           aria-hidden
           className="absolute inset-0"
           style={{
+            // Brand background wash. Was a pink ramp (white → petal →
+            // #ffd6e6); now the aqua family, so the hero reads as the same
+            // surface as the rest of the page instead of a pink island.
             background:
-              "radial-gradient(130% 100% at 72% -10%, var(--color-white) 0%, var(--color-petal) 46%, var(--color-petal-deep) 76%, #ffd6e6 100%)",
+              "radial-gradient(130% 100% at 72% -10%, var(--color-white) 0%, var(--color-aqua-soft) 42%, var(--color-aqua) 74%, var(--color-aqua-deep) 100%)",
           }}
         />
         <div

@@ -1,5 +1,5 @@
 /* =================================================================== *
- * aura.skin — products & categories data access (Supabase)
+ * skin.script — products & categories data access (Supabase)
  * -------------------------------------------------------------------
  * Reads from `products_public` — the view that already computes inStock,
  * isLowStock, isOnSale, discountPercent, isBestSeller (see the DB migration,

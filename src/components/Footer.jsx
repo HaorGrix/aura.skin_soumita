@@ -115,7 +115,7 @@ export default function Footer() {
         <div className="grid gap-10 border-t border-line pt-12 sm:grid-cols-2 lg:grid-cols-5">
           <div className="lg:col-span-2">
             <a href="/" className="font-serif text-2xl text-ink">
-              aura<span className="text-magenta">.</span>skin
+              skin<span className="text-magenta">.</span>script
             </a>
             <p className="mt-3 max-w-xs text-sm leading-relaxed text-ink-soft">
               K- and J-Beauty, sourced honestly and sold without the theatre.
@@ -153,7 +153,7 @@ export default function Footer() {
 
         {/* Bottom bar */}
         <div className="mt-12 flex flex-col items-center justify-between gap-4 border-t border-line pt-6 text-xs text-ink-soft sm:flex-row">
-          <p>© {new Date().getFullYear()} aura.skin — Glow within, bloom daily. 🌸</p>
+          <p>© {new Date().getFullYear()} skin.script — Glow within, bloom daily. 🌸</p>
           <div className="flex gap-5">
             <a href="/about" className="hover:text-magenta">Privacy</a>
             <a href="/about" className="hover:text-magenta">Terms</a>

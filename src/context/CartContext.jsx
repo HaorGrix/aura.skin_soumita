@@ -15,7 +15,7 @@ import { maxQtyFor } from "../data/products.js";
  * badge, ProductCard quick-add, the drawer, the cart page, and checkout.
  */
 const CartContext = createContext(null);
-const STORAGE_KEY = "aura-cart";
+const STORAGE_KEY = "skinscript-cart";
 
 /* Keep only what the cart UI needs (small + serializable). */
 function slim(item) {

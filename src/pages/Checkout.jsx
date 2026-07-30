@@ -23,8 +23,12 @@ import { useUser } from "../context/UserContext.jsx";
 import { useToast } from "../components/ui/Toast.jsx";
 import Button from "../components/ui/Button.jsx";
 import { Field, OptionCard, Input } from "../components/ui/index.js";
-import { FREE_SHIPPING_THRESHOLD, STANDARD_SHIPPING, EXPRESS_SHIPPING } from "../lib/shop-config.js";
+import { useStoreSettings } from "../lib/api/settings.js";
 import { formatPrice } from "../lib/format.js";
+// Aliased: this module already has a local `placeOrder()` (the pre-flight
+// stock guard). Importing under the same name would shadow it and make the
+// guard call itself instead of the API.
+import { placeOrder as placeOrderRpc, checkoutErrorMessage } from "../lib/api/orders.js";
 import { smartNavigate } from "../lib/nav-history.js";
 import { surface } from "../lib/design-system.js";
 import LineItem from "../components/cart/LineItem.jsx";
@@ -42,7 +46,7 @@ const STEPS = [
 
 const emailOk = (v) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
 const postcodeOk = (v) => /^[0-9]{4}$/.test(v.trim());
-const CHECKOUT_KEY = "aura_checkout_state";
+const CHECKOUT_KEY = "skinscript_checkout_state";
 
 function loadCheckoutState() {
   try {
@@ -131,12 +135,17 @@ export default function Checkout() {
   // shipping to any future code that happens to contain "FS" (GIFTS, OFFSEASON…).
   const isFreeShippingCoupon = !!appliedCoupon?.freeShipping;
 
+  // Rates and threshold come from /admin/settings. These figures are for
+  // DISPLAY only — place_order() recomputes shipping from the same row
+  // server-side, so a stale client can never change what is charged.
+  const { freeShippingThreshold, standardShipping, expressShipping } = useStoreSettings();
+
   const shipping =
     delivery === "express"
-      ? EXPRESS_SHIPPING
-      : (newSubtotal >= FREE_SHIPPING_THRESHOLD || isFreeShippingCoupon)
+      ? expressShipping
+      : (newSubtotal >= freeShippingThreshold || isFreeShippingCoupon)
       ? 0
-      : STANDARD_SHIPPING;
+      : standardShipping;
   const total = newSubtotal + shipping;
 
   const applyCoupon = (e) => {
@@ -227,41 +236,72 @@ export default function Checkout() {
       return;
     }
 
+    submitOrder();
+  }
+
+  /**
+   * The real checkout. Everything that matters happens inside the
+   * place_order() RPC as one transaction: stock is re-checked under a row
+   * lock, decremented, the order and its line items are written, the coupon
+   * is validated and redeemed, and the inventory ledger is updated.
+   *
+   * The guards above are a courtesy — they catch the common case early with
+   * a friendlier message. The server is what actually prevents overselling,
+   * because only it can hold a lock while it checks and decrements.
+   *
+   * Money is NOT sent. `total` on this page is display arithmetic; the
+   * amounts stored against the order come back computed from the database.
+   */
+  async function submitOrder() {
     setProcessing(true);
-    setTimeout(() => {
-      const orderNumber = "AUR-" + Math.floor(100000 + Math.random() * 900000);
-      const itemIds = items.map((item) => item.id); // Extract product IDs from cart
 
-      const orderData = {
-        number: orderNumber,
-        email: form.email,
-        total,
-        count,
-        payMethod,
-        itemIds, // Product IDs for order history
-        timestamp: new Date().toISOString(), // For tracking status
-      };
+    const { data, error } = await placeOrderRpc({
+      email: form.email,
+      items,
+      paymentMethod: payMethod,
+      shippingMethod: delivery,
+      couponCode: appliedCoupon?.code ?? null,
+      shippingAddress: {
+        name: `${form.firstName ?? ""} ${form.lastName ?? ""}`.trim() || form.name || "",
+        line1: form.address ?? "",
+        line2: form.apartment ?? "",
+        city: form.city ?? "",
+        area: form.area ?? "",
+        postcode: form.postcode ?? "",
+        country: form.country ?? "Bangladesh",
+        phone: form.phone ?? "",
+      },
+    });
 
-      setOrder(orderData);
+    setProcessing(false);
 
-      // Lock the coupon so it cannot be reused on future orders.
-      if (appliedCoupon) markCouponUsed(appliedCoupon.code);
+    if (error) {
+      // Named lookup so "Only 2 of X left" says the product's real name
+      // rather than its slug.
+      const slug = (error.message ?? "").split(":")[1];
+      const line = items.find((i) => (i.slug ?? i.id) === slug);
+      toast.error(checkoutErrorMessage(error, { productName: line?.name }), "Order not placed");
+      return;
+    }
 
-      // Persist to global order history (UserContext)
-      addOrder({
-        number: orderNumber,
-        total,
-        email: form.email,
-        payMethod,
-        itemIds,
-        couponCode: appliedCoupon?.code || null,
-      });
+    setOrder({ ...data, count });
 
-      setProcessing(false);
-      sessionStorage.removeItem("aura_checkout_form");
-      clear();
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    }, 1700);
+    // Mirror into the local history the Account page still reads. Once
+    // account pages read from the DB (roadmap), this line goes away.
+    if (appliedCoupon) markCouponUsed(appliedCoupon.code);
+    addOrder({
+      number: data.number,
+      total: data.total,
+      email: data.email,
+      payMethod: data.payMethod,
+      itemIds: items.map((i) => i.id),
+      couponCode: data.couponCode,
+      timestamp: data.timestamp,
+    });
+
+    sessionStorage.removeItem("skinscript_checkout_form");
+    clear();
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   // —— Success ——
@@ -562,21 +602,25 @@ function InfoStep({ form, set, setForm, setIsPhoneValid, errors }) {
 }
 
 function DeliveryStep({ delivery, setDelivery, payMethod, setPayMethod, subtotal }) {
-  const freeStd = subtotal >= FREE_SHIPPING_THRESHOLD;
+  // Same source as the order summary — reading it here too keeps the option
+  // prices and the totals from ever disagreeing.
+  const { freeShippingThreshold, standardShipping, expressShipping } = useStoreSettings();
+
+  const freeStd = subtotal >= freeShippingThreshold;
   const deliveryOptions = [
     {
       id: "standard",
       icon: Truck,
       title: "Home Delivery",
       desc: "3–5 business days · to your door",
-      price: freeStd ? 0 : STANDARD_SHIPPING,
+      price: freeStd ? 0 : standardShipping,
     },
     {
       id: "express",
       icon: Zap,
       title: "Express Delivery",
       desc: "1–2 business days",
-      price: EXPRESS_SHIPPING,
+      price: expressShipping,
     },
   ];
   const payOptions = [

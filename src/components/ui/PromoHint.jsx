@@ -11,7 +11,7 @@ import { FIRST_ORDER_CODES } from "../../lib/rewards-config.js";
  *      code hasn't been used yet.  Shows GLOW10 / BLOOM5.
  *   3. Loyalty   — shopper has earned rewards codes and none have been used.
  *
- * AURA loyalty codes are not mentioned here when a first-order hint applies,
+ * SKIN SCRIPT loyalty codes are not mentioned here when a first-order hint applies,
  * keeping the message focused.  Loyalty codes are multi-use by design and
  * are unaffected by the firstOrderOnly check in CartContext.
  */

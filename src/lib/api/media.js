@@ -1,5 +1,5 @@
 /* =================================================================== *
- * aura.skin — product image uploads (Supabase Storage)
+ * skin.script — product image uploads (Supabase Storage)
  * -------------------------------------------------------------------
  * The single path for getting a product photo into Storage AND correctly
  * linked in the database. Whether it's called from the future admin panel

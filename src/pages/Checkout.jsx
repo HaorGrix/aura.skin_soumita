@@ -1,3 +1,4 @@
+import { navigate } from "../lib/navigate.js";
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -275,7 +276,7 @@ export default function Checkout() {
           title="Nothing to check out"
           message="Your bag is empty — let’s add a little glow first."
           actionLabel="Go to shop"
-          onAction={() => (window.location.hash = "#/shop")}
+          onAction={() => (navigate("/shop"))}
         />
       </div>
     );
@@ -290,10 +291,10 @@ export default function Checkout() {
     <div className="min-h-screen">
       <div className="mx-auto max-w-6xl px-5 sm:px-8">
         <a
-          href="#/cart"
+          href="/cart"
           onClick={(e) => {
             e.preventDefault();
-            smartNavigate("#/cart", "cart", "checkout");
+            smartNavigate("/cart", "cart", "checkout");
           }}
           className="mt-12 inline-flex items-center gap-1.5 text-sm font-medium text-ink-soft transition-colors hover:text-magenta"
         >
@@ -467,10 +468,10 @@ function AuthGate({ onGuest, openAuth }) {
     <div className="min-h-screen">
       <div className="mx-auto max-w-md px-5 sm:px-8">
         <a
-          href="#/cart"
+          href="/cart"
           onClick={(e) => {
             e.preventDefault();
-            smartNavigate("#/cart", "cart", "checkout");
+            smartNavigate("/cart", "cart", "checkout");
           }}
           className="mt-12 inline-flex items-center gap-1.5 text-sm font-medium text-ink-soft transition-colors hover:text-magenta"
         >
@@ -847,13 +848,13 @@ function Success({ order }) {
             Track Order
           </button>
           <a
-            href="#/shop"
+            href="/shop"
             className="flex-1 rounded-full border border-ink/15 py-3.5 text-sm font-semibold text-ink transition-colors hover:border-magenta/50"
           >
             Continue shopping
           </a>
           <a
-            href="#/"
+            href="/"
             className="flex-1 rounded-full border border-ink/15 py-3.5 text-sm font-semibold text-ink transition-colors hover:border-magenta/50"
           >
             Back home

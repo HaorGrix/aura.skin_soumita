@@ -6,6 +6,8 @@
  * So we keep our own stack. It lives in sessionStorage to survive a reload but
  * die with the tab. */
 
+import { navigate } from "./navigate.js";
+
 const KEY = "aura-nav-stack";
 const MAX = 20;
 
@@ -63,10 +65,10 @@ export function previousRoute(current) {
 export function backTargetFor(current) {
   const previous = previousRoute(current);
 
-  if (!previous) return "#/";
-  if (TRANSACTIONAL.has(previous) && CATALOG.has(current)) return "#/";
+  if (!previous) return "/";
+  if (TRANSACTIONAL.has(previous) && CATALOG.has(current)) return "/";
 
-  return previous === "home" ? "#/" : `#/${previous}`;
+  return previous === "home" ? "/" : `/${previous}`;
 }
 
 /**
@@ -82,10 +84,10 @@ export function backTargetFor(current) {
  * a duplicate. The stack stays flat and native Back behaves the way a shopper
  * expects.
  */
-export function smartNavigate(targetHash, targetRoute, currentRoute) {
+export function smartNavigate(targetPath, targetRoute, currentRoute) {
   if (previousRoute(currentRoute) === targetRoute && window.history.length > 1) {
     window.history.back();
     return;
   }
-  window.location.hash = targetHash;
+  navigate(targetPath);
 }

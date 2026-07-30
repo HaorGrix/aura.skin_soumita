@@ -78,7 +78,7 @@ export default function FeaturedProducts() {
 
         <div className="mt-12 text-center">
           <a
-            href="#/shop"
+            href="/shop"
             className="inline-flex items-center gap-2 rounded-full border border-ink/15 px-8 py-3.5 text-sm font-semibold text-ink transition-colors hover:border-magenta/50 hover:text-magenta"
           >
             Shop all products <ArrowRight className="h-4 w-4" strokeWidth={2} />

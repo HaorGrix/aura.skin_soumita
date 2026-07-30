@@ -127,7 +127,7 @@ export default function Articles() {
 
         {/* Breadcrumb */}
         <nav className="flex items-center gap-2 text-sm text-ink-soft" aria-label="Breadcrumb">
-          <a href="#/" className="inline-flex items-center gap-1 hover:text-magenta">
+          <a href="/" className="inline-flex items-center gap-1 hover:text-magenta">
             <Home className="h-3.5 w-3.5" strokeWidth={1.8} /> Home
           </a>
           <span>/</span>

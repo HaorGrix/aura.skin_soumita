@@ -70,7 +70,7 @@ export default function Journal() {
               Stories & <span className="italic text-gradient-glow">soulful reads</span>
             </h2>
           </div>
-          <a href="#/journal" className="hidden text-sm font-medium text-magenta hover:underline sm:inline">
+          <a href="/journal" className="hidden text-sm font-medium text-magenta hover:underline sm:inline">
             All articles →
           </a>
         </div>

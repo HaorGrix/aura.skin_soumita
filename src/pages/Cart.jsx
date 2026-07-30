@@ -1,3 +1,4 @@
+import { navigate } from "../lib/navigate.js";
 import { useMemo, useState } from "react";
 import { AnimatePresence } from "framer-motion";
 import { ChevronLeft, Tag, ArrowRight, Lock, ShieldCheck, Truck } from "lucide-react";
@@ -75,7 +76,7 @@ export default function Cart() {
             title="Your bag is feeling light"
             message="Fill it with rituals that make you glow. Your perfect shelf is one click away. ✨"
             actionLabel="Explore the shop"
-            onAction={() => (window.location.hash = "#/shop")}
+            onAction={() => (navigate("/shop"))}
           />
           <RelatedProducts
             products={recommended}
@@ -96,10 +97,10 @@ export default function Cart() {
             came from — pushing a duplicate entry is what built the
             Shop → Cart → Shop → Cart trap. */}
         <a
-          href="#/shop"
+          href="/shop"
           onClick={(e) => {
             e.preventDefault();
-            smartNavigate("#/shop", "shop", "cart");
+            smartNavigate("/shop", "shop", "cart");
           }}
           className="inline-flex items-center gap-1.5 text-sm font-medium text-ink-soft transition-colors hover:text-magenta"
         >
@@ -169,7 +170,7 @@ export default function Cart() {
                 magnetic={false}
                 className="mt-4 w-full"
                 as="a"
-                href="#/checkout"
+                href="/checkout"
               >
                 Proceed to Checkout <ArrowRight className="h-4 w-4" strokeWidth={2} />
               </Button>

@@ -57,7 +57,7 @@ function ConcernCard({ tile }) {
 
   return (
     <motion.a
-      href={`#/shop?concern=${encodeURIComponent(tile.label)}`}
+      href={`/shop?concern=${encodeURIComponent(tile.label)}`}
       whileHover={{ y: -6 }}
       transition={{ type: "spring", stiffness: 300, damping: 24 }}
       className="group relative w-[15.5rem] shrink-0 snap-start overflow-hidden rounded-[1.75rem] shadow-soft ring-1 ring-line transition-shadow duration-500 hover:shadow-lift sm:w-[17.5rem]"
@@ -171,7 +171,7 @@ export default function ShopByConcern() {
           {SKIN_TILES.map((s) => (
             <a
               key={s}
-              href={`#/shop?skinType=${encodeURIComponent(s)}`}
+              href={`/shop?skinType=${encodeURIComponent(s)}`}
               className="rounded-full bg-white px-4 py-2 text-sm font-medium text-ink ring-1 ring-line transition-colors hover:ring-magenta hover:text-magenta"
             >
               {s}

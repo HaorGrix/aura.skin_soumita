@@ -28,6 +28,7 @@ import EmptyState from "../components/ui/EmptyState.jsx";
 import Button from "../components/ui/Button.jsx";
 import BackButton from "../components/ui/BackButton.jsx";
 import { useBodyScrollLock } from "../lib/scrollLock.js";
+import { onRouteChange } from "../lib/navigate.js";
 
 const PAGE = 12;
 
@@ -45,7 +46,7 @@ const FACET_VALUES = {
   availability: new Set(AVAILABILITY.map((a) => a.id)),
 };
 
-/* Read pre-filters from the hash query, e.g. #/shop?concern=Hydration&skinType=Dry&q=snail
+/* Read pre-filters from the URL query, e.g. /shop?concern=Hydration&skinType=Dry&q=snail
  * Values are validated against FACET_VALUES so any junk param resolves to "no
  * filter" (full catalog) rather than an empty result set. Multiple values per
  * facet (comma-separated) combine, and different facets combine too — so
@@ -53,11 +54,8 @@ const FACET_VALUES = {
 function parseHashQuery() {
   const filters = structuredClone(EMPTY_FILTERS);
   let search = "";
-  // indexOf (not split) so a value that ever contains "?" can't truncate the rest.
-  const hash = window.location.hash;
-  const qi = hash.indexOf("?");
-  if (qi === -1) return { filters, search };
-  const params = new URLSearchParams(hash.slice(qi + 1));
+  // Clean-URL routing: the query lives in location.search, not the hash.
+  const params = new URLSearchParams(window.location.search);
   for (const key of Object.keys(FACET_VALUES)) {
     const raw = params.get(key);
     if (!raw) continue;
@@ -85,17 +83,13 @@ export default function Shop() {
 
   // Re-sync on REAL navigation only — browser back/forward, or clicking another
   // concern card while already on Shop. In-page filter toggles use
-  // history.replaceState (see syncHash), which does not emit hashchange, so they
+  // history.replaceState (see syncHash), which emits no route event, so they
   // never round-trip through here and can't clobber React state.
-  useEffect(() => {
-    const syncFromUrl = () => {
-      const { filters: parsedFilters, search: parsedSearch } = parseHashQuery();
-      setFilters(parsedFilters);
-      setSearch(parsedSearch);
-    };
-    window.addEventListener("hashchange", syncFromUrl);
-    return () => window.removeEventListener("hashchange", syncFromUrl);
-  }, []);
+  useEffect(() => onRouteChange(() => {
+    const { filters: parsedFilters, search: parsedSearch } = parseHashQuery();
+    setFilters(parsedFilters);
+    setSearch(parsedSearch);
+  }), []);
   const [sort, setSort] = useState("featured");
   const [visible, setVisible] = useState(PAGE);
   const [loading, setLoading] = useState(true); // true until the initial fetch settles
@@ -209,8 +203,8 @@ export default function Shop() {
     });
     const qs = params.toString();
     // Use replaceState so filter clicks don't bloat the history stack,
-    // but the URL remains shareable.
-    window.history.replaceState(null, "", qs ? `#/shop?${qs}` : "#/shop");
+    // but the URL remains shareable. Clean path — query in the search string.
+    window.history.replaceState(null, "", qs ? `/shop?${qs}` : "/shop");
   };
 
   const toggleFilter = (key, id) => {

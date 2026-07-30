@@ -13,14 +13,18 @@
  * not a client-side-only check.
  * =================================================================== */
 import { supabase } from "./client.js";
+import { DEFAULT_BUCKET, publicUrl } from "./storage-url.js";
 
-const BUCKET = "product-images";
+const BUCKET = DEFAULT_BUCKET;
 
 /** Resolve a stored path to its public URL. Shared by products.js so there
- *  is one place that knows how bucket → URL resolution works. */
+ *  is one place that knows how bucket → URL resolution works.
+ *
+ *  Delegates to the SDK-free builder in storage-url.js: read-only callers
+ *  (the CMS on the homepage hero) can import that directly and skip pulling
+ *  @supabase/supabase-js into the initial bundle. Same output either way. */
 export function publicImageUrl(storagePath) {
-  if (!storagePath) return null;
-  return supabase.storage.from(BUCKET).getPublicUrl(storagePath).data.publicUrl;
+  return publicUrl(storagePath, BUCKET);
 }
 
 /**

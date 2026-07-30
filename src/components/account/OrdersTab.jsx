@@ -1,3 +1,4 @@
+import { navigate } from "../../lib/navigate.js";
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { Package, Check, PenLine, Truck } from "lucide-react";
@@ -36,7 +37,7 @@ export default function OrdersTab() {
           title="No orders yet"
           message="Your purchases will appear here, ready to review for points."
           actionLabel="Start shopping"
-          onAction={() => (window.location.hash = "#/shop")}
+          onAction={() => (navigate("/shop"))}
         />
       ) : (
         <div className="space-y-5">
@@ -91,7 +92,7 @@ export default function OrdersTab() {
                   return (
                     <li key={id} className="flex items-center gap-4 px-5 py-4">
                       <a
-                        href={`#/product/${id}`}
+                        href={`/product/${id}`}
                         className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl ring-1 ring-line"
                         style={{
                           background: `radial-gradient(120% 100% at 50% 0%, var(--color-white) 0%, ${p.tone} 75%, var(--color-petal-deep) 100%)`,
@@ -103,7 +104,7 @@ export default function OrdersTab() {
                       </a>
                       <div className="min-w-0 flex-1">
                         <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-magenta">{p.brand}</p>
-                        <a href={`#/product/${id}`} className="line-clamp-1 font-medium text-ink transition-colors hover:text-magenta">
+                        <a href={`/product/${id}`} className="line-clamp-1 font-medium text-ink transition-colors hover:text-magenta">
                           {p.name}
                         </a>
                         <p className="mt-0.5 text-sm text-ink-soft">{formatPrice(p.price)}</p>

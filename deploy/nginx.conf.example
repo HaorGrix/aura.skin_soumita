@@ -1,0 +1,70 @@
+# =====================================================================
+# aura.skin — nginx reference config for the clean-URL SPA
+# ---------------------------------------------------------------------
+# The GitHub Actions deploy (.github/workflows/deploy.yml) rsyncs the
+# built dist/ into /var/www/auraskin/ and nginx serves it statically.
+#
+# With History-API (clean-URL) routing, a direct visit or refresh of a
+# deep path like /product/cosrx-advanced-snail-96-mucin-power-essence
+# has NO matching file on disk. Without the `try_files … /index.html`
+# fallback below, nginx returns a hard 404. This block fixes that and
+# adds baseline security headers.
+#
+# HOW TO USE
+#   1. SSH to the live server.
+#   2. Merge the `location` + `add_header` lines below into the existing
+#      server { } block for auraskin in your nginx site config
+#      (typically /etc/nginx/sites-available/auraskin or conf.d/*.conf).
+#   3. Test + reload:   sudo nginx -t && sudo systemctl reload nginx
+#
+# NOTE: this file is documentation only — it is NOT read by the app,
+# the build, or the deploy. Nothing here ships in dist/.
+# =====================================================================
+
+server {
+    listen 80;
+    # listen 443 ssl http2;   # (your TLS config (certbot etc.) stays as-is)
+    server_name auraskin.example.com;   # ← your real domain
+
+    root /var/www/auraskin;
+    index index.html;
+
+    # ---- SPA fallback: serve index.html for any unknown path so the -----
+    # ---- client-side router can handle it (fixes refresh/deep-link 404) -
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+
+    # ---- Long-cache the content-hashed build assets (safe: names change
+    # ---- on every build). index.html itself must NOT be long-cached so
+    # ---- clients pick up new asset hashes immediately.
+    location /assets/ {
+        try_files $uri =404;
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+    }
+    location = /index.html {
+        add_header Cache-Control "no-cache";
+    }
+
+    # ---- Baseline security headers (apply to every response) ------------
+    # CSP notes:
+    #   • style-src needs 'unsafe-inline' — Tailwind v4 + Framer Motion set
+    #     inline styles at runtime.
+    #   • fonts are loaded from Google Fonts (see index.html) → whitelist
+    #     fonts.googleapis.com (CSS) + fonts.gstatic.com (font files).
+    #   • img-src needs data: — product placeholders are inline SVG data URIs.
+    #   • script-src 'self' — the app bundles all JS; no external/inline scripts.
+    add_header Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-Frame-Options "DENY" always;
+    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+    add_header Permissions-Policy "geolocation=(), microphone=(), camera=(), interest-cohort=()" always;
+    # Enable only once you are fully on HTTPS:
+    # add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+
+    # Optional: compress text assets
+    gzip on;
+    gzip_types text/css application/javascript application/json image/svg+xml;
+    gzip_min_length 1024;
+}

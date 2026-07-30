@@ -7,8 +7,10 @@ import {
 } from "framer-motion";
 import { ArrowRight, Sparkles, ChevronDown } from "lucide-react";
 import MagneticButton from "./ui/MagneticButton.jsx";
+import { contentImage, useContent, words } from "../lib/api/content.js";
 // Direct import so Vite resolves this specific asset immediately (the
 // import.meta.glob registry can be stale for files added after dev-server start).
+// Still the fallback when the admin hasn't uploaded a hero image.
 import HERO_IMG from "../../assests/herosection6.jpg";
 
 // Floating sparkle particles (deterministic positions for SSR-safety)
@@ -51,8 +53,12 @@ export default function Hero() {
   const yImg = useTransform(scrollYProgress, [0, 1], ["0%", "-8%"]);
   const opacity = useTransform(scrollYProgress, [0, 0.85], [1, 0]);
 
-  const line1 = ["Glow", "within."];
-  const line2 = ["Glass", "skin,", "every", "day."];
+  // Editable in /admin/content → "Homepage Hero". The CMS stores each
+  // headline as a plain sentence; the per-word stagger below is unchanged —
+  // we just split at render instead of hardcoding the arrays.
+  const { content } = useContent("home.hero");
+  const line1 = words(content.line1);
+  const line2 = words(content.line2);
 
   return (
     <section
@@ -138,14 +144,16 @@ export default function Hero() {
             className="inline-flex cursor-default items-center gap-2 rounded-full border border-ink/10 bg-white/70 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.2em] text-ink/80 backdrop-blur transition-shadow hover:shadow-soft"
           >
             <Sparkles className="h-3.5 w-3.5 text-magenta" strokeWidth={2} />
-            For every skin · K &amp; J-Beauty
+            {content.eyebrow || "For every skin · K & J-Beauty"}
           </motion.span>
 
           <h1 className="mt-6 font-serif text-[clamp(2.8rem,6.5vw,5.25rem)] leading-[0.98] tracking-[-0.01em] text-ink">
             <span className="block">
               {line1.map((word, i) => (
                 <motion.span
-                  key={word}
+                  // Index-keyed: CMS copy can legitimately repeat a word, and
+                  // a word-keyed list would collide and drop one.
+                  key={`${i}-${word}`}
                   custom={i}
                   variants={WORD}
                   initial={reduce ? false : "hidden"}
@@ -159,14 +167,16 @@ export default function Hero() {
             <span className="mt-1 block">
               {line2.map((word, i) => (
                 <motion.span
-                  key={word}
-                  custom={i + 2}
+                  key={`${i}-${word}`}
+                  custom={i + line1.length}
                   variants={WORD}
                   initial={reduce ? false : "hidden"}
                   animate="show"
-                  className={`mr-[0.2em] inline-block ${
-                    word === "Glass" || word === "skin," ? "italic text-gradient-glow" : ""
-                  }`}
+                  // The glow-italic treatment used to match the literal words
+                  // "Glass"/"skin," — which would silently vanish the moment
+                  // the client edited the headline. Now it's the first two
+                  // words of line 2, so the effect survives any copy.
+                  className={`mr-[0.2em] inline-block ${i < 2 ? "italic text-gradient-glow" : ""}`}
                 >
                   {word}
                 </motion.span>
@@ -180,9 +190,10 @@ export default function Hero() {
             transition={{ delay: 0.95, duration: 0.85, ease: EASE }}
             className="mx-auto mt-6 max-w-xl text-pretty text-base text-ink-soft sm:text-lg lg:mx-0"
           >
-            Real K- and J-Beauty, straight from authorised distributors.
-            Barrier-first formulas for the skin you actually have, plus honest
-            advice about what you can skip. ✨
+            {content.body ||
+              `Real K- and J-Beauty, straight from authorised distributors.
+               Barrier-first formulas for the skin you actually have, plus honest
+               advice about what you can skip. ✨`}
           </motion.p>
           </div>
 
@@ -196,8 +207,15 @@ export default function Hero() {
             transition={{ delay: 1.15, duration: 0.85, ease: EASE }}
             className="mt-9 flex justify-center lg:justify-start"
           >
-            <MagneticButton variant="accent" as="a" href="#/shop" className="w-full sm:w-auto">
-              Start Your Ritual
+            {/* The CMS stores ctaHref as a real path ("/shop"), which is now
+                exactly what the router wants — the link interceptor in
+                lib/navigate.js promotes it to an SPA navigation. */}
+            <MagneticButton
+              variant="accent" as="a"
+              href={content.ctaHref || "/shop"}
+              className="w-full sm:w-auto"
+            >
+              {content.ctaLabel || "Start Your Ritual"}
               <ArrowRight className="h-4 w-4" strokeWidth={2} />
             </MagneticButton>
           </motion.div>
@@ -257,8 +275,8 @@ export default function Hero() {
             className="relative mx-auto w-fit rounded-[2rem] bg-white p-3 shadow-lift ring-1 ring-white/60"
           >
             <img
-              src={HERO_IMG}
-              alt="Three people of different skin tones with healthy, glowing skin"
+              src={contentImage(content.image, HERO_IMG)}
+              alt={content.imageAlt || "Three people of different skin tones with healthy, glowing skin"}
               fetchpriority="high"
               className="mx-auto block h-auto w-auto max-h-[56vh] max-w-full rounded-[1.5rem] object-contain sm:max-h-[62vh] lg:max-h-[66vh]"
             />
@@ -269,7 +287,7 @@ export default function Hero() {
       {/* Scroll indicator */}
       {!reduce && (
         <motion.a
-          href="#best-sellers"
+          href="#featured"
           aria-label="Scroll to explore"
           className="absolute bottom-6 left-1/2 z-10 hidden -translate-x-1/2 flex-col items-center gap-2 text-ink/60 lg:flex"
           initial={{ opacity: 0 }}

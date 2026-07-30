@@ -18,7 +18,7 @@ const OFFERS = [
     badge: "Summer Sale",
     title: "Up to 50% off",
     blurb: "Sun-kissed glow essentials, half price.",
-    href: "#/shop?discount=50",
+    href: "/shop?discount=50",
     tone: "var(--color-gold-soft)",
   },
   {
@@ -26,7 +26,7 @@ const OFFERS = [
     badge: "Clearance",
     title: "Up to 75% off",
     blurb: "Personal-care blowout while stocks last.",
-    href: "#/shop?discount=75",
+    href: "/shop?discount=75",
     tone: "var(--color-cyan-soft)",
   },
   {
@@ -34,7 +34,7 @@ const OFFERS = [
     badge: "Flash Sale",
     title: "30% off select",
     blurb: "Friday flash — gone by midnight.",
-    href: "#/shop?discount=30",
+    href: "/shop?discount=30",
     tone: "var(--color-petal)",
   },
 ];

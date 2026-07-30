@@ -1,3 +1,4 @@
+import { navigate } from "../lib/navigate.js";
 import { motion } from "framer-motion";
 import { Heart, ShoppingBag, X, Trash2 } from "lucide-react";
 import { useWishlist } from "../context/WishlistContext.jsx";
@@ -71,7 +72,7 @@ export default function Wishlist() {
             title="Your wishlist is empty"
             message="Browse the shop and tap the ♡ on products you love to save them here."
             actionLabel="Discover favorites"
-            onAction={() => (window.location.hash = "#/shop")}
+            onAction={() => (navigate("/shop"))}
           />
         ) : (
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
@@ -99,7 +100,7 @@ export default function Wishlist() {
 
                 {/* Product image */}
                 <a
-                  href={`#/product/${p.id}`}
+                  href={`/product/${p.id}`}
                   className="relative aspect-square w-full overflow-hidden bg-snow"
                   style={{
                     background: `radial-gradient(120% 100% at 50% 0%, #fff 0%, ${p.tone} 75%, #ffe1ec 100%)`,
@@ -121,7 +122,7 @@ export default function Wishlist() {
                     {p.brand}
                   </p>
                   <a
-                    href={`#/product/${p.id}`}
+                    href={`/product/${p.id}`}
                     className="mt-1 line-clamp-2 font-serif text-base leading-snug text-ink transition-colors hover:text-magenta"
                   >
                     {p.name}

@@ -261,7 +261,7 @@ export default function Contact() {
                 filters can narrow by concern, skin type, brand, and stock state.
               </p>
             </div>
-            <Button as="a" href="#/shop?concern=Barrier%20Repair" variant="solid" size="lg">
+            <Button as="a" href="/shop?concern=Barrier%20Repair" variant="solid" size="lg">
               Browse barrier care
             </Button>
           </div>

@@ -1,3 +1,4 @@
+import { navigate } from "../../lib/navigate.js";
 import { useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, ShoppingBag, ArrowRight, Lock, Tag } from "lucide-react";
@@ -26,7 +27,7 @@ export default function CartDrawer() {
 
   const goCheckout = () => {
     closeCart();
-    window.location.hash = "#/checkout";
+    navigate("/checkout");
   };
 
   return (
@@ -125,7 +126,7 @@ export default function CartDrawer() {
                   </Button>
 
                   <a
-                    href="#/cart"
+                    href="/cart"
                     onClick={closeCart}
                     className="mt-2.5 block text-center text-sm font-medium text-ink-soft underline-offset-2 hover:text-magenta hover:underline"
                   >
@@ -159,7 +160,7 @@ function EmptyBag({ onClose }) {
         Let’s find your next glass-skin staple. Your glow awaits. ✨
       </p>
       <a
-        href="#/shop"
+        href="/shop"
         onClick={onClose}
         className="mt-7 inline-flex items-center gap-2 rounded-full bg-magenta px-7 py-3.5 text-sm font-semibold text-white shadow-soft transition-shadow hover:shadow-[var(--shadow-glow-pink)]"
       >

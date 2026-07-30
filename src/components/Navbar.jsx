@@ -17,12 +17,12 @@ import { useFocusTrap } from "../lib/useFocusTrap.js";
 import { useBodyScrollLock } from "../lib/scrollLock.js";
 
 const LINKS = [
-  { label: "Shop", href: "#/shop" },
-  { label: "Offers", href: "#/offers" },
-  { label: "Rewards", href: "#/rewards" },
-  { label: "Journal", href: "#/journal" },
-  { label: "About", href: "#/about" },
-  { label: "Contact", href: "#/contact" },
+  { label: "Shop", href: "/shop" },
+  { label: "Offers", href: "/offers" },
+  { label: "Rewards", href: "/rewards" },
+  { label: "Journal", href: "/journal" },
+  { label: "About", href: "/about" },
+  { label: "Contact", href: "/contact" },
 ];
 
 // Authorized brands — shown as a quiet marquee strip on desktop.
@@ -124,7 +124,7 @@ export default function Navbar({ onOpenSearch }) {
         >
           {/* Logo */}
           <a
-            href="#/"
+            href="/"
             className="font-serif text-2xl tracking-tight text-ink"
           >
             aura<span className="text-magenta">.</span>skin
@@ -151,7 +151,7 @@ export default function Navbar({ onOpenSearch }) {
             </button>
             {/* Wishlist — navigates to the dedicated wishlist page */}
             <a
-              href="#/wishlist"
+              href="/wishlist"
               className={`relative ${iconBtn} hidden sm:grid`}
               aria-label={`Wishlist (${wishCount} saved)`}
             >
@@ -198,7 +198,7 @@ export default function Navbar({ onOpenSearch }) {
                 instead of implying points they don't own. */}
             {authed ? (
               <a
-                href="#/rewards"
+                href="/rewards"
                 aria-label={`You have ${points} loyalty points`}
                 className="hidden items-center gap-1.5 rounded-full bg-petal px-3 py-1.5 text-xs font-semibold text-magenta transition-colors hover:bg-rose/30 sm:inline-flex"
               >
@@ -219,7 +219,7 @@ export default function Navbar({ onOpenSearch }) {
             {/* Logged out → open the login modal; logged in → go to account.
                 Browsing never forces auth, so this is just a friendly entry. */}
             <a
-              href="#/account"
+              href="/account"
               onClick={(e) => {
                 if (!authed) {
                   e.preventDefault();
@@ -341,7 +341,7 @@ export default function Navbar({ onOpenSearch }) {
                 {/* Aura Rewards — full-width accent row. Guests get a join CTA
                     rather than a points balance they don't have. */}
                 <a
-                  href={authed ? "#/rewards" : "#/account"}
+                  href={authed ? "/rewards" : "/account"}
                   onClick={(e) => {
                     setOpen(false);
                     if (!authed) {
@@ -369,14 +369,14 @@ export default function Navbar({ onOpenSearch }) {
                       icon: Heart,
                       label: "Wishlist",
                       hint: wishCount > 0 ? `${wishCount} saved` : "Save your faves",
-                      href: "#/wishlist",
+                      href: "/wishlist",
                       active: wishCount > 0,
                     },
                     {
                       icon: User,
                       label: authed ? "Account" : "Log in",
                       hint: authed ? "Profile & orders" : "Sign in or sign up",
-                      href: "#/account",
+                      href: "/account",
                       active: false,
                       auth: true,
                     },

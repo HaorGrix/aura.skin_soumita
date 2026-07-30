@@ -163,13 +163,13 @@ export default function About() {
                 variant="primary"
                 size="lg"
                 as="a"
-                href="#/shop"
+                href="/shop"
                 magnetic
               >
                 Shop the collection
                 <ArrowRight className="h-4 w-4" strokeWidth={2} />
               </Button>
-              <Button variant="secondary" size="lg" as="a" href="#/contact" magnetic={false}>
+              <Button variant="secondary" size="lg" as="a" href="/contact" magnetic={false}>
                 Talk to the care desk
               </Button>
             </div>
@@ -315,7 +315,7 @@ export default function About() {
                   size="md"
                   magnetic={false}
                   as="a"
-                  href="#/contact"
+                  href="/contact"
                   className="w-full justify-center"
                 >
                   Contact the care desk
@@ -367,11 +367,11 @@ export default function About() {
             and the rituals that make mornings sacred.
           </p>
           <div className="mt-8 flex flex-wrap justify-center gap-4">
-            <Button variant="primary" size="lg" as="a" href="#/shop" magnetic>
+            <Button variant="primary" size="lg" as="a" href="/shop" magnetic>
               Shop the collection
               <ArrowRight className="h-4 w-4" strokeWidth={2} />
             </Button>
-            <Button variant="secondary" size="lg" as="a" href="#/account" magnetic={false}>
+            <Button variant="secondary" size="lg" as="a" href="/account" magnetic={false}>
               Join Aura Rewards
               <Sparkles className="h-4 w-4" strokeWidth={2} />
             </Button>

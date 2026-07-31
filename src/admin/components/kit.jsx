@@ -104,17 +104,37 @@ export function TextField({ label, hint, required, error, className = "", as = "
   );
 }
 
+/**
+ * Select field. Accepts either a flat option list or grouped options:
+ *
+ *   options={[{ label: "Skin Care", options: [{ id, name }, …] }, …]}
+ *
+ * Grouping matters for categories — "Facewash" exists under both Skin Care
+ * and K-Beauty, so a flat list would show two identical entries with no way
+ * to tell them apart. <optgroup> is also the native control, so it stays
+ * keyboard- and screen-reader-friendly for free.
+ */
 export function SelectField({ label, hint, options = [], placeholder, className = "", ...props }) {
+  const renderOption = (o) => (
+    <option key={o.id ?? o.value ?? o} value={o.id ?? o.value ?? o}>
+      {o.label ?? o.name ?? o}
+    </option>
+  );
+
   return (
     <label className={`block ${className}`}>
       {label && <Label hint={hint}>{label}</Label>}
       <select className={inputCls} {...props}>
         {placeholder && <option value="">{placeholder}</option>}
-        {options.map((o) => (
-          <option key={o.id ?? o.value ?? o} value={o.id ?? o.value ?? o}>
-            {o.label ?? o.name ?? o}
-          </option>
-        ))}
+        {options.map((o, i) =>
+          Array.isArray(o?.options) ? (
+            <optgroup key={o.id ?? o.label ?? i} label={o.label ?? o.name}>
+              {o.options.map(renderOption)}
+            </optgroup>
+          ) : (
+            renderOption(o)
+          )
+        )}
       </select>
     </label>
   );

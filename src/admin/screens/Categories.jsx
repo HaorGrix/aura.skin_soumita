@@ -20,7 +20,7 @@ import {
 import { useAdmin } from "../context.js";
 import { adminNavigate } from "../AdminApp.jsx";
 import {
-  Btn, Card, ConfirmModal, Modal, PageHeader, Pill, SaveBar, Spinner, TextField,
+  Btn, Card, ConfirmModal, Modal, PageHeader, Pill, SaveBar, SelectField, Spinner, TextField,
 } from "../components/kit.jsx";
 
 export default function Categories() {
@@ -45,12 +45,43 @@ export default function Categories() {
   const dirty = rows && original &&
     rows.map((r) => r.id).join(",") !== original.map((r) => r.id).join(",");
 
-  function move(index, direction) {
-    const target = index + direction;
-    if (target < 0 || target >= rows.length) return;
+  /**
+   * Move a category among its OWN siblings.
+   *
+   * Swapping with whatever happens to be adjacent in the flat array would let
+   * a Skin Care sub-category jump into the Lip Care column. The neighbour is
+   * therefore looked up by matching parent_id.
+   */
+  function move(id, direction) {
+    const index = rows.findIndex((r) => r.id === id);
+    if (index < 0) return;
+    const me = rows[index];
+
+    const siblings = rows
+      .map((r, i) => ({ r, i }))
+      .filter(({ r }) => (r.parent_id ?? null) === (me.parent_id ?? null));
+
+    const at = siblings.findIndex(({ r }) => r.id === id);
+    const swapWith = siblings[at + direction];
+    if (!swapWith) return; // already first/last in its column
+
     const next = [...rows];
-    [next[index], next[target]] = [next[target], next[index]];
+    [next[index], next[swapWith.i]] = [next[swapWith.i], next[index]];
     setRows(next);
+  }
+
+  /* Parents first, each followed by its own children — so the list reads the
+     way the mega menu renders. */
+  const ordered = [];
+  for (const root of rows.filter((r) => !r.parent_id)) {
+    ordered.push({ ...root, depth: 0 });
+    for (const child of rows.filter((r) => r.parent_id === root.id)) {
+      ordered.push({ ...child, depth: 1 });
+    }
+  }
+  // Anything whose parent was deleted would otherwise vanish from this screen.
+  for (const orphan of rows.filter((r) => r.parent_id && !rows.some((p) => p.id === r.parent_id))) {
+    ordered.push({ ...orphan, depth: 0, orphaned: true });
   }
 
   if (error && !rows) return <p className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>;
@@ -72,21 +103,27 @@ export default function Categories() {
 
       <Card>
         <ul className="divide-y divide-line">
-          {rows.map((c, i) => (
-            <li key={c.id} className="flex items-center gap-3 py-3">
+          {ordered.map((c) => (
+            <li key={c.id} className={`flex items-center gap-3 py-3 ${c.depth ? "pl-8" : ""}`}>
               <div className="flex flex-col">
-                <button onClick={() => move(i, -1)} disabled={i === 0 || readOnly}
+                <button onClick={() => move(c.id, -1)} disabled={readOnly}
                   className="rounded p-0.5 text-ink-soft hover:text-magenta disabled:opacity-25" aria-label="Move up">
                   <ArrowUp className="h-3.5 w-3.5" />
                 </button>
-                <button onClick={() => move(i, 1)} disabled={i === rows.length - 1 || readOnly}
+                <button onClick={() => move(c.id, 1)} disabled={readOnly}
                   className="rounded p-0.5 text-ink-soft hover:text-magenta disabled:opacity-25" aria-label="Move down">
                   <ArrowDown className="h-3.5 w-3.5" />
                 </button>
               </div>
 
               <div className="min-w-0 flex-1">
-                <p className="text-sm font-medium text-ink">{c.name}</p>
+                <p className={`text-sm text-ink ${c.depth ? "" : "font-semibold"}`}>
+                  {c.name}
+                  {c.depth === 0 && !c.orphaned && (
+                    <span className="ml-2 text-[11px] font-normal text-ink-soft">menu column</span>
+                  )}
+                  {c.orphaned && <Pill tone="amber" className="ml-2">Orphaned</Pill>}
+                </p>
                 <p className="text-xs text-ink-soft">/{c.slug}</p>
               </div>
 
@@ -133,7 +170,8 @@ export default function Categories() {
 
       {editing && (
         <CategoryModal
-          category={editing} onClose={() => setEditing(null)}
+          category={editing} allCategories={rows}
+          onClose={() => setEditing(null)}
           onSaved={() => { setEditing(null); load(); }}
         />
       )}
@@ -153,14 +191,21 @@ export default function Categories() {
   );
 }
 
-function CategoryModal({ category, onClose, onSaved }) {
+function CategoryModal({ category, allCategories = [], onClose, onSaved }) {
   const [form, setForm] = useState(category);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
   const isNew = !category.id;
 
+  // Only top-level rows can be parents — the taxonomy is deliberately two
+  // levels deep, matching what the mega menu can render. A category also
+  // can't be its own parent (the database rejects that outright).
+  const parentChoices = allCategories
+    .filter((c) => !c.parent_id && c.id !== category.id)
+    .map((c) => ({ id: c.id, name: c.name }));
+
   return (
-    <Modal open onClose={onClose} title={isNew ? "New category" : `Rename “${category.name}”`}
+    <Modal open onClose={onClose} title={isNew ? "New category" : `Edit “${category.name}”`}
       footer={
         <>
           <Btn variant="secondary" size="sm" onClick={onClose}>Cancel</Btn>
@@ -171,12 +216,19 @@ function CategoryModal({ category, onClose, onSaved }) {
               ...(form.id ? { id: form.id } : {}),
               name: form.name.trim(),
               slug: form.slug?.trim() || slugify(form.name),
+              parent_id: form.parent_id || null,
               is_active: form.is_active ?? true,
               sort_order: form.sort_order ?? 0,
             });
             setBusy(false);
-            if (error) setError(error.message);
-            else onSaved();
+            if (error) {
+              // The unique index is per-parent, so this is the likely clash.
+              setError(
+                /duplicate key/i.test(error.message)
+                  ? "Another category in the same section already uses that name or web address."
+                  : error.message
+              );
+            } else onSaved();
           }}>Save</Btn>
         </>
       }>
@@ -184,6 +236,13 @@ function CategoryModal({ category, onClose, onSaved }) {
       <div className="grid gap-4">
         <TextField label="Name" required value={form.name ?? ""}
           onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} />
+
+        <SelectField
+          label="Section" placeholder="Top level (its own menu column)"
+          hint="Where this appears in the Shop menu"
+          value={form.parent_id ?? ""} options={parentChoices}
+          onChange={(e) => setForm((f) => ({ ...f, parent_id: e.target.value || null }))}
+        />
         <TextField label="Web address" hint="Leave blank to generate from the name"
           placeholder={slugify(form.name ?? "")} value={form.slug ?? ""}
           onChange={(e) => setForm((f) => ({ ...f, slug: e.target.value }))} />

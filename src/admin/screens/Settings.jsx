@@ -105,6 +105,16 @@ export default function Settings() {
             </p>
           )}
         </Card>
+
+        <Card title="Announcement bar" description="The strip shown above the header on every page.">
+          <div className="grid gap-4">
+            <Toggle label="Show announcement bar"
+              checked={form.announcement_enabled} onChange={set("announcement_enabled")} />
+            <TextField label="Announcement text" value={form.announcement_text ?? ""}
+              onChange={setInput("announcement_text")}
+              hint="Keep it to one short line — it's shown centered in a slim strip." />
+          </div>
+        </Card>
       </div>
 
       <SaveBar dirty={dirty} saving={saving} onSave={handleSave} onDiscard={() => setForm(original)} />

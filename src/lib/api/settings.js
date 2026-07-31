@@ -30,6 +30,8 @@ export const DEFAULT_SETTINGS = {
   supportEmail: null,
   supportPhone: null,
   maintenanceMode: false,
+  announcementEnabled: true,
+  announcementText: "Script Your Skin. Reveal Your Confidence.",
 };
 
 let cache = null;
@@ -46,6 +48,10 @@ function mapRow(row) {
     supportEmail: row.support_email ?? null,
     supportPhone: row.support_phone ?? null,
     maintenanceMode: !!row.maintenance_mode,
+    // Falls back to the previous hardcoded copy if the column is missing
+    // (e.g. migration 0009 not yet applied) or left blank in /admin.
+    announcementEnabled: row.announcement_enabled ?? DEFAULT_SETTINGS.announcementEnabled,
+    announcementText: row.announcement_text || DEFAULT_SETTINGS.announcementText,
   };
 }
 

@@ -15,6 +15,9 @@ import { useUser } from "../context/UserContext.jsx";
 import { useWishlist } from "../context/WishlistContext.jsx";
 import { useFocusTrap } from "../lib/useFocusTrap.js";
 import { useBodyScrollLock } from "../lib/scrollLock.js";
+import { useStoreSettings } from "../lib/api/settings.js";
+import logoWordmark from "../../assests/skinscript-logo-header.png";
+import MegaMenu, { MobileCategoryNav } from "./nav/MegaMenu.jsx";
 
 const LINKS = [
   { label: "Shop", href: "/shop" },
@@ -36,11 +39,6 @@ const BRANDS = [
   "Simple",
 ];
 
-// A single, static line — replaces the old scrolling marquee ticker.
-// One considered sentence reads as boutique signage; a looping pill strip
-// read as clutter and was the first thing flagged for removal.
-const ANNOUNCEMENT = "Complimentary shipping over ৳6,000 — Authentic K & J-Beauty, guaranteed";
-
 const MOBILE_QUOTE = "Glass skin is a daily ritual — and you’re already glowing. 🌸";
 
 export default function Navbar({ onOpenSearch }) {
@@ -48,6 +46,10 @@ export default function Navbar({ onOpenSearch }) {
   const { count, openCart, isOpen: cartOpen } = useCart();
   const { points, authed, openAuth } = useUser();
   const { count: wishCount } = useWishlist();
+  // Admin-editable (Store settings → Announcement bar); falls back to a
+  // sensible default (same pattern as shipping/tax settings) if the row or
+  // the migration adding these columns hasn't landed yet.
+  const { announcementEnabled, announcementText } = useStoreSettings();
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
   
@@ -98,38 +100,54 @@ export default function Navbar({ onOpenSearch }) {
       >
         {/* Static announcement bar — a slim deep-navy strip of boutique
             signage, replacing the scrolling ticker. No animation, no loop:
-            one considered line, then the glass nav floats below it. */}
-        <div className="relative z-50 bg-magenta-deep py-2.5 text-center">
-          <p className="px-4 text-[11px] font-medium uppercase tracking-[0.18em] text-white/90 sm:text-xs">
-            {ANNOUNCEMENT}
-          </p>
-        </div>
+            one considered line, then the glass nav floats below it. Text
+            and visibility are admin-editable (Settings → Announcement bar). */}
+        {announcementEnabled && (
+          <div className="relative z-50 bg-magenta-deep py-2.5 text-center">
+            <p className="px-4 text-[11px] font-medium uppercase tracking-[0.18em] text-white/90 sm:text-xs">
+              {announcementText}
+            </p>
+          </div>
+        )}
 
         <div
           className={`mx-auto flex max-w-7xl items-center justify-between px-6 transition-all duration-500 sm:px-9 ${
             scrolled ? "my-3 rounded-full glass shadow-soft py-3" : "py-5"
           }`}
         >
-          {/* Logo */}
-          <a
-            href="/"
-            className="font-serif text-2xl tracking-tight text-ink"
-          >
-            skin<span className="text-magenta">.</span>script
+          {/* Logo — scales up on larger viewports where the header has room to
+              breathe, and steps back down a notch once scrolled/compact so it
+              never outgrows the glass pill. */}
+          <a href="/" className="flex shrink-0 items-center" aria-label="skin.script — home">
+            <img
+              src={logoWordmark}
+              alt="skin.script"
+              className={`w-auto transition-[height] duration-500 ${
+                scrolled
+                  ? "h-9 sm:h-10 md:h-12 lg:h-14"
+                  : "h-10 sm:h-11 md:h-16 lg:h-20"
+              }`}
+            />
           </a>
 
-          {/* Desktop nav */}
+          {/* Desktop nav — "Shop" becomes the mega-menu trigger; the rest
+              stay plain links. The menu falls back to a normal link if the
+              category tree can't be loaded, so this can't break navigation. */}
           <nav className="hidden items-center gap-2 lg:flex">
-            {LINKS.map((link) => (
-              <a
-                key={link.label}
-                href={link.href}
-                className="group relative rounded-full px-4 py-2 text-sm font-medium text-ink/70 transition-colors hover:text-ink"
-              >
-                {link.label}
-                <span className="absolute inset-x-4 -bottom-0.5 h-0.5 origin-left scale-x-0 rounded-full bg-magenta transition-transform duration-300 group-hover:scale-x-100" />
-              </a>
-            ))}
+            {LINKS.map((link) =>
+              link.href === "/shop" ? (
+                <MegaMenu key={link.label} label={link.label} href={link.href} />
+              ) : (
+                <a
+                  key={link.label}
+                  href={link.href}
+                  className="group relative rounded-full px-4 py-2 text-sm font-medium text-ink/70 transition-colors hover:text-ink"
+                >
+                  {link.label}
+                  <span className="absolute inset-x-4 -bottom-0.5 h-0.5 origin-left scale-x-0 rounded-full bg-magenta transition-transform duration-300 group-hover:scale-x-100" />
+                </a>
+              )
+            )}
           </nav>
 
           {/* Right cluster */}
@@ -261,9 +279,7 @@ export default function Navbar({ onOpenSearch }) {
               transition={{ type: "spring", stiffness: 260, damping: 30 }}
             >
               <div className="flex items-center justify-between">
-                <span className="font-serif text-2xl text-ink">
-                  skin<span className="text-magenta">.</span>script
-                </span>
+                <img src={logoWordmark} alt="skin.script" className="h-9 w-auto" />
                 <button
                   className={iconBtn}
                   aria-label="Close menu"
@@ -275,21 +291,34 @@ export default function Navbar({ onOpenSearch }) {
 
               <nav className="mt-8 flex flex-col">
                 {LINKS.map((link, i) => (
-                  <motion.a
+                  <motion.div
                     key={link.label}
-                    href={link.href}
-                    onClick={() => setOpen(false)}
                     initial={{ opacity: 0, x: 30 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: 0.06 * i + 0.1, ease: [0.22, 1, 0.36, 1] }}
-                    className="group flex items-center justify-between border-b border-line py-4 font-serif text-[1.7rem] leading-none text-ink transition-all hover:pl-2 hover:text-magenta"
+                    className="border-b border-line"
                   >
-                    {link.label}
-                    <ChevronRight
-                      className="h-5 w-5 -translate-x-2 text-magenta opacity-0 transition-all duration-300 group-hover:translate-x-0 group-hover:opacity-100"
-                      strokeWidth={2}
-                    />
-                  </motion.a>
+                    <a
+                      href={link.href}
+                      onClick={() => setOpen(false)}
+                      className="group flex items-center justify-between py-4 font-serif text-[1.7rem] leading-none text-ink transition-all hover:pl-2 hover:text-magenta"
+                    >
+                      {link.label}
+                      <ChevronRight
+                        className="h-5 w-5 -translate-x-2 text-magenta opacity-0 transition-all duration-300 group-hover:translate-x-0 group-hover:opacity-100"
+                        strokeWidth={2}
+                      />
+                    </a>
+
+                    {/* The mega menu is a hover panel, which means nothing on a
+                        phone — the same category tree renders here as a
+                        thumb-operable disclosure instead. */}
+                    {link.href === "/shop" && (
+                      <div className="pb-3">
+                        <MobileCategoryNav onNavigate={() => setOpen(false)} />
+                      </div>
+                    )}
+                  </motion.div>
                 ))}
               </nav>
 

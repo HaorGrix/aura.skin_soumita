@@ -129,7 +129,7 @@ export default function Hero() {
       )}
 
       {/* ── Split content ────────────────────────────────────── */}
-      <div className="relative z-10 mx-auto flex w-full max-w-7xl flex-col items-center gap-8 px-6 pb-16 pt-36 sm:px-8 sm:pt-40 md:pt-40 lg:grid lg:grid-cols-[1.05fr_0.95fr] lg:items-center lg:gap-6 lg:pb-20 lg:pt-24">
+      <div className="relative z-10 mx-auto flex w-full max-w-7xl flex-col items-center gap-8 px-6 pb-16 pt-40 sm:px-8 sm:pt-40 md:pt-40 lg:grid lg:grid-cols-[1.05fr_0.95fr] lg:items-center lg:gap-6 lg:pb-20 lg:pt-44">
         {/* LEFT — copy. `contents lg:block` promotes the headline group and the
             action group into the flex flow on mobile so the image can slot
             between them; on desktop it collapses back into one left column. */}

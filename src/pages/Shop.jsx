@@ -29,6 +29,7 @@ import Button from "../components/ui/Button.jsx";
 import BackButton from "../components/ui/BackButton.jsx";
 import { useBodyScrollLock } from "../lib/scrollLock.js";
 import { onRouteChange } from "../lib/navigate.js";
+import { useCategoryTree, categoryNamesFor } from "../lib/api/categories.js";
 
 const PAGE = 12;
 
@@ -51,7 +52,39 @@ const FACET_VALUES = {
  * filter" (full catalog) rather than an empty result set. Multiple values per
  * facet (comma-separated) combine, and different facets combine too — so
  * concern + skinType logically AND together in the query engine. */
-function parseUrlQuery() {
+/**
+ * Turn a `?category=` value into the category NAMES the grid filters on.
+ *
+ * The mega menu links by SLUG (`skin-care-facewash`), because a slug is
+ * unique and a name is not — "Facewash" exists under both Skin Care and
+ * K-Beauty. Products, however, carry a category NAME, so slugs have to be
+ * resolved before they can match anything.
+ *
+ * A parent slug expands to its children's names: no product is literally
+ * categorised "Skin Care", so without expansion that link would return an
+ * empty grid.
+ *
+ * Plain names are still accepted, so the sidebar's own filter chips and any
+ * older `?category=Serum` link keep working.
+ */
+function resolveCategoryTokens(raw, tree) {
+  const known = new Set(CATEGORIES);
+  for (const parent of tree ?? []) {
+    known.add(parent.name);
+    for (const child of parent.children ?? []) known.add(child.name);
+  }
+
+  const out = [];
+  for (const token of String(raw).split(",").map((v) => v.trim()).filter(Boolean)) {
+    const viaSlug = categoryNamesFor(tree, token);
+    if (viaSlug.length) out.push(...viaSlug);
+    else if (known.has(token)) out.push(token);
+    // else: stale or misspelled → dropped, same as every other facet
+  }
+  return [...new Set(out)];
+}
+
+function parseUrlQuery(tree) {
   const filters = structuredClone(EMPTY_FILTERS);
   let search = "";
   // Clean-URL routing: the query lives in location.search, not the hash.
@@ -59,6 +92,13 @@ function parseUrlQuery() {
   for (const key of Object.keys(FACET_VALUES)) {
     const raw = params.get(key);
     if (!raw) continue;
+
+    if (key === "category") {
+      const names = resolveCategoryTokens(raw, tree);
+      if (names.length) filters.category = names;
+      continue;
+    }
+
     // Split, decode-safe (URLSearchParams already decoded), keep only known values.
     const valid = raw.split(",").map((v) => v.trim()).filter((v) => FACET_VALUES[key].has(v));
     if (valid.length) filters[key] = valid;
@@ -81,15 +121,54 @@ export default function Shop() {
   const [search, setSearch] = useState(() => parseUrlQuery().search);
   const [filters, setFilters] = useState(() => parseUrlQuery().filters);
 
+  // The tree arrives asynchronously, but the two useState initialisers above
+  // run on the very first render. A `?category=<slug>` link therefore can't be
+  // resolved yet — the effect below re-resolves it the moment the tree lands.
+  // Held in a ref as well so the route-change handler always reads the current
+  // tree without needing to be re-subscribed.
+  const categoryTree = useCategoryTree();
+  const treeRef = useRef(categoryTree);
+  useEffect(() => { treeRef.current = categoryTree; }, [categoryTree]);
+
+  // True while the URL carries a category we haven't been able to resolve yet.
+  // syncUrl() refuses to touch the URL until this clears — see the note there.
+  const pendingCategoryRef = useRef(
+    typeof window !== "undefined" &&
+      !!new URLSearchParams(window.location.search).get("category") &&
+      parseUrlQuery().filters.category.length === 0
+  );
+
   // Re-sync on REAL navigation only — browser back/forward, or clicking another
   // concern card while already on Shop. In-page filter toggles use
   // history.replaceState (see syncUrl), which emits no route event, so they
   // never round-trip through here and can't clobber React state.
   useEffect(() => onRouteChange(() => {
-    const { filters: parsedFilters, search: parsedSearch } = parseUrlQuery();
+    const { filters: parsedFilters, search: parsedSearch } = parseUrlQuery(treeRef.current);
     setFilters(parsedFilters);
     setSearch(parsedSearch);
   }), []);
+
+  // Resolve a slug-based ?category= once the tree is available. Guarded on the
+  // URL still carrying a category param, so it can never overwrite filters the
+  // shopper has since changed by hand.
+  useEffect(() => {
+    if (!categoryTree.length) return;
+    const raw = new URLSearchParams(window.location.search).get("category");
+    if (!raw) { pendingCategoryRef.current = false; return; }
+
+    const names = resolveCategoryTokens(raw, categoryTree);
+    // Release the URL guard either way: an unresolvable slug is a dead link,
+    // and holding the guard forever would freeze the URL for the whole visit.
+    pendingCategoryRef.current = false;
+    if (!names.length) return;
+
+    setFilters((prev) => {
+      const same =
+        prev.category.length === names.length &&
+        names.every((n) => prev.category.includes(n));
+      return same ? prev : { ...prev, category: names };
+    });
+  }, [categoryTree]);
   const [sort, setSort] = useState("featured");
   const [visible, setVisible] = useState(PAGE);
   const [loading, setLoading] = useState(true); // true until the initial fetch settles
@@ -196,6 +275,14 @@ export default function Shop() {
 
   // —— filter helpers ——
   const syncUrl = (nextFilters, currentSearch) => {
+    // A `?category=<slug>` arriving from the mega menu cannot be resolved on
+    // the first render — the category tree is still in flight, so `filters`
+    // is legitimately empty. <PredictiveSearch> reports its empty query on
+    // mount, which calls straight through to here, and without this guard
+    // that first call rewrites the URL to a bare "/shop" and destroys the
+    // slug before the tree ever lands. Hold off until it's resolved.
+    if (pendingCategoryRef.current) return;
+
     const params = new URLSearchParams();
     if (currentSearch) params.set("q", currentSearch);
     Object.entries(nextFilters).forEach(([key, arr]) => {

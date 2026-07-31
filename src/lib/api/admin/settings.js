@@ -19,7 +19,7 @@ const SETTINGS_FIELDS = [
   "express_shipping_minor", "tax_rate", "currency_code", "currency_symbol",
   "points_per_taka", "points_per_review", "low_stock_threshold",
   "support_email", "support_phone", "socials", "announcement_enabled",
-  "maintenance_mode",
+  "announcement_text", "maintenance_mode",
 ];
 
 export async function saveSettings(input) {

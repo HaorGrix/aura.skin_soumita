@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { Plus } from "lucide-react";
 import {
-  bulkPrice, listCategories, listProducts, setProductStatus,
+  bulkPrice, categoryOptions, listCategoryTree, listProducts, setProductStatus,
 } from "../../lib/api/admin/catalog.js";
 import { useAdmin } from "../context.js";
 import { adminNavigate } from "../AdminApp.jsx";
@@ -23,7 +23,7 @@ export default function Products() {
   const [selected, setSelected] = useState([]);
   const [priceModal, setPriceModal] = useState(false);
 
-  const categories = useAsync(() => listCategories(), []);
+  const categories = useAsync(() => listCategoryTree(), []);
   const list = useAsync(
     () => listProducts({ search, status, categoryId, stockFilter, page }),
     [search, status, categoryId, stockFilter, page]
@@ -57,7 +57,7 @@ export default function Products() {
           placeholder="All statuses"
           options={[{ id: "active", label: "Active" }, { id: "draft", label: "Draft" }, { id: "archived", label: "Archived" }]} />
         <SelectField value={categoryId} onChange={(e) => setFilter(setCategoryId)(e.target.value)}
-          placeholder="All categories" options={categories.data ?? []} />
+          placeholder="All categories" options={categoryOptions(categories.data)} />
         <SelectField value={stockFilter} onChange={(e) => setFilter(setStockFilter)(e.target.value)}
           placeholder="Any stock level"
           options={[{ id: "low", label: "Running low" }, { id: "out", label: "Out of stock" }]} />

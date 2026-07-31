@@ -15,7 +15,7 @@ import { useEffect, useMemo, useState } from "react";
 import { ArrowLeft, ExternalLink, History } from "lucide-react";
 import {
   adjustStock, archiveProduct, createProduct, getProduct, listBrands,
-  listCategories, listStockMovements, setStock, slugify, updateProduct,
+  categoryOptions, listCategoryTree, listStockMovements, setStock, slugify, updateProduct,
 } from "../../lib/api/admin/catalog.js";
 import { useAdmin } from "../context.js";
 import { adminNavigate } from "../AdminApp.jsx";
@@ -55,7 +55,10 @@ export default function ProductEdit({ id }) {
   const [productId, setProductId] = useState(isNew ? null : id);
   const [stock, setStockValue] = useState(0);
 
-  const categories = useAsync(() => listCategories(), []);
+  // The same tree the storefront's mega menu renders from, so whatever is
+  // picked here lines up with the shop filters automatically — no SQL, and no
+  // second list to keep in step.
+  const categories = useAsync(() => listCategoryTree(), []);
   const brands = useAsync(() => listBrands(), []);
 
   const load = async () => {
@@ -177,8 +180,14 @@ export default function ProductEdit({ id }) {
               <TextField label="Brand" value={form.brand ?? ""} onChange={setInput("brand")} list="brand-options" disabled={readOnly} />
               <datalist id="brand-options">{(brands.data ?? []).map((b) => <option key={b} value={b} />)}</datalist>
             </div>
-            <SelectField label="Category" value={form.category_id ?? ""} onChange={setInput("category_id")}
-              placeholder="Choose a category" options={categories.data ?? []} disabled={readOnly} />
+            <SelectField
+              label="Category" required
+              hint="Grouped by section — pick the sub-category"
+              value={form.category_id ?? ""} onChange={setInput("category_id")}
+              placeholder="Choose a category"
+              options={categoryOptions(categories.data)}
+              disabled={readOnly}
+            />
             <TextField label="Web address" hint="The /product/… link" value={form.slug ?? ""}
               onChange={setInput("slug")} disabled={readOnly}
               placeholder={slugify(`${form.brand}-${form.name}`)} className="sm:col-span-2" />

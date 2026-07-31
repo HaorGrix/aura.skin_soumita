@@ -231,11 +231,66 @@ export async function listCategories({ includeInactive = false } = {}) {
   return { data, error };
 }
 
+/**
+ * Categories as a two-level tree: `[{ ...parent, children: [...] }]`.
+ *
+ * Used by the product form's grouped <optgroup> select and by the Categories
+ * screen. Includes inactive rows by default because the admin must be able to
+ * see and re-activate what it has hidden — unlike the storefront reader,
+ * which only ever shows active ones.
+ */
+export async function listCategoryTree({ includeInactive = true } = {}) {
+  let q = supabase
+    .from("categories")
+    .select("id, name, slug, parent_id, sort_order, is_active")
+    .order("sort_order", { ascending: true });
+  if (!includeInactive) q = q.eq("is_active", true);
+
+  const { data, error } = await q;
+  if (error) return { data: null, error };
+
+  const byId = new Map(data.map((c) => [c.id, { ...c, children: [] }]));
+  const roots = [];
+  for (const cat of byId.values()) {
+    const parent = cat.parent_id ? byId.get(cat.parent_id) : null;
+    if (parent) parent.children.push(cat);
+    else roots.push(cat);
+  }
+  const bySort = (a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0);
+  roots.sort(bySort);
+  roots.forEach((r) => r.children.sort(bySort));
+
+  return { data: roots, error: null };
+}
+
+/**
+ * The tree shaped for <SelectField>: one <optgroup> per top-level category.
+ *
+ * A parent that holds products directly (Eye Care) is listed inside its own
+ * group as well, so it stays selectable — otherwise its existing products
+ * would have a category the form couldn't represent, and saving would
+ * silently move them.
+ */
+export function categoryOptions(tree) {
+  return (tree ?? []).map((parent) => ({
+    id: parent.id,
+    label: parent.name,
+    options: [
+      { id: parent.id, name: `${parent.name} (top level)` },
+      ...(parent.children ?? []).map((c) => ({
+        id: c.id,
+        name: c.is_active ? c.name : `${c.name} — hidden`,
+      })),
+    ],
+  }));
+}
+
 /** Categories plus how many products sit in each — the client needs to see
  *  the blast radius before renaming or hiding one. */
 export async function listCategoriesWithCounts() {
   const [cats, prods] = await Promise.all([
-    supabase.from("categories").select("id, name, slug, sort_order, is_active").order("sort_order"),
+    supabase.from("categories")
+      .select("id, name, slug, parent_id, sort_order, is_active").order("sort_order"),
     supabase.from("products").select("category_id, status"),
   ]);
   if (cats.error) return { data: null, error: cats.error };
@@ -277,9 +332,27 @@ export async function setCategoryActive(id, isActive) {
   return { data, error };
 }
 
-/** Persist a whole reordered list in one round trip. */
+/**
+ * Persist a reordered list in one round trip.
+ *
+ * `sort_order` is numbered WITHIN each parent, not across the whole list —
+ * top-level columns are ordered against each other, and each parent's
+ * children against their siblings. A single global sequence would make a
+ * child's position depend on how many items happened to sit above it in an
+ * unrelated column.
+ */
 export async function reorderCategories(ordered) {
-  const rows = ordered.map((c, i) => ({ id: c.id, name: c.name, slug: c.slug, sort_order: i }));
+  const seen = new Map(); // parent_id (or "root") → next index
+  const rows = (ordered ?? []).map((c) => {
+    const key = c.parent_id ?? "root";
+    const next = (seen.get(key) ?? 0) + 1;
+    seen.set(key, next);
+    return {
+      id: c.id, name: c.name, slug: c.slug,
+      parent_id: c.parent_id ?? null, sort_order: next,
+    };
+  });
+
   const { data, error } = await supabase
     .from("categories").upsert(rows, { onConflict: "id" }).select("id");
   return { data, error };

@@ -145,8 +145,47 @@ function p(brand, name, opts) {
 
 /* ------------------------------------------------------------------ *
  * Catalog
+ * -------------------------------------------------------------------
+ * Trimmed to a lean 3-per-category sample (27 total) so this mock/
+ * fallback file — still imported directly by Cart's recommendations,
+ * Wishlist, FeaturedProducts, SEO metadata and a few others — stays in
+ * sync with the live Supabase catalog after the same trim there
+ * (supabase/migrations/0008_trim_catalog_to_sample.sql). The full
+ * hand-authored entries below are left as-is; only the final array is
+ * filtered, so re-adding a product later is just deleting its slug
+ * from this set.
  * ------------------------------------------------------------------ */
-export const PRODUCTS = [
+const KEEP_SLUGS = new Set([
+  "anua-heartleaf-70-intense-calming-cream",
+  "anua-heartleaf-77-soothing-toner",
+  "anua-peach-70-niacinamide-serum",
+  "beauty-of-joseon-dayscreen-moisturizer-spf30-green-tea-ha-ceramide",
+  "beauty-of-joseon-revive-eye-serum-ginseng-retinal",
+  "beauty-of-joseon-revive-under-eye-patch-ginseng-retinal",
+  "cerave-pm-facial-moisturizing-lotion",
+  "cosrx-acne-pimple-master-patch",
+  "cosrx-advanced-snail-96-mucin-power-essence",
+  "cosrx-aha-bha-clarifying-treatment-toner",
+  "cosrx-aloe-soothing-sun-cream-spf50",
+  "cosrx-bha-blackhead-power-liquid",
+  "cosrx-salicylic-acid-daily-gentle-cleanser",
+  "dr-althea-345-relief-cream",
+  "isntree-hyaluronic-acid-watery-sun-gel-spf50",
+  "isntree-hyper-niacinamide-20-serum",
+  "isntree-hyper-vitamin-c-23-serum",
+  "isntree-mugwort-calming-clay-mask",
+  "isntree-real-rose-calming-mask",
+  "missha-artemisia-calming-essence",
+  "missha-blackhead-off-cleansing-oil",
+  "missha-super-off-cleansing-oil-dust-off",
+  "missha-time-revolution-the-first-treatment-essence",
+  "skin1004-centella-teca-soothing-toner",
+  "skin1004-hyalu-cica-sleeping-pack",
+  "the-ordinary-azelaic-acid-suspension-10",
+  "the-ordinary-multi-peptide-eye-serum",
+]);
+
+const PRODUCTS_RAW = [
   // —— Beauty of Joseon ——
   p("Beauty of Joseon", "Relief Sun: Rice + Probiotics SPF50+", { category: "Sunscreen", skinType: ["Dry", "Combination", "Sensitive"], concern: ["Sun Protection", "Hydration"], price: 18, badge: "best", tone: "gold", ingredients: ["Rice", "Niacinamide"], popularity: 99, image: "Relief-Sun-Duo-Original-Aqua-Fresh_Beauty-of-Joseon_8190145-52106365010292.jpg" }),
 //   p("Beauty of Joseon", "Glow Serum: Propolis + Niacinamide", { category: "Serum", skinType: ["Oily", "Combination"], concern: ["Brightening", "Pores"], price: 17, badge: "dewy", tone: "gold", ingredients: ["Propolis", "Niacinamide"], popularity: 95 }),
@@ -359,6 +398,8 @@ export const PRODUCTS = [
   p("SKIN1004", "Madagascar Centella Cream", { category: "Moisturizer", skinType: ["Sensitive", "Dry"], concern: ["Soothing", "Hydration"], price: 23, tone: "sage", ingredients: ["Centella"], popularity: 74, image: "skin1004-cream-centella-cream-38642822906102.png" }),
 ];
 
+export const PRODUCTS = PRODUCTS_RAW.filter((p) => KEEP_SLUGS.has(p.id));
+
 /* ------------------------------------------------------------------ *
  * Mock inventory layer — dummy promos + stock-outs for a realistic store.
  * Sale fields are DERIVED from `compareAt` here in ONE place (single source
@@ -399,15 +440,12 @@ const PROMO = {
   "anua-heartleaf-70-soothing-collagen-mask-4ea": 60,
   "dr-althea-pure-grinding-cleansing-balm": 75,
 };
-const OUT_OF_STOCK = new Set([
-  "beauty-of-joseon-dynasty-cream",
-  "beauty-of-joseon-revive-eye-serum-ginseng-retinal",
-  "beauty-of-joseon-matte-sun-stick-mugwort-camelia-spf50",
-  "cosrx-advanced-snail-92-all-in-one-cream",
-  "cosrx-aha-bha-clarifying-treatment-toner",
-  "cosrx-centella-blemish-cream",
-  "cosrx-bha-blackhead-power-liquid",
-]);
+// Kept sample products (beauty-of-joseon-revive-eye-serum-ginseng-retinal,
+// cosrx-aha-bha-clarifying-treatment-toner, cosrx-bha-blackhead-power-liquid)
+// were previously listed here — removed so the client-side pre-checks in
+// Checkout.jsx (stockFor/maxQtyFor) don't block a sample product's checkout
+// before place_order() ever gets a chance to check the real DB stock.
+const OUT_OF_STOCK = new Set([]);
 
 /* Hand-tuned low-stock units — drives the "Only N left" urgency state and the
  * per-line quantity cap. Anything unlisted gets a healthy popularity-derived

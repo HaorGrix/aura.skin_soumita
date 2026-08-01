@@ -69,7 +69,12 @@ server {
     #     or the deployed site loads no data and shows no images.
     #     wss: is required for Realtime; drop it if you never enable Realtime.
     set $supabase "https://gmhqdurhmmkixjlerdqp.supabase.co";
-    add_header Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: $supabase; connect-src 'self' $supabase wss://gmhqdurhmmkixjlerdqp.supabase.co; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'" always;
+    #   • media-src is REQUIRED for the hero carousel. It is a separate
+    #     directive from img-src: with it absent, <video> falls back to
+    #     default-src 'self' and the Supabase-hosted banner video is blocked,
+    #     while the sibling JPGs load fine because img-src allows them. That
+    #     asymmetry is exactly what it looked like in production.
+    add_header Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: $supabase; media-src 'self' $supabase; connect-src 'self' $supabase wss://gmhqdurhmmkixjlerdqp.supabase.co; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'" always;
     add_header X-Content-Type-Options "nosniff" always;
     add_header X-Frame-Options "DENY" always;
     add_header Referrer-Policy "strict-origin-when-cross-origin" always;

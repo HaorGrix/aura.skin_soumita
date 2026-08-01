@@ -1,5 +1,5 @@
 -- ===================================================================
--- skin.script — product → category identity map
+-- skin.script — product → category identity map (was 0010, renumbered)
 -- -------------------------------------------------------------------
 -- `products_public` exposes a category NAME, and that was unambiguous while
 -- the taxonomy was flat. It isn't any more: after 0009 the reference menu

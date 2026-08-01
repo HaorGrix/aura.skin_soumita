@@ -15,6 +15,11 @@ export default defineConfig({
           'framer-motion': ['framer-motion'],
           'lenis': ['lenis', 'lenis/react'],
           'lucide-react': ['lucide-react'],
+          // Hero carousel engine. Split out (rather than left in the entry
+          // chunk) so it downloads in parallel with app code and, more to the
+          // point, stays cached across deploys — it changes far less often
+          // than our own source does.
+          'swiper': ['swiper', 'swiper/react', 'swiper/modules'],
         }
       }
     }

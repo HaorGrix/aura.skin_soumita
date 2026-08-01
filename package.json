@@ -15,7 +15,8 @@
     "lenis": "^1.1.18",
     "lucide-react": "^0.460.0",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "swiper": "^14.0.7"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.0.0",

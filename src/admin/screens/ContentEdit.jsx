@@ -13,6 +13,7 @@ import { ArrowLeft, RotateCcw } from "lucide-react";
 import { getBlock, listRevisions, restoreRevision, saveBlock } from "../../lib/api/admin/content.js";
 import { adminNavigate } from "../AdminApp.jsx";
 import { SingleImageField } from "../components/ImageManager.jsx";
+import { MediaField, collectMediaPaths, deleteSiteMedia } from "../components/MediaField.jsx";
 import {
   Btn, Card, PageHeader, SaveBar, SelectField, Spinner, TextField, Toggle, useAsync,
 } from "../components/kit.jsx";
@@ -48,11 +49,38 @@ export default function ContentEdit({ slot }) {
 
   async function handleSave() {
     setSaving(true); setError(null); setNotice(null);
+
+    // Snapshot what the SAVED version referenced, so we can tell which files
+    // this edit orphaned.
+    const before = collectMediaPaths(schema, original);
+
     const { data, error } = await saveBlock(slot, form);
+    if (error) { setSaving(false); return setError(error.message); }
+
+    /* Storage garbage-collection.
+     *
+     * Deliberately AFTER a successful save, never at the moment the admin
+     * clicks Remove: until they save, "Remove" is still undoable via Discard,
+     * and deleting the file on click would leave the live storefront pointing
+     * at a 404. Covers Replace too — swapping a banner changes the path, so
+     * the previous file falls out of the `after` set exactly like a removal.
+     *
+     * Best-effort: a failed cleanup must not present the save as failed,
+     * because the save genuinely succeeded. */
+    const after = collectMediaPaths(schema, data.payload);
+    const orphans = [...before].filter((p) => !after.has(p));
+    let cleanupNote = "";
+    if (orphans.length) {
+      const { error: delErr } = await deleteSiteMedia(orphans);
+      cleanupNote = delErr
+        ? ` (${orphans.length} old file(s) could not be removed from storage: ${delErr.message})`
+        : ` ${orphans.length} unused file(s) deleted from storage.`;
+    }
+
     setSaving(false);
-    if (error) return setError(error.message);
     setOriginal(data.payload);
-    setNotice("Saved. Your storefront is updated.");
+    setForm(data.payload);
+    setNotice("Saved. Your storefront is updated." + cleanupNote);
   }
 
   if (error && !form) {
@@ -143,11 +171,17 @@ function FieldRenderer({ field, value, onChange }) {
     case "image":
       return <SingleImageField label={field.label} hint={field.help} value={value} onChange={onChange} />;
 
+    case "media":
+      return <MediaField label={field.label} hint={field.help} value={value} onChange={onChange} />;
+
     case "route":
       return (
         <SelectField {...common} value={value ?? ""} onChange={(e) => onChange(e.target.value)}
           placeholder="Choose a page" options={ROUTES.map((r) => ({ id: r, label: r === "/" ? "Home" : r }))} />
       );
+
+    case "link":
+      return <LinkField field={field} value={value} onChange={onChange} />;
 
     case "list":
       return <ListField field={field} value={value ?? []} onChange={onChange} />;
@@ -159,6 +193,46 @@ function FieldRenderer({ field, value, onChange }) {
           value={value ?? ""} onChange={(e) => onChange(e.target.value)} />
       );
   }
+}
+
+/** Free-text destination: an on-site path OR a full external URL.
+ *
+ *  A plain text input would happily accept "shop" or "www.x.com", both of
+ *  which produce a dead link only noticed once it's live. The hint below
+ *  classifies whatever is typed in real time, so a mistake is visible while
+ *  the client is still looking at the field. Known pages are offered through
+ *  a datalist, so the common case stays a two-click pick rather than typing. */
+function LinkField({ field, value, onChange }) {
+  const raw = (value ?? "").trim();
+  const listId = `routes-${field.key}`;
+
+  let status = null;
+  if (raw) {
+    if (/^https?:\/\//i.test(raw)) status = { tone: "ok", text: "External link — opens in a new tab." };
+    else if (raw.startsWith("/")) status = { tone: "ok", text: "Page on this site." };
+    else status = { tone: "warn", text: "Should start with “/” for a page here, or “https://” for another site." };
+  }
+
+  return (
+    <div>
+      <TextField
+        label={field.label}
+        hint={field.help}
+        value={value ?? ""}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder="/shop  or  https://example.com/campaign"
+        list={listId}
+      />
+      <datalist id={listId}>
+        {ROUTES.map((r) => <option key={r} value={r} />)}
+      </datalist>
+      {status && (
+        <p className={`mt-1 text-[11px] ${status.tone === "ok" ? "text-emerald-600" : "text-amber-600"}`}>
+          {status.text}
+        </p>
+      )}
+    </div>
+  );
 }
 
 /** Repeating group — banners, concern tiles, bullet points. Add / remove /
@@ -200,7 +274,7 @@ function ListField({ field, value, onChange }) {
             </div>
             <div className="grid gap-3 sm:grid-cols-2">
               {field.itemFields.map((f) => (
-                <div key={f.key} className={f.type === "image" || f.type === "textarea" ? "sm:col-span-2" : ""}>
+                <div key={f.key} className={["image", "media", "textarea", "link"].includes(f.type) ? "sm:col-span-2" : ""}>
                   <FieldRenderer field={f} value={item[f.key]} onChange={(v) => update(i, f.key, v)} />
                 </div>
               ))}

@@ -29,7 +29,10 @@ import Button from "../components/ui/Button.jsx";
 import BackButton from "../components/ui/BackButton.jsx";
 import { useBodyScrollLock } from "../lib/scrollLock.js";
 import { onRouteChange } from "../lib/navigate.js";
-import { useCategoryTree, categoryNamesFor } from "../lib/api/categories.js";
+import {
+  useCategoryTree, useProductCategoryMap,
+  categoryNamesFor, categorySlugsFor, findBySlug,
+} from "../lib/api/categories.js";
 
 const PAGE = 12;
 
@@ -134,9 +137,19 @@ export default function Shop() {
   // syncUrl() refuses to touch the URL until this clears — see the note there.
   const pendingCategoryRef = useRef(
     typeof window !== "undefined" &&
-      !!new URLSearchParams(window.location.search).get("category") &&
-      parseUrlQuery().filters.category.length === 0
+      !!new URLSearchParams(window.location.search).get("category")
   );
+
+  /* The URL-driven category selection, kept separate from `filters.category`.
+   *
+   * The sidebar's own category checkboxes are NAME-based and stay that way —
+   * ticking "Serum" there reasonably means "serums wherever they live". The
+   * menu, by contrast, points at one specific column, so it selects by slug.
+   * Two different questions, two different filters. */
+  const [categorySlugs, setCategorySlugs] = useState([]);
+  const [categoryNames, setCategoryNames] = useState([]); // fallback, see results memo
+  const [activeCategoryName, setActiveCategoryName] = useState(null);
+  const productCategory = useProductCategoryMap();
 
   // Re-sync on REAL navigation only — browser back/forward, or clicking another
   // concern card while already on Shop. In-page filter toggles use
@@ -154,20 +167,28 @@ export default function Shop() {
   useEffect(() => {
     if (!categoryTree.length) return;
     const raw = new URLSearchParams(window.location.search).get("category");
-    if (!raw) { pendingCategoryRef.current = false; return; }
+    if (!raw) {
+      pendingCategoryRef.current = false;
+      setCategorySlugs([]); setCategoryNames([]); setActiveCategoryName(null);
+      return;
+    }
 
-    const names = resolveCategoryTokens(raw, categoryTree);
+    // Slugs, not names: after the hierarchy landed, "Serum" exists under both
+    // Skin Care and K-Beauty, so a name can no longer identify one column.
+    const slugs = [...new Set(
+      raw.split(",").map((t) => t.trim()).filter(Boolean)
+        .flatMap((token) => categorySlugsFor(categoryTree, token))
+    )];
+
     // Release the URL guard either way: an unresolvable slug is a dead link,
     // and holding the guard forever would freeze the URL for the whole visit.
     pendingCategoryRef.current = false;
-    if (!names.length) return;
-
-    setFilters((prev) => {
-      const same =
-        prev.category.length === names.length &&
-        names.every((n) => prev.category.includes(n));
-      return same ? prev : { ...prev, category: names };
-    });
+    setCategorySlugs(slugs);
+    setCategoryNames([...new Set(
+      raw.split(",").map((t) => t.trim()).filter(Boolean)
+        .flatMap((token) => categoryNamesFor(categoryTree, token))
+    )]);
+    setActiveCategoryName(findBySlug(categoryTree, raw.split(",")[0].trim())?.name ?? null);
   }, [categoryTree]);
   const [sort, setSort] = useState("featured");
   const [visible, setVisible] = useState(PAGE);
@@ -191,10 +212,30 @@ export default function Shop() {
   // with another overlay's lock.
   useBodyScrollLock(sheetOpen);
 
-  const results = useMemo(
-    () => queryProducts(products, { search, filters, sort }),
-    [products, search, filters, sort]
-  );
+  const results = useMemo(() => {
+    const list = queryProducts(products, { search, filters, sort });
+
+    // Menu-driven category selection, applied on top of the facet engine.
+    // Held apart from queryProducts because that matches on category NAME and
+    // names are no longer unique across the tree — this narrows by the
+    // product's actual category slug instead.
+    //
+    if (!categorySlugs.length) return list;
+
+    if (productCategory.size > 0) {
+      const wanted = new Set(categorySlugs);
+      return list.filter((p) => wanted.has(productCategory.get(p.dbId ?? p.id)));
+    }
+
+    // Fallback: the map view isn't available (migration 0010 not applied, or
+    // the request failed). Match on category NAME instead — correct for every
+    // name that appears once, and the previous behaviour for all of them.
+    // Better than returning the whole catalog and looking like the filter was
+    // ignored. Still skipped entirely while names are empty.
+    if (!categoryNames.length) return list;
+    const wantedNames = new Set(categoryNames);
+    return list.filter((p) => wantedNames.has(p.category));
+  }, [products, search, filters, sort, categorySlugs, categoryNames, productCategory]);
 
   // Fetch the live catalog. The skeleton (existing `loading` state — same UI
   // as before) now reflects a REAL fetch instead of a fixed timer. Extracted
@@ -441,6 +482,21 @@ export default function Shop() {
               <p className="text-sm text-ink-soft">
                 {loading ? "Curating…" : fetchError ? "" : `${results.length} products`}
               </p>
+
+              {/* The menu-driven category isn't part of `filters`, so it gets
+                  no ActiveChip. Without this the grid would look filtered for
+                  no visible reason — and with no way back to everything. */}
+              {activeCategoryName && !loading && !fetchError && (
+                <div className="flex items-center gap-2">
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-petal px-3 py-1 text-xs font-medium text-magenta">
+                    {activeCategoryName}
+                  </span>
+                  <a href="/shop" className="text-xs text-ink-soft underline-offset-2 hover:text-magenta hover:underline">
+                    Clear
+                  </a>
+                </div>
+              )}
+
               {!fetchError && (
                 <ActiveChips filters={filters} onToggle={toggleFilter} onClear={clearFilters} />
               )}

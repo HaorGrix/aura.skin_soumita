@@ -6,7 +6,15 @@
  * plus reading it in the component. No new admin screen, no new table.
  *
  * Field types the editor knows how to render:
- *   text | textarea | number | boolean | image | route | color | date | list
+ *   text | textarea | number | boolean | image | media | route | link | color | date | list
+ *
+ * `route` is a dropdown of known top-level pages; `link` is free text that
+ * additionally accepts deep paths and off-site URLs. Prefer `route` when the
+ * target really is one of the main pages — the dropdown can't be typo'd.
+ *
+ * `media` (unlike `image`) accepts video too — uploads go to the `site-media`
+ * bucket (0011_hero_carousel_media.sql), not product-images. Use it for CMS
+ * fields that should support both, like the Hero Carousel's banners.
  *
  * NOTE on `home.hero`: Hero.jsx currently holds its headline as a WORD ARRAY
  * (`["Glass","skin,","every","day."]`) because the entrance animation
@@ -50,6 +58,31 @@ export const SLOTS = [
       { key: "ctaHref", label: "Button target", type: "route", default: "/shop" },
       { key: "image", label: "Background image", type: "image", aspect: "3:4", default: "" },
       { key: "imageAlt", label: "Image description", type: "text", max: 120, default: "" },
+    ],
+  },
+  {
+    slot: "home.heroCarousel",
+    label: "Homepage Hero Carousel",
+    group: "Homepage",
+    help: "The sliding banner strip right below the header. Each banner is an image or a short video, stored in the site-media bucket. Remove every banner and the strip disappears from the homepage.",
+    fields: [
+      {
+        key: "items", label: "Banners", type: "list", max: 8,
+        itemFields: [
+          { key: "media", label: "Media (image or video)", type: "media" },
+          // `link`, not `route`: a hero banner routinely points somewhere the
+          // fixed route list can't express — a single product, a filtered
+          // Shop URL, or an off-site campaign page. Free text with route
+          // suggestions covers all three; `route` covered only the first.
+          { key: "ctaHref", label: "Clicking this banner opens", type: "link",
+            help: "A page on this site (/shop, /product/abc) or a full external link (https://…)" },
+          { key: "eyebrow", label: "Eyebrow", type: "text", max: 40 },
+          { key: "title", label: "Title", type: "text", max: 60 },
+          { key: "subtitle", label: "Subtitle", type: "textarea", max: 160 },
+          { key: "ctaLabel", label: "Button label", type: "text", max: 24 },
+        ],
+        default: [],
+      },
     ],
   },
   {

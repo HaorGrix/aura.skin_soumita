@@ -27,3 +27,8 @@ dist-ssr
 *.sw?
 .vercel
 .env*
+
+# Design-tool scratch (22 MB of .dc.html project files, screenshot scraps and
+# thumbnails). Not app source — the finished art lives in assests/cate/.
+# Committing it would bloat the repo permanently.
+category-row-with-pink-tiles/

@@ -1,4 +1,5 @@
 import Hero from "../components/Hero.jsx";
+import CategoryTiles from "../components/home/CategoryTiles.jsx";
 import Offers from "../components/home/Offers.jsx";
 import FeaturedProducts from "../components/home/FeaturedProducts.jsx";
 import ShopByConcern from "../components/home/ShopByConcern.jsx";
@@ -25,6 +26,7 @@ export default function Home() {
       />
 
       <Hero />
+      <CategoryTiles />
       <Offers />
       <FeaturedProducts />
       <ShopByConcern />

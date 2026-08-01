@@ -16,7 +16,7 @@ import { useWishlist } from "../context/WishlistContext.jsx";
 import { useFocusTrap } from "../lib/useFocusTrap.js";
 import { useBodyScrollLock } from "../lib/scrollLock.js";
 import { useStoreSettings } from "../lib/api/settings.js";
-import logoWordmark from "../../assests/skinscript-logo-header.png";
+import logoWordmark from "../../assests/skinscript-logo-header-v2.png";
 import MegaMenu, { MobileCategoryNav } from "./nav/MegaMenu.jsx";
 
 const LINKS = [
@@ -272,13 +272,13 @@ export default function Navbar({ onOpenSearch }) {
               role="dialog"
               aria-modal="true"
               aria-label="Navigation menu"
-              className="fixed inset-y-0 right-0 z-[var(--z-modal)] flex w-[86%] max-w-sm flex-col bg-white px-7 pb-10 pt-6 shadow-lift lg:hidden"
+              className="fixed inset-y-0 right-0 z-[var(--z-modal)] flex w-[86%] max-w-sm flex-col overflow-hidden bg-white pt-6 shadow-lift lg:hidden"
               initial={{ x: reduce ? 0 : "100%" }}
               animate={{ x: 0 }}
               exit={{ x: reduce ? 0 : "100%" }}
               transition={{ type: "spring", stiffness: 260, damping: 30 }}
             >
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between px-7">
                 <img src={logoWordmark} alt="skin.script" className="h-9 w-auto" />
                 <button
                   className={iconBtn}
@@ -289,6 +289,15 @@ export default function Navbar({ onOpenSearch }) {
                 </button>
               </div>
 
+              {/* Scrollable body — the ONLY scrollable region in the drawer.
+                  `data-lenis-prevent` keeps the root smooth-scroll instance from
+                  swallowing touch/wheel events meant for this fixed overlay (same
+                  pattern as the Shop filter sheet); `min-h-0` is what lets a flex
+                  child actually scroll instead of stretching its parent. Without
+                  this, content taller than the viewport (mega menu open, small
+                  phone) was clipped with no way to reach the Wishlist/Login/Bag
+                  cards below the fold. */}
+              <div data-lenis-prevent className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-7 pb-10">
               <nav className="mt-8 flex flex-col">
                 {LINKS.map((link, i) => (
                   <motion.div
@@ -437,6 +446,7 @@ export default function Navbar({ onOpenSearch }) {
                 >
                   “{MOBILE_QUOTE}”
                 </motion.p>
+              </div>
               </div>
             </motion.aside>
           </>

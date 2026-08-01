@@ -103,6 +103,23 @@ export function contentImage(path, fallbackUrl = null) {
   return publicUrl(path) ?? fallbackUrl;
 }
 
+const VIDEO_EXTENSIONS = new Set(["mp4", "webm"]);
+
+/** True if a CMS media path/URL is a video, false for images (default). */
+export function isVideoPath(path) {
+  const clean = (path ?? "").split("?")[0];
+  const ext = clean.split(".").pop()?.toLowerCase();
+  return VIDEO_EXTENSIONS.has(ext);
+}
+
+/** Same as contentImage but for the `media` field type (site-media bucket,
+ *  which — unlike product-images — also holds video). */
+export function contentMedia(path, fallbackUrl = null) {
+  if (!path) return fallbackUrl;
+  if (/^https?:\/\//i.test(path)) return path;
+  return publicUrl(path, "site-media") ?? fallbackUrl;
+}
+
 /** Split a CMS headline into words for per-word entrance animations. */
 export function words(text) {
   return String(text ?? "").trim().split(/\s+/).filter(Boolean);

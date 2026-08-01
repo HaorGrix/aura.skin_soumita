@@ -125,8 +125,75 @@ export function categoryNamesFor(tree, slug) {
   return names;
 }
 
+/**
+ * Every category SLUG a selection covers — the node itself plus its children.
+ *
+ * Slugs, not names, are what the shop filters on. After the hierarchy landed,
+ * names repeat across columns (Skin Care ▸ Serum and K-Beauty ▸ Serum), so
+ * matching a product by its category name puts it in the wrong column.
+ * Slugs are globally unique, so they identify exactly one category.
+ */
+export function categorySlugsFor(tree, slug) {
+  const node = findBySlug(tree, slug);
+  if (!node) return [];
+  return [node.slug, ...(node.children ?? []).map((c) => c.slug)];
+}
+
+let mapCache = null;
+let mapInflight = null;
+
+/**
+ * product → category-slug lookup, keyed by BOTH the UUID and the legacy id,
+ * because the storefront still keys carts and URLs by the legacy slug while
+ * the database keys everything by UUID.
+ *
+ * Returns an empty Map on any failure, which degrades to "no category
+ * filtering" rather than an empty shop.
+ */
+export async function getProductCategoryMap() {
+  if (mapCache) return mapCache;
+  if (mapInflight) return mapInflight;
+
+  mapInflight = (async () => {
+    try {
+      const { supabase } = await import("./client.js");
+      const { data, error } = await supabase
+        .from("product_category_map")
+        .select("product_id, legacy_id, category_slug");
+
+      const map = new Map();
+      if (!error && data) {
+        for (const row of data) {
+          if (row.product_id) map.set(row.product_id, row.category_slug);
+          if (row.legacy_id) map.set(row.legacy_id, row.category_slug);
+        }
+      }
+      mapCache = map;
+    } catch {
+      mapCache = new Map();
+    } finally {
+      mapInflight = null;
+    }
+    return mapCache;
+  })();
+
+  return mapInflight;
+}
+
+export function useProductCategoryMap() {
+  const [map, setMap] = useState(() => mapCache ?? new Map());
+  useEffect(() => {
+    let alive = true;
+    getProductCategoryMap().then((m) => { if (alive) setMap(m); });
+    return () => { alive = false; };
+  }, []);
+  return map;
+}
+
 /** Test seam / post-save invalidation. */
 export function clearCategoryCache() {
   cache = null;
   inflight = null;
+  mapCache = null;
+  mapInflight = null;
 }

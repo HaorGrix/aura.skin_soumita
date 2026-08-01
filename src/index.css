@@ -79,6 +79,10 @@
   /* — Typography — */
   --font-serif: "Instrument Serif", ui-serif, Georgia, serif;
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  /* Condensed all-caps display face — category tiles and similar labels.
+     Bebas Neue has no lowercase and only one weight, so it is a LABEL font
+     only; body copy stays on --font-sans. */
+  --font-display: "Bebas Neue", "Inter Tight", ui-sans-serif, sans-serif;
 
   /* — Fluid type scale — */
   --text-display: clamp(2.85rem, 8.5vw, 7.5rem);

@@ -17,7 +17,7 @@
  * The panel is deliberately NOT a modal: it doesn't trap focus or lock
  * scroll, because it is a navigation aid, not a task.
  * =================================================================== */
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { ChevronDown, ArrowRight } from "lucide-react";
 import { useCategoryTree } from "../../lib/api/categories.js";
@@ -31,7 +31,39 @@ export default function MegaMenu({ label = "Shop", href = "/shop" }) {
   const wrapRef = useRef(null);
   const triggerRef = useRef(null);
   const closeTimer = useRef(null);
+  const panelRef = useRef(null);
   const panelId = useId();
+  const [shift, setShift] = useState(0);
+
+  /* Keep the panel inside the viewport.
+   *
+   * It is centred on the trigger, which sits left of centre in the header, so
+   * at full width it hangs off the left edge. Measure once it's mounted and
+   * nudge it back by however much it overhangs, leaving a gutter. Runs in a
+   * layout effect so the correction paints in the same frame — no visible jump.
+   */
+  useLayoutEffect(() => {
+    if (!open) { setShift(0); return; }
+
+    const GUTTER = 16;
+    const reposition = () => {
+      const el = panelRef.current;
+      if (!el) return;
+      const r = el.getBoundingClientRect();
+      setShift((prev) => {
+        // r already includes the current shift, so correct relative to it.
+        if (r.left < GUTTER) return prev + (GUTTER - r.left);
+        if (r.right > window.innerWidth - GUTTER) {
+          return prev - (r.right - (window.innerWidth - GUTTER));
+        }
+        return prev;
+      });
+    };
+
+    reposition();
+    window.addEventListener("resize", reposition);
+    return () => window.removeEventListener("resize", reposition);
+  }, [open]);
 
   const cancelClose = () => {
     if (closeTimer.current) { clearTimeout(closeTimer.current); closeTimer.current = null; }
@@ -101,7 +133,20 @@ export default function MegaMenu({ label = "Shop", href = "/shop" }) {
 
       <AnimatePresence>
         {open && (
+          /* Two elements on purpose. The OUTER one owns horizontal position
+             and is clamped to the viewport; the INNER one owns the entrance
+             animation. They can't be merged: framer-motion drives `transform`,
+             so a clamping translateX set via style would be overwritten by it.
+             Centring on the trigger alone put a 1152px panel partly off-screen,
+             because "Shop" sits left of centre in the header. */
+          <div
+            style={{ transform: `translateX(calc(-50% + ${shift}px))` }}
+            className="absolute left-1/2 top-full z-[var(--z-dropdown)] mt-3 w-[min(72rem,calc(100vw-2rem))]"
+            onMouseEnter={cancelClose}
+            onMouseLeave={scheduleClose}
+          >
           <motion.div
+            ref={panelRef}
             id={panelId}
             role="menu"
             aria-label={`${label} categories`}
@@ -109,11 +154,7 @@ export default function MegaMenu({ label = "Shop", href = "/shop" }) {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={reduce ? { opacity: 0 } : { opacity: 0, y: -8, scale: 0.985 }}
             transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
-            onMouseEnter={cancelClose}
-            onMouseLeave={scheduleClose}
-            /* z-dropdown, per the project's layering scale — above the page,
-               below modals and the cart FAB. */
-            className="absolute left-1/2 top-full z-[var(--z-dropdown)] mt-3 w-[min(72rem,calc(100vw-2rem))] -translate-x-1/2 overflow-hidden rounded-2xl bg-white shadow-lift ring-1 ring-line"
+            className="overflow-hidden rounded-2xl bg-white shadow-lift ring-1 ring-line"
           >
             {/* Five columns, matching the reference layout. Columns align to
                 the top so an uneven tree (Skin Care has 14 items, Eye Care 2)
@@ -166,6 +207,7 @@ export default function MegaMenu({ label = "Shop", href = "/shop" }) {
               </a>
             </div>
           </motion.div>
+          </div>
         )}
       </AnimatePresence>
     </div>

@@ -32,7 +32,7 @@
  *      be retired in favour of `formatPriceMinor()` throughout.
  * =================================================================== */
 import { supabase } from "./client.js";
-import { publicImageUrl } from "./media.js";
+import { publicImageUrl, publicVideoUrl } from "./media.js";
 
 // Mirrors the TONE map in data/products.js — the DB stores the short key
 // ('pink', 'sage', …); the frontend wants the resolved hex for gradients.
@@ -57,7 +57,12 @@ const LEGACY_PRICE_SCALE = 120 * 100;
  *  header — this is a deliberate compatibility bridge, not the DB's native
  *  shape). Every field here was verified against an actual consumer. */
 function mapProduct(row) {
-  const gallery = (row.gallery ?? []).map((g) => publicImageUrl(g.path));
+  // Each DB image carries its own admin-entered `alt` — that's the real,
+  // per-image label (see ImageManager.jsx), not a positional guess. Kept as
+  // {url, label} rather than a plain string so product-details.js can show
+  // exactly what the admin typed, instead of reassigning a fixed label by
+  // array index.
+  const gallery = (row.gallery ?? []).map((g) => ({ url: publicImageUrl(g.path), label: g.alt || null }));
   const compareAt = row.compare_at_minor != null ? row.compare_at_minor / LEGACY_PRICE_SCALE : undefined;
 
   return {
@@ -87,11 +92,17 @@ function mapProduct(row) {
     salesCount: row.sales_count,
     rating: row.rating,
     reviews: row.review_count, // legacy field name
-    // Decorative badges (barrier/exfoliation/dewy/…) aren't migrated yet —
-    // only the one badge fully derivable from DB data today.
+    // Decorative badges (barrier/exfoliation/dewy/…) aren't migrated yet.
+    // `is_best_seller` already folds in the manual admin override (see
+    // 0021_manual_badges.sql + the products_public view update) — the
+    // storefront never has to know whether it's real sales or a manual
+    // flag, just like `is_new`.
     badge: row.is_best_seller ? { variant: "bestseller", label: "Best Seller" } : undefined,
-    image: gallery[0] ?? null,
-    gallery, // plain URL strings, matching the static catalog's shape
+    isStaffPick: row.is_staff_pick ?? false,
+    isLimitedEdition: row.is_limited_edition ?? false,
+    videoUrl: row.video_url ? publicVideoUrl(row.video_url) : null,
+    image: gallery[0]?.url ?? null,
+    gallery, // {url, label}[], one entry per real uploaded image, in order
   };
 }
 
@@ -114,7 +125,55 @@ export async function listProducts({ limit } = {}) {
   return { data: data.map(mapProduct), error: null };
 }
 
-/** Fetch a single product by its URL slug (for the PDP route). */
+/**
+ * Map one `product_variants_public` row into the storefront's variant
+ * shape. Price fields go through the same LEGACY_PRICE_SCALE bridge as
+ * mapProduct(), for the same reason: formatPrice()/cart math still run on
+ * the old "USD-ish" float scale, not raw paisa.
+ */
+function mapVariant(row) {
+  const compareAt = row.compare_at_price_minor != null ? row.compare_at_price_minor / LEGACY_PRICE_SCALE : undefined;
+  return {
+    id: row.id,
+    productId: row.product_id,
+    sizeLabel: row.size_label,
+    sortOrder: row.sort_order,
+    isDefault: row.is_default,
+    price: row.price_minor / LEGACY_PRICE_SCALE,
+    compareAt,
+    isOnSale: row.is_on_sale,
+    discountPercent: row.discount_percent,
+    inStock: row.in_stock,
+    isLowStock: row.is_low_stock,
+  };
+}
+
+/**
+ * Every size option for one product, ordered for display. Public view only
+ * — no raw stock_quantity, matching product_variants_public's privacy rule
+ * (same reason products_public never exposes an exact stock count either).
+ *
+ * A product with exactly one size still returns a 1-element array — callers
+ * (the PDP) decide whether that's worth showing a picker for, not this.
+ */
+export async function getVariantsForProduct(productId) {
+  const { data, error } = await supabase
+    .from("product_variants_public")
+    .select("*")
+    .eq("product_id", productId)
+    .order("sort_order", { ascending: true });
+
+  if (error) return { data: null, error };
+  return { data: data.map(mapVariant), error: null };
+}
+
+/**
+ * Fetch a single product by its URL slug (for the PDP route), together with
+ * its full variant list. Two queries rather than one: `products_public`
+ * can't safely be modified to embed variants (its definition predates these
+ * migrations and isn't tracked — see 0016's header), so this follows the
+ * same "small parallel query" pattern already used for categories.
+ */
 export async function getProductBySlug(slug) {
   const { data, error } = await supabase
     .from("products_public")
@@ -123,7 +182,23 @@ export async function getProductBySlug(slug) {
     .maybeSingle();
 
   if (error) return { data: null, error };
-  return { data: data ? mapProduct(data) : null, error: null };
+  if (!data) return { data: null, error: null };
+
+  const product = mapProduct(data);
+
+  const { data: variants, error: variantsError } = await getVariantsForProduct(product.dbId);
+  // A failed variants fetch shouldn't take down the whole PDP — fall back to
+  // a single synthetic entry built from the product's own (mirrored) price,
+  // so the page still renders with no picker rather than a blank price.
+  product.variants = !variantsError && variants?.length
+    ? variants
+    : [{
+        id: null, productId: product.dbId, sizeLabel: "Standard", sortOrder: 0, isDefault: true,
+        price: product.price, compareAt: product.compareAt, isOnSale: product.isOnSale,
+        discountPercent: product.discountPercent, inStock: product.inStock, isLowStock: product.isLowStock,
+      }];
+
+  return { data: product, error: null };
 }
 
 /** Fetch active categories, sorted for display (facet lists, nav, etc). */

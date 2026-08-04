@@ -163,6 +163,8 @@ export const badge = {
     bestseller: "bg-magenta text-white",
     new: "bg-ink text-white",
     sale: "bg-error/15 text-error ring-1 ring-error/30",
+    limited: "bg-gold text-white",
+    staffPick: "bg-lilac text-ink ring-1 ring-lilac/60",
   },
 };
 

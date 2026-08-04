@@ -131,7 +131,7 @@ export default function Cart() {
             <div className="flex flex-col divide-y divide-line">
               <AnimatePresence initial={false}>
                 {items.map((item) => (
-                  <div key={item.id} className="py-5 first:pt-0">
+                  <div key={`${item.id}:${item.variantId ?? ""}`} className="py-5 first:pt-0">
                     <LineItem item={item} />
                   </div>
                 ))}

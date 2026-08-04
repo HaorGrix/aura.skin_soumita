@@ -1,25 +1,25 @@
 /* =================================================================== *
  * skin.script admin — sign in
  * -------------------------------------------------------------------
- * Three modes, all backed by real Supabase Auth:
+ * Two modes, both backed by real Supabase Auth:
  *   • password  — the normal path
- *   • link      — one-time email sign-in; the fallback when an account has
- *                 no password yet. Invited users and users created via a
- *                 magic link have none, and the API reports that as the
- *                 SAME "Invalid login credentials" as a wrong password —
- *                 which is why that error message explains the difference.
  *   • reset     — email a password-reset link
  *
- * There is deliberately NO "claim ownership" / self-promotion button. A
- * client-callable endpoint that grants owner rights is an unnecessary
+ * There is deliberately no passwordless "email me a sign-in link" option.
+ * With only a handful of staff accounts, a magic link is pure extra attack
+ * surface (another way in, another email-interception risk) for
+ * convenience nobody was using — password + reset covers every real case.
+ *
+ * There is also deliberately NO "claim ownership" / self-promotion button.
+ * A client-callable endpoint that grants owner rights is an unnecessary
  * attack surface, and it can't create the auth user anyway. Staff accounts
  * come from `node scripts/admin-account.mjs`, which needs the service-role
  * key — the one credential that must never reach a browser.
  * =================================================================== */
 import { useState } from "react";
-import { KeyRound, Mail, RotateCcw, ShieldAlert } from "lucide-react";
+import { KeyRound, RotateCcw, ShieldAlert } from "lucide-react";
 import {
-  friendlyAuthError, sendPasswordReset, signIn, signInWithMagicLink, signOut,
+  friendlyAuthError, sendPasswordReset, signIn, signOut,
 } from "../../lib/api/admin/auth.js";
 import { Btn, Card, TextField } from "../components/kit.jsx";
 
@@ -44,13 +44,6 @@ export default function Login({ session, onSignedIn }) {
       setBusy(false);
       if (error) return setError(friendlyAuthError(error));
       return onSignedIn?.();
-    }
-
-    if (mode === "link") {
-      const { error } = await signInWithMagicLink(email.trim());
-      setBusy(false);
-      if (error) return setError(friendlyAuthError(error));
-      return setNotice(`Sign-in link sent to ${email.trim()}. Open it on this device — it signs you straight in.`);
     }
 
     const { error } = await sendPasswordReset(email.trim());
@@ -91,7 +84,6 @@ export default function Login({ session, onSignedIn }) {
 
   const copy = {
     password: { title: "Sign in", cta: "Sign in", Icon: KeyRound },
-    link:     { title: "Email sign-in link", cta: "Send the link", Icon: Mail },
     reset:    { title: "Reset your password", cta: "Send reset link", Icon: RotateCcw },
   }[mode];
 
@@ -113,13 +105,6 @@ export default function Login({ session, onSignedIn }) {
             />
           )}
 
-          {mode === "link" && (
-            <p className="rounded-lg bg-snow px-3 py-2 text-[11px] text-ink-soft">
-              We'll email a one-time link that signs you in without a password — useful if this
-              account was never given one.
-            </p>
-          )}
-
           {error && <p className="rounded-lg bg-red-50 px-3 py-2 text-xs text-red-700">{error}</p>}
           {notice && <p className="rounded-lg bg-emerald-50 px-3 py-2 text-xs text-emerald-700">{notice}</p>}
 
@@ -132,11 +117,6 @@ export default function Login({ session, onSignedIn }) {
           {mode !== "password" && (
             <button onClick={() => { setMode("password"); clear(); }} className="text-ink-soft hover:text-magenta">
               Sign in with a password
-            </button>
-          )}
-          {mode !== "link" && (
-            <button onClick={() => { setMode("link"); clear(); }} className="text-ink-soft hover:text-magenta">
-              Email me a sign-in link
             </button>
           )}
           {mode !== "reset" && (

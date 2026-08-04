@@ -54,8 +54,13 @@ export default function Products() {
       <div className="mb-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <SearchInput value={search} onChange={setFilter(setSearch)} placeholder="Name, brand or SKU…" />
         <SelectField value={status} onChange={(e) => setFilter(setStatus)(e.target.value)}
-          placeholder="All statuses"
-          options={[{ id: "active", label: "Active" }, { id: "draft", label: "Draft" }, { id: "archived", label: "Archived" }]} />
+          placeholder="Active & Draft"
+          options={[
+            { id: "active", label: "Active" },
+            { id: "draft", label: "Draft" },
+            { id: "archived", label: "Archived" },
+            { id: "all", label: "All statuses (incl. archived)" },
+          ]} />
         <SelectField value={categoryId} onChange={(e) => setFilter(setCategoryId)(e.target.value)}
           placeholder="All categories" options={categoryOptions(categories.data)} />
         <SelectField value={stockFilter} onChange={(e) => setFilter(setStockFilter)(e.target.value)}

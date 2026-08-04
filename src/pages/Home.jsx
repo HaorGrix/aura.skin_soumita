@@ -6,6 +6,7 @@ import ShopByConcern from "../components/home/ShopByConcern.jsx";
 import Rituals from "../components/home/Rituals.jsx";
 import Journal from "../components/home/Journal.jsx";
 import WhyAura from "../components/home/WhyAura.jsx";
+import Testimonials from "../components/home/Testimonials.jsx";
 import Footer from "../components/Footer.jsx";
 
 export default function Home() {
@@ -33,6 +34,7 @@ export default function Home() {
       <Rituals />
       <Journal />
       <WhyAura />
+      <Testimonials />
       <Footer />
     </>
   );

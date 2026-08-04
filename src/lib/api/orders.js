@@ -32,6 +32,7 @@ export function checkoutErrorMessage(error, { productName } = {}) {
     case "EMAIL_REQUIRED":
       return "We need an email address to send your confirmation.";
     case "PRODUCT_NOT_FOUND":
+    case "VARIANT_NOT_FOUND":
       return "Something in your bag is no longer available. Please remove it and try again.";
     case "PRODUCT_UNAVAILABLE":
       return `${name} is no longer on sale. Please remove it from your bag.`;
@@ -75,12 +76,18 @@ export async function placeOrder({
   email, items, shippingAddress, paymentMethod,
   shippingMethod = "standard", couponCode = null,
 }) {
-  // Cart lines are keyed by the legacy slug id; place_order resolves either
-  // `slug` or `legacy_id`, so this keeps working after the cart moves to UUIDs.
-  const payloadItems = (items ?? []).map((i) => ({
-    slug: i.slug ?? i.id,
-    quantity: Math.max(1, Number(i.qty) || 1),
-  }));
+  // A line with a variantId (picked on the PDP's size selector) sends that
+  // exact variant — place_order() locks, prices and decrements THAT row.
+  // A line without one (quick-add from a grid/wishlist, which never shows a
+  // size picker) sends the product reference alone; place_order() resolves
+  // it to that product's default variant server-side. Either way, cart,
+  // checkout and the order record all end up referencing a real variant —
+  // never just "the product" with an ambiguous price.
+  const payloadItems = (items ?? []).map((i) =>
+    i.variantId
+      ? { variant_id: i.variantId, quantity: Math.max(1, Number(i.qty) || 1) }
+      : { slug: i.slug ?? i.id, quantity: Math.max(1, Number(i.qty) || 1) }
+  );
 
   const { data, error } = await supabase.rpc("place_order", {
     payload: {

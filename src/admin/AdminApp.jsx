@@ -31,6 +31,7 @@ const Content     = lazy(() => import("./screens/Content.jsx"));
 const ContentEdit = lazy(() => import("./screens/ContentEdit.jsx"));
 const Coupons     = lazy(() => import("./screens/Coupons.jsx"));
 const Sales       = lazy(() => import("./screens/Sales.jsx"));
+const Testimonials = lazy(() => import("./screens/Testimonials.jsx"));
 const Settings    = lazy(() => import("./screens/Settings.jsx"));
 const Staff       = lazy(() => import("./screens/Staff.jsx"));
 const Audit       = lazy(() => import("./screens/Audit.jsx"));
@@ -80,11 +81,29 @@ export default function AdminApp() {
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => setSession(data.session ?? null));
     return onAuthChange((s, event) => {
-      setSession(s ?? null);
       // A reset link produces a real session, so without this flag the user
       // would land on the dashboard and never set the password they came for.
       if (event === "PASSWORD_RECOVERY") setRecovering(true);
       if (event === "SIGNED_OUT") setRecovering(false);
+
+      /* Only update `session` state when the SIGNED-IN USER actually
+       * changes — not on every auth event. The Supabase client refreshes
+       * its JWT automatically (autoRefreshToken: true) whenever the tab
+       * regains focus, firing TOKEN_REFRESHED with a new session object
+       * every time even though it's the same user. Calling setSession()
+       * unconditionally there gave `session` a new reference on every tab
+       * refocus, which changed loadProfile's identity (it depends on
+       * `session`), which re-ran the effect below, which set
+       * profileLoading(true) — and the loading gate a few lines down
+       * unmounts <Screen> (and whatever admin form was open inside it)
+       * the entire time profileLoading is true. That's the "form resets
+       * when I switch tabs and come back" bug.
+       *
+       * The functional update returns the SAME `prev` reference when the
+       * user id hasn't changed, so React bails out of the state update
+       * entirely — no re-render, no effect re-run, no remount. A real
+       * sign-in/out (different or null user id) still updates normally. */
+      setSession((prev) => (prev?.user?.id === (s?.user?.id ?? null) ? prev : (s ?? null)));
     });
   }, []);
 
@@ -152,6 +171,7 @@ function Screen({ route }) {
     case "content":   return id ? <ContentEdit slot={id} /> : <Content />;
     case "coupons":   return <Coupons />;
     case "sales":     return <Sales />;
+    case "testimonials": return <Testimonials />;
     case "settings":  return <Settings />;
     case "staff":     return <Staff />;
     case "audit":     return <Audit />;

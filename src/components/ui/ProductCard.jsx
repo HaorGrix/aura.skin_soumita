@@ -106,6 +106,8 @@ export default function ProductCard({ product, onQuickView }) {
           )}
           {product.isNew && <Badge variant="new">New</Badge>}
           {badge && badge.variant !== "new" && <Badge variant={badge.variant}>{badge.label}</Badge>}
+          {product.isStaffPick && <Badge variant="staffPick">Staff Pick</Badge>}
+          {product.isLimitedEdition && <Badge variant="limited">Limited Edition</Badge>}
         </div>
 
         {/* Out-of-stock overlay */}

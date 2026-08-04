@@ -70,3 +70,79 @@ export async function deleteProductImage(imageRow) {
   const { error: storageError } = await supabase.storage.from(BUCKET).remove([imageRow.storage_path]);
   return { error: storageError ?? null };
 }
+
+/**
+ * Persist a full drag-to-reorder: `orderedIds` is every image id for a
+ * product, in its new display order.
+ *
+ * `position` is unique per product, so writing final positions directly can
+ * collide mid-transaction (row A wants row B's current position before B has
+ * moved off it). Two passes avoid that: park every row at a negative,
+ * definitely-unused position first, then assign the real final positions —
+ * the same trick the adjacent-swap `move()` in ImageManager already used,
+ * just generalised from 2 rows to N.
+ *
+ * Not atomic (no multi-statement RPC exists for this), so a failure mid-way
+ * can leave rows on temporary negative positions. That's self-healing on the
+ * next reorder — callers additionally re-fetch after calling this, so a
+ * failure surfaces as "order didn't change" rather than a broken UI state.
+ */
+export async function reorderProductImages(orderedIds) {
+  for (let i = 0; i < orderedIds.length; i++) {
+    const { error } = await supabase.from("product_images").update({ position: -(i + 1) }).eq("id", orderedIds[i]);
+    if (error) return { error };
+  }
+  for (let i = 0; i < orderedIds.length; i++) {
+    const { error } = await supabase.from("product_images").update({ position: i }).eq("id", orderedIds[i]);
+    if (error) return { error };
+  }
+  return { error: null };
+}
+
+/* =================================================================== *
+ * Product video — one optional video per product (0023_product_video.sql).
+ * Stored in the existing `site-media` bucket (0011), not `product-images`:
+ * that bucket already exists for exactly this kind of one-off admin-
+ * uploaded media (hero carousel, testimonials), and its admin-only write
+ * policy already matches what a product video needs.
+ * =================================================================== */
+const VIDEO_BUCKET = "site-media";
+
+export function publicVideoUrl(storagePath) {
+  return publicUrl(storagePath, VIDEO_BUCKET);
+}
+
+/** Upload a product's video and point `products.video_url` at it in one
+ *  call. Same rollback discipline as uploadProductImage: if the DB write
+ *  fails, the just-uploaded file is removed rather than left orphaned. A
+ *  product has at most one video, so this always overwrites — the caller
+ *  (VideoField) is responsible for deleting the OLD storage object first
+ *  when replacing one that already exists. */
+export async function uploadProductVideo(productId, file) {
+  const ext = (file.name.split(".").pop() || "mp4").toLowerCase();
+  const path = `products/${productId}/video-${crypto.randomUUID()}.${ext}`;
+
+  const { error: uploadError } = await supabase.storage.from(VIDEO_BUCKET).upload(path, file, {
+    cacheControl: "31536000",
+    upsert: false,
+  });
+  if (uploadError) return { path: null, error: uploadError };
+
+  const { error } = await supabase.from("products").update({ video_url: path }).eq("id", productId);
+  if (error) {
+    await supabase.storage.from(VIDEO_BUCKET).remove([path]);
+    return { path: null, error };
+  }
+  return { path, error: null };
+}
+
+/** Remove a product's video: null the column first (so a dangling row can
+ *  never point at a file that's already gone, same ordering rule as
+ *  deleteProductImage), then the Storage object. */
+export async function deleteProductVideo(productId, storagePath) {
+  const { error: dbError } = await supabase.from("products").update({ video_url: null }).eq("id", productId);
+  if (dbError) return { error: dbError };
+
+  const { error: storageError } = await supabase.storage.from(VIDEO_BUCKET).remove([storagePath]);
+  return { error: storageError ?? null };
+}

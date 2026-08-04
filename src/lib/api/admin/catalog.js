@@ -8,7 +8,10 @@
  * The admin never writes a derived field. `is_on_sale`, `discount_percent`,
  * `in_stock`, `is_low_stock` and `is_best_seller` are computed by the
  * products_public view from the base facts written here — that's what keeps
- * the storefront and the admin from ever disagreeing.
+ * the storefront and the admin from ever disagreeing. `is_best_seller_manual`
+ * IS a base fact (0021_manual_badges.sql): the view OR's it into
+ * `is_best_seller`, so checking it can only ever ADD the badge, never hide
+ * one a product earned by actually selling well.
  *
  * Stock is the one exception to plain CRUD: it moves only through the
  * adjust_stock() RPC, which writes the ledger and the balance together.
@@ -48,7 +51,18 @@ export async function listProducts({
     const term = `%${search.trim()}%`;
     q = q.or(`name.ilike.${term},brand.ilike.${term},sku.ilike.${term},slug.ilike.${term}`);
   }
-  if (status) q = q.eq("status", status);
+  // No status filter picked -> Active + Draft, NOT literally every status.
+  // Archived is deliberately excluded from the default view so retired
+  // products (old collections, discontinued lines) don't clutter the list
+  // an admin sees day to day. `status: "all"` is the explicit escape hatch
+  // when someone actually wants to see archived rows mixed in with the rest.
+  if (status === "all") {
+    // no filter — every status, archived included
+  } else if (status) {
+    q = q.eq("status", status);
+  } else {
+    q = q.neq("status", "archived");
+  }
   if (categoryId) q = q.eq("category_id", categoryId);
   if (stockFilter === "out") q = q.eq("stock", 0);
   if (stockFilter === "low") q = q.gt("stock", 0).lte("stock", 5);
@@ -87,6 +101,7 @@ const WRITABLE = [
   "max_per_order", "backorder_ok", "status", "is_new", "popularity", "tone",
   "concern", "skin_type", "ingredients", "seo_title", "seo_description",
   "rating", "review_count",
+  "is_staff_pick", "is_limited_edition", "is_best_seller_manual",
 ];
 
 function pickWritable(input) {
@@ -180,7 +195,7 @@ export async function setStock(productId, currentStock, nextStock, note = "manua
 export async function listStockMovements(productId, limit = 50) {
   const { data, error } = await supabase
     .from("inventory_movements")
-    .select("id, delta, reason, note, created_at, order_id")
+    .select("id, delta, reason, note, created_at, order_id, variant_id")
     .eq("product_id", productId)
     .order("created_at", { ascending: false })
     .limit(limit);
@@ -215,6 +230,144 @@ export async function listLowStock(limit = 50) {
     .slice(0, limit);
 
   return { data: low, error: null };
+}
+
+/* ---------------------------------------------------------------- *
+ * Variants — multiple sizes per product, each with its own price/stock.
+ *
+ * A product always has >=1 variant (the database enforces this — see
+ * 0016_product_variants.sql — a delete that would leave zero is rejected).
+ * For a plain single-size product, that one row is exactly the price/stock
+ * shown everywhere else: `products.price_minor`/`stock` mirror the DEFAULT
+ * variant automatically (a DB trigger keeps them in sync both ways), so
+ * editing via the existing Pricing/Inventory tabs still works completely
+ * unchanged for that common case.
+ * ---------------------------------------------------------------- */
+
+export async function listVariants(productId) {
+  const { data, error } = await supabase
+    .from("product_variants")
+    .select("*")
+    .eq("product_id", productId)
+    .order("sort_order", { ascending: true });
+  return { data, error };
+}
+
+/** Insert or update one variant row. `id` present -> update; absent -> insert. */
+export async function upsertVariant(row) {
+  const payload = {
+    product_id: row.product_id,
+    size_label: row.size_label,
+    sku: row.sku || null,
+    price_minor: row.price_minor,
+    compare_at_price_minor: row.compare_at_price_minor ?? null,
+    is_default: !!row.is_default,
+    sort_order: row.sort_order ?? 0,
+    ...(row.id ? { id: row.id } : {}),
+  };
+  const { data, error } = await supabase
+    .from("product_variants").upsert(payload).select().single();
+  return { data, error };
+}
+
+/**
+ * Delete a variant. The database refuses this outright if it would leave
+ * the product with zero variants (a real trigger, not just a UI check —
+ * see variant_prevent_last_delete in the migration), so the error is
+ * translated to plain English rather than shown as a raw exception.
+ */
+export async function deleteVariant(id) {
+  const { error } = await supabase.from("product_variants").delete().eq("id", id);
+  if (!error) return { error: null };
+  if (/LAST_VARIANT/.test(error.message)) {
+    return { error: { message: "A product needs at least one size — add another before removing this one." } };
+  }
+  return { error };
+}
+
+/**
+ * One row per VARIANT, joined with its parent product — the Inventory
+ * screen's real source. A single-variant product still shows one row (its
+ * one size), so this looks pixel-identical to the old per-product list for
+ * every product that has never needed sizes; a multi-variant product shows
+ * one row per size instead of a single number that can no longer mean
+ * anything ("stock: 12" of WHICH size?).
+ */
+export async function listInventoryRows({
+  search = "", stockFilter = "", page = 0, pageSize = 50,
+} = {}) {
+  let q = supabase
+    .from("product_variants")
+    .select(
+      "id, product_id, size_label, sku, price_minor, stock_quantity, is_default, " +
+      "products!inner(id, name, brand, slug, status, low_stock_at)",
+      { count: "exact" }
+    )
+    .eq("products.status", "active");
+
+  if (search.trim()) {
+    const term = `%${search.trim()}%`;
+    q = q.or(`size_label.ilike.${term},sku.ilike.${term}`);
+    // Note: this only matches the variant's own fields — matching by
+    // product name/brand would need an .or() across the joined table,
+    // which PostgREST doesn't support in one call. Good enough for a
+    // "find this SKU/size" search; product-name search still works from
+    // the Products screen.
+  }
+  if (stockFilter === "out") q = q.eq("stock_quantity", 0);
+
+  // "low" can't be a single-table filter — low_stock_at lives on the parent
+  // product, and PostgREST can't compare two different tables' columns in
+  // one filter (the same constraint listLowStock() already works around).
+  // Trade real pagination for a generous bound in that one case: fetch every
+  // plausibly-low row and filter here, same shape as listLowStock(). "Low
+  // stock" lists are short in practice, so this doesn't cost much.
+  const isLowFilter = stockFilter === "low";
+  if (isLowFilter) {
+    q = q.lte("stock_quantity", 100).order("stock_quantity", { ascending: true }).limit(500);
+  } else {
+    const from = page * pageSize;
+    q = q.order("stock_quantity", { ascending: true }).range(from, from + pageSize - 1);
+  }
+
+  const { data, error, count } = await q;
+  if (error) return { data: null, error, count: 0 };
+
+  let rows = data.map((r) => ({
+    id: r.id,
+    productId: r.product_id,
+    productName: r.products.name,
+    brand: r.products.brand,
+    slug: r.products.slug,
+    sizeLabel: r.size_label,
+    sku: r.sku,
+    priceMinor: r.price_minor,
+    stock: r.stock_quantity,
+    lowStockAt: r.products.low_stock_at ?? 5,
+    isDefault: r.is_default,
+  }));
+
+  if (isLowFilter) {
+    const filtered = rows.filter((r) => r.stock > 0 && r.stock <= r.lowStockAt);
+    const pageRows = filtered.slice(page * pageSize, page * pageSize + pageSize);
+    return { data: pageRows, error: null, count: filtered.length };
+  }
+
+  return { data: rows, error: null, count: count ?? 0 };
+}
+
+/** Stock — ledger-backed, same convention as adjustStock() but variant-scoped. */
+export async function adjustVariantStock(variantId, delta, reason = "adjust", note = null) {
+  const { data, error } = await supabase.rpc("adjust_stock_variant", {
+    p_variant_id: variantId, p_delta: delta, p_reason: reason, p_note: note,
+  });
+  return { data, error };
+}
+
+export async function setVariantStock(variantId, currentStock, nextStock, note = "manual recount") {
+  const delta = nextStock - currentStock;
+  if (delta === 0) return { data: currentStock, error: null };
+  return adjustVariantStock(variantId, delta, "recount", note);
 }
 
 /* ---------------------------------------------------------------- *
@@ -321,15 +474,44 @@ export async function upsertCategory(row) {
 }
 
 /**
- * Hide a category instead of deleting it. `products.category_id` is a real FK
- * with ON DELETE RESTRICT, so deleting a category that still has products
- * would fail at the database anyway — and deleting an empty one would break
- * any old link pointing at it. Hiding is the honest operation.
+ * Hide a category instead of deleting it, for the common case: a category
+ * with products in it. Hiding pulls it out of the storefront filters while
+ * leaving those products' category_id (and any old links to it) intact.
  */
 export async function setCategoryActive(id, isActive) {
   const { data, error } = await supabase
     .from("categories").update({ is_active: isActive }).eq("id", id).select().single();
   return { data, error };
+}
+
+/**
+ * Delete a category outright — for the case hiding doesn't cover: a category
+ * that should stop existing, not just stop showing (e.g. a whole taxonomy
+ * branch that was never populated).
+ *
+ * Deliberately NOT reassigning products or child categories anywhere as a
+ * side effect. Two real foreign keys already protect against orphaning:
+ *   - products.category_id       → ON DELETE RESTRICT
+ *   - categories.parent_id       → ON DELETE RESTRICT
+ * So the database refuses this delete outright if the category still has
+ * products or child categories — verified against a throwaway row before
+ * this was written, not assumed. Callers should prefer checking
+ * productCount/child count up front (see Categories.jsx) to give the client
+ * a plain-English reason instead of a raw constraint-violation message; this
+ * function's own error-translation is the fallback for the race where
+ * something changed between that check and the click.
+ */
+export async function deleteCategory(id) {
+  const { error } = await supabase.from("categories").delete().eq("id", id);
+  if (!error) return { error: null };
+
+  if (/categories_parent_id_fkey/.test(error.message)) {
+    return { error: { message: "This category still has sub-categories under it. Delete or move those first." } };
+  }
+  if (/products_category_id_fkey/.test(error.message)) {
+    return { error: { message: "This category still has products in it. Move or remove those first." } };
+  }
+  return { error };
 }
 
 /**

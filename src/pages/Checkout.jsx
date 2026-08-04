@@ -220,7 +220,7 @@ export default function Checkout() {
     const overQty = items.filter((i) => stockFor(i.id) > 0 && i.qty > maxQtyFor(i.id));
 
     if (soldOut.length > 0) {
-      soldOut.forEach((i) => removeItem(i.id));
+      soldOut.forEach((i) => removeItem(i.id, i.variantId));
       toast.error(
         `${soldOut.map((i) => i.name).join(", ")} just sold out and ${soldOut.length > 1 ? "were" : "was"} removed from your bag.`,
         "Out of stock"
@@ -228,7 +228,7 @@ export default function Checkout() {
       return;
     }
     if (overQty.length > 0) {
-      overQty.forEach((i) => setQty(i.id, maxQtyFor(i.id)));
+      overQty.forEach((i) => setQty(i.id, maxQtyFor(i.id), i.variantId));
       toast.error(
         `We only have enough of ${overQty.map((i) => i.name).join(", ")} left — quantities updated.`,
         "Limited stock"
@@ -756,7 +756,7 @@ function SummaryPanel({ items, subtotal, shipping, total, discountAmount, applie
     <div className="space-y-4">
       <div className="max-h-72 space-y-4 overflow-y-auto rounded-[1.5rem] bg-snow p-5 ring-1 ring-line">
         {items.map((item) => (
-          <LineItem key={item.id} item={item} compact readOnly />
+          <LineItem key={`${item.id}:${item.variantId ?? ""}`} item={item} compact readOnly />
         ))}
       </div>
 

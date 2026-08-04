@@ -14,13 +14,13 @@ import {
   Sparkles,
   Bell,
 } from "lucide-react";
+import Badge from "../ui/Badge.jsx";
 import Button from "../ui/Button.jsx";
 import NotifyMeModal from "../ui/NotifyMeModal.jsx";
 import { useCart } from "../../context/CartContext.jsx";
 import { useWishlist } from "../../context/WishlistContext.jsx";
 import { useToast } from "../ui/Toast.jsx";
 import { formatPrice } from "../../lib/format.js";
-import { maxQtyFor } from "../../data/products.js";
 
 function Stars({ value, className = "h-4 w-4" }) {
   return (
@@ -50,11 +50,23 @@ export default function ProductInfo({ product, related = [], onWriteReview }) {
   const { has: wishHas, toggle: wishToggle } = useWishlist();
   const { toast } = useToast();
 
-  const [variant, setVariant] = useState(() =>
-    Object.fromEntries(product.variants.map((g) => [g.name, g.options[0].id]))
+  // One flat list of size options (real product_variants rows), not the old
+  // "variant groups with price deltas" model — a product only ever varies
+  // by size here. Pick the DB's own default (matches what the card/Shop
+  // grid already show), falling back to the first option if something odd
+  // happened to the data (e.g. every row's is_default came back false).
+  const variants = product.variants ?? [];
+  const [variantId, setVariantId] = useState(
+    () => variants.find((v) => v.isDefault)?.id ?? variants[0]?.id ?? null
   );
+  const selectedVariant = variants.find((v) => v.id === variantId) ?? variants[0] ?? null;
+
   const [qty, setQty] = useState(1);
-  const maxQty = maxQtyFor(product.id); // stock-aware cap for the stepper
+  // Order-size cap is public (products_public.max_per_order); exact stock
+  // counts deliberately are NOT (see 0005/0016's privacy rule) — in-stock
+  // state is a boolean per variant, which is all the stepper needs to gate
+  // on. maxPerOrder is a per-PRODUCT policy, same limit across every size.
+  const maxQty = product.maxPerOrder ?? 10;
   const [adding, setAdding] = useState(false);
   const [added, setAdded] = useState(false);
   const wished = wishHas(product.id);
@@ -69,15 +81,26 @@ export default function ProductInfo({ product, related = [], onWriteReview }) {
   }
   const addBtnRef = useRef(null);
 
-  // Live price reflects selected variant deltas.
-  const unitPrice = useMemo(() => {
-    let delta = 0;
-    for (const g of product.variants) {
-      const opt = g.options.find((o) => o.id === variant[g.name]);
-      if (opt) delta += opt.priceDelta;
-    }
-    return product.price + delta;
-  }, [product, variant]);
+  // The selected size's own price/sale state — no delta math.
+  //
+  // Falls back to the product's (mirrored default-variant) figures ONLY
+  // when there's no selected variant at all — variants came back empty and
+  // getProductBySlug's synthetic single-entry fallback didn't apply either.
+  // Falling back FIELD BY FIELD (the previous version) was a real bug: a
+  // variant with no compare-at price has `compareAt: undefined`, and `??`
+  // can't tell that apart from "no variant selected" — so switching to a
+  // size with no sale would silently inherit the PRODUCT's (i.e. some
+  // OTHER variant's) compare-at price instead of correctly showing none.
+  // Caught live: the 150ml size (no sale) picked up 30ml's ৳2500 compare-at
+  // in the cart line data. Harmless in the UI (gated behind isOnSale, which
+  // itself doesn't leak this way — it's a real boolean either way), but it
+  // was still wrong data sitting in the cart line.
+  const unitPrice = selectedVariant ? selectedVariant.price : product.price;
+  const unitCompareAt = selectedVariant ? selectedVariant.compareAt : (product.compareAt ?? product.originalPrice);
+  const unitIsOnSale = selectedVariant ? selectedVariant.isOnSale : product.isOnSale;
+  const unitDiscountPercent = selectedVariant ? selectedVariant.discountPercent : product.discountPercent;
+  const unitInStock = selectedVariant ? selectedVariant.inStock : product.inStock;
+  const unitIsLowStock = selectedVariant ? selectedVariant.isLowStock : product.isLowStock;
 
   function flyToCart() {
     if (reduce || !addBtnRef.current) return;
@@ -88,11 +111,25 @@ export default function ProductInfo({ product, related = [], onWriteReview }) {
   }
 
   function handleAdd() {
-    if (!product.inStock || adding) return;
+    if (!unitInStock || adding) return;
     setAdding(true);
     flyToCart();
     setTimeout(() => {
-      for (let i = 0; i < qty; i++) addItem({ ...product, price: unitPrice });
+      // The specific SIZE goes into the bag, not the base product — variantId
+      // is what checkout sends to place_order(), which prices, locks stock
+      // and writes the order line against that exact variant.
+      addItem(
+        {
+          ...product,
+          price: unitPrice,
+          compareAt: unitCompareAt,
+          isOnSale: unitIsOnSale,
+          discountPercent: unitDiscountPercent,
+          variantId: selectedVariant?.id ?? null,
+          sizeLabel: variants.length > 1 ? selectedVariant?.sizeLabel : null,
+        },
+        qty
+      );
       setAdding(false);
       setAdded(true);
       toast.cart(`${product.brand} — ${product.name} ×${qty}`);
@@ -118,6 +155,23 @@ export default function ProductInfo({ product, related = [], onWriteReview }) {
         {product.name}
       </h1>
 
+      {/* Badges — the same set ProductCard shows on the Shop grid (New,
+          Bestseller, Staff Pick, Limited Edition). Sale isn't repeated here:
+          the price section below already shows the "-X%" pill + struck-
+          through compare-at, which is this page's equivalent of the Shop
+          card's discount ribbon — a second Sale badge here would just say
+          the same thing twice. */}
+      {(product.isNew || product.badge || product.isStaffPick || product.isLimitedEdition) && (
+        <div className="mt-3 flex flex-wrap gap-2">
+          {product.isNew && <Badge variant="new">New</Badge>}
+          {product.badge && product.badge.variant !== "new" && (
+            <Badge variant={product.badge.variant}>{product.badge.label}</Badge>
+          )}
+          {product.isStaffPick && <Badge variant="staffPick">Staff Pick</Badge>}
+          {product.isLimitedEdition && <Badge variant="limited">Limited Edition</Badge>}
+        </div>
+      )}
+
       {/* Rating */}
       <div className="mt-3 flex flex-wrap items-center gap-3 text-sm">
         <span className="inline-flex items-center gap-1.5 text-ink-soft">
@@ -133,22 +187,22 @@ export default function ProductInfo({ product, related = [], onWriteReview }) {
         </button>
       </div>
 
-      {/* Price */}
+      {/* Price — reflects whichever size is selected below */}
       <div className="mt-5 flex items-center gap-3">
         <span
           className={`font-serif text-3xl ${
-            product.isOnSale ? "text-magenta" : "text-ink"
+            unitIsOnSale ? "text-magenta" : "text-ink"
           }`}
         >
           {formatPrice(unitPrice)}
         </span>
-        {product.isOnSale && product.originalPrice > unitPrice && (
+        {unitIsOnSale && unitCompareAt > unitPrice && (
           <>
             <span className="text-lg text-ink-soft line-through">
-              {formatPrice(product.originalPrice)}
+              {formatPrice(unitCompareAt)}
             </span>
             <span className="rounded-full bg-magenta px-2.5 py-1 text-xs font-bold text-white">
-              -{product.discountPercent}%
+              -{unitDiscountPercent}%
             </span>
           </>
         )}
@@ -173,35 +227,41 @@ export default function ProductInfo({ product, related = [], onWriteReview }) {
         {product.longDescription}
       </p>
 
-      {/* Variants */}
-      {product.variants.map((g) => (
-        <div key={g.name} className="mt-6">
+      {/* Size — hidden entirely for a single-size product, so it looks
+          exactly like it always did. Only shows once there's an actual
+          choice to make. */}
+      {variants.length > 1 && (
+        <div className="mt-6">
           <p className="mb-2 text-sm font-semibold text-ink">
-            {g.name}:{" "}
+            Size:{" "}
             <span className="font-normal text-ink-soft">
-              {variant[g.name]}
+              {selectedVariant?.sizeLabel}
             </span>
           </p>
           <div className="flex flex-wrap gap-2">
-            {g.options.map((o) => {
-              const on = variant[g.name] === o.id;
+            {variants.map((v) => {
+              const on = v.id === variantId;
               return (
                 <button
-                  key={o.id}
-                  onClick={() => setVariant((v) => ({ ...v, [g.name]: o.id }))}
+                  key={v.id}
+                  onClick={() => { setVariantId(v.id); setQty(1); }}
+                  disabled={!v.inStock}
+                  title={!v.inStock ? `${v.sizeLabel} is out of stock` : undefined}
                   className={`rounded-full border px-4 py-2 text-sm font-medium transition-all ${
                     on
                       ? "border-magenta bg-magenta text-white"
+                      : !v.inStock
+                      ? "cursor-not-allowed border-ink/10 text-ink-soft/50 line-through"
                       : "border-ink/15 text-ink hover:border-magenta/50"
                   }`}
                 >
-                  {o.label}
+                  {v.sizeLabel}
                 </button>
               );
             })}
           </div>
         </div>
-      ))}
+      )}
 
       {/* Quantity + Add to Bag */}
       <div className="mt-7 flex items-stretch gap-3">
@@ -229,16 +289,16 @@ export default function ProductInfo({ product, related = [], onWriteReview }) {
 
         <button
           ref={addBtnRef}
-          onClick={product.inStock ? handleAdd : () => setNotify(true)}
+          onClick={unitInStock ? handleAdd : () => setNotify(true)}
           className={`group relative flex flex-1 items-center justify-center gap-2 overflow-hidden rounded-full px-6 text-sm font-semibold transition-all duration-500 ${
-            !product.inStock
+            !unitInStock
               ? "border border-magenta/50 bg-magenta/10 text-magenta hover:bg-magenta hover:text-white hover:shadow-[var(--shadow-glow-pink)]"
               : added
               ? "bg-success text-white"
               : "bg-magenta text-white hover:shadow-[var(--shadow-glow-pink)]"
           }`}
         >
-          {!product.inStock ? (
+          {!unitInStock ? (
             <span className="inline-flex items-center gap-2">
               <Bell className="h-4 w-4" strokeWidth={2} /> Out of Stock — Notify Me
             </span>
@@ -290,17 +350,19 @@ export default function ProductInfo({ product, related = [], onWriteReview }) {
         </button>
       </div>
 
-      {/* Stock + shipping hint */}
+      {/* Stock + shipping hint. Exact counts are never exposed to shoppers
+          (same privacy rule as the Shop grid) — "Only a few left" is the
+          boolean urgency cue, not a real number. */}
       <div className="mt-4 flex items-center gap-2 text-sm text-ink-soft">
-        {product.isLowStock ? (
+        {unitIsLowStock ? (
           <>
             <span className="inline-block h-2 w-2 rounded-full bg-error animate-pulse" />
             <span className="font-semibold text-magenta">
-              Only {product.stock} left
+              Only a few left
             </span>
             · <Truck className="h-4 w-4" strokeWidth={1.7} /> Free shipping over ৳6000
           </>
-        ) : product.inStock ? (
+        ) : unitInStock ? (
           <>
             <span className="inline-block h-2 w-2 rounded-full bg-success" />
             In stock · <Truck className="h-4 w-4" strokeWidth={1.7} /> Free shipping over ৳6000
@@ -376,6 +438,7 @@ export default function ProductInfo({ product, related = [], onWriteReview }) {
       {/* Mobile sticky add bar */}
       <MobileAddBar
         product={product}
+        inStock={unitInStock}
         price={unitPrice * qty}
         adding={adding}
         added={added}
@@ -390,7 +453,7 @@ export default function ProductInfo({ product, related = [], onWriteReview }) {
 }
 
 /* Fixed bottom bar on mobile only */
-function MobileAddBar({ product, price, adding, added, onAdd, onNotify }) {
+function MobileAddBar({ product, inStock, price, adding, added, onAdd, onNotify }) {
   return (
     <div className="fixed inset-x-0 bottom-0 z-[90] border-t border-line bg-white/90 px-4 py-3 backdrop-blur lg:hidden">
       <div className="flex items-center gap-3">
@@ -401,16 +464,16 @@ function MobileAddBar({ product, price, adding, added, onAdd, onNotify }) {
           </p>
         </div>
         <button
-          onClick={product.inStock ? onAdd : onNotify}
+          onClick={inStock ? onAdd : onNotify}
           className={`flex flex-1 items-center justify-center gap-2 rounded-full py-3.5 text-sm font-semibold transition-colors ${
-            !product.inStock
+            !inStock
               ? "border border-magenta/50 bg-magenta/10 text-magenta"
               : added
               ? "bg-success text-white"
               : "bg-magenta text-white"
           }`}
         >
-          {!product.inStock ? (
+          {!inStock ? (
             <>
               <Bell className="h-4 w-4" strokeWidth={2} /> Notify Me
             </>

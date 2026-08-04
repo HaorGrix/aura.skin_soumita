@@ -49,7 +49,7 @@ export default function Gallery({ product }) {
               setTab("photos");
               setActive(i);
             }}
-            aria-label={g.label}
+            aria-label={g.label || `Photo ${i + 1}`}
             className={`relative h-16 w-16 shrink-0 overflow-hidden rounded-xl ring-2 transition-all lg:h-20 lg:w-20 ${
               tab === "photos" && active === i
                 ? "ring-magenta"
@@ -57,9 +57,11 @@ export default function Gallery({ product }) {
             }`}
           >
             <span className="absolute inset-0" style={{ background: tile(g) }} />
-            <span className="absolute inset-x-0 bottom-0 bg-black/30 py-0.5 text-[8px] font-medium text-white">
-              {g.label}
-            </span>
+            {g.label && (
+              <span className="absolute inset-x-0 bottom-0 bg-black/30 py-0.5 text-[8px] font-medium text-white">
+                {g.label}
+              </span>
+            )}
           </button>
         ))}
         {hasVideo && (
@@ -141,9 +143,11 @@ export default function Gallery({ product }) {
                   />
                 )}
                 {/* Floating label + zoom hint */}
-                <span className="absolute bottom-3 left-3 rounded-full bg-white/85 px-3 py-1 text-xs font-medium text-ink backdrop-blur">
-                  {current.label}
-                </span>
+                {current.label && (
+                  <span className="absolute bottom-3 left-3 rounded-full bg-white/85 px-3 py-1 text-xs font-medium text-ink backdrop-blur">
+                    {current.label}
+                  </span>
+                )}
                 <span className="absolute bottom-3 right-3 grid h-9 w-9 place-items-center rounded-full bg-white/85 text-ink backdrop-blur opacity-0 transition-opacity group-hover:opacity-100">
                   <ZoomIn className="h-4 w-4" strokeWidth={1.8} />
                 </span>
@@ -154,24 +158,22 @@ export default function Gallery({ product }) {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="absolute inset-0 grid place-items-center bg-ink"
+                className="absolute inset-0 bg-ink"
               >
-                <div
-                  className="absolute inset-0 opacity-60"
-                  style={{ background: tile({ ...current, hue: 3 }) }}
+                {/* Real uploaded video (0023_product_video.sql) — native
+                    controls rather than a custom play button: it's the most
+                    reliable "click to play, inline" experience across
+                    browsers/devices without hand-rolling play/pause/seek
+                    state. `poster` avoids a blank black frame before the
+                    shopper presses play. */}
+                <video
+                  key={product.videoUrl}
+                  src={product.videoUrl}
+                  poster={current.image}
+                  controls
+                  playsInline
+                  className="absolute inset-0 h-full w-full object-cover"
                 />
-                <motion.button
-                  whileHover={{ scale: 1.08 }}
-                  whileTap={{ scale: 0.95 }}
-                  className="relative grid h-20 w-20 place-items-center rounded-full bg-white/90 text-magenta shadow-lift"
-                  aria-label="Play product video"
-                >
-                  <Play className="ml-1 h-7 w-7" fill="currentColor" strokeWidth={0} />
-                  <span className="absolute inset-0 animate-ping rounded-full bg-white/40" />
-                </motion.button>
-                <span className="absolute bottom-4 left-1/2 -translate-x-1/2 text-sm text-white/80">
-                  60s ritual demo ✨
-                </span>
               </motion.div>
             )}
           </AnimatePresence>

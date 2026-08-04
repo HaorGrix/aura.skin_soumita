@@ -202,6 +202,40 @@ export function TagsField({ label, hint, value = [], onChange, suggestions = [],
   );
 }
 
+/** Fixed-option multi-select, rendered as toggle pills — for fields like
+ *  skin_type where free text invites typos/duplicates ("Oily" vs "oily" vs
+ *  "Olly") and the real option set is small and known up front. Unlike
+ *  TagsField's comma-separated text, every value here is guaranteed to be
+ *  one of `options`, so filter logic elsewhere can match on it exactly. */
+export function MultiSelectField({ label, hint, value = [], onChange, options = [], disabled, className = "" }) {
+  const toggle = (opt) => {
+    if (disabled) return;
+    onChange(value.includes(opt) ? value.filter((v) => v !== opt) : [...value, opt]);
+  };
+  return (
+    <div className={className}>
+      {label && <Label hint={hint}>{label}</Label>}
+      <div className="flex flex-wrap gap-2">
+        {options.map((opt) => {
+          const on = value.includes(opt);
+          return (
+            <button
+              key={opt} type="button" disabled={disabled} onClick={() => toggle(opt)} aria-pressed={on}
+              className={`rounded-full border px-3 py-1.5 text-xs font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
+                on
+                  ? "border-magenta bg-magenta text-white"
+                  : "border-line text-ink-soft hover:border-magenta/50 hover:text-ink"
+              }`}
+            >
+              {opt}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 /* ---------------------------------------------------------------- *
  * Status pill
  * ---------------------------------------------------------------- */

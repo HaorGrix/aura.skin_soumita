@@ -693,7 +693,14 @@ export function queryProducts(all, { search = "", filters = {}, sort = "featured
     if (availability.includes("inStock") && item.inStock === false) return false;
     if (availability.includes("onSale") && !item.isOnSale) return false;
     if (availability.includes("isNew") && !item.isNew) return false;
-    if (skinType.length && !item.skinType.some((s) => skinType.includes(s))) return false;
+    // "All Skin Types" on the product means it matches ANY skin-type filter
+    // the shopper picks — a product tagged only that must still show up
+    // under Oily, Dry, every one of them, not just an exact string match.
+    if (
+      skinType.length &&
+      !item.skinType.includes("All Skin Types") &&
+      !item.skinType.some((s) => skinType.includes(s))
+    ) return false;
     if (concern.length && !item.concern.some((c) => concern.includes(c))) return false;
     if (brand.length && !brand.includes(item.brand)) return false;
     if (category.length && !category.includes(item.category)) return false;

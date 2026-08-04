@@ -200,31 +200,35 @@ function buildVariants(product) {
   return groups;
 }
 
-/* Build the gallery. When the product has real photos, use them (labeled
- * front → texture → ingredients → angles). Otherwise fall back to the
- * branded gradient tiles so every product still looks polished. */
+/* Build the gallery — one thumbnail per real uploaded image, no more, no
+ * fewer, no fixed slots. Each DB image carries its own admin-entered label
+ * (ImageManager.jsx); that's used verbatim, never reassigned by position.
+ * The static bundled catalog has no per-image labels, so its plain URL
+ * strings fall back to "View n". With zero real photos, a single branded
+ * placeholder card stands in — never multiple ghost slots with fake
+ * labels for images that don't exist. */
 function buildGallery(product) {
-  const labels = ["Front", "Texture", "Key Actives", "Details", "In Use", "More"];
   const photos = product.gallery ?? [];
 
   if (photos.length > 0) {
-    return photos.map((url, i) => ({
-      id: `${product.id}-g${i}`,
-      label: labels[i] ?? `View ${i + 1}`,
-      tone: product.tone,
-      hue: i,
-      image: url,
-    }));
+    return photos.map((photo, i) => {
+      const isRealImage = typeof photo === "object" && photo !== null;
+      // Real DB images show exactly what the admin typed, including blank —
+      // never a fabricated label they never entered. The static bundled
+      // catalog has no per-image labels to preserve, so it keeps a generic
+      // fallback.
+      const label = isRealImage ? (photo.label ?? "") : `View ${i + 1}`;
+      return {
+        id: `${product.id}-g${i}`,
+        label,
+        tone: product.tone,
+        hue: i,
+        image: isRealImage ? photo.url : photo,
+      };
+    });
   }
 
-  // Gradient fallback (no photography yet)
-  return labels.slice(0, 4).map((label, i) => ({
-    id: `${product.id}-g${i}`,
-    label,
-    tone: product.tone,
-    hue: i,
-    image: i === 0 ? product.image : undefined,
-  }));
+  return [{ id: `${product.id}-g0`, label: "", tone: product.tone, hue: 0, image: product.image ?? undefined }];
 }
 
 function ratingBreakdown(product, rand) {
@@ -272,9 +276,18 @@ export function buildPdp(product) {
     longDescription,
     philosophy,
     howTo: HOWTO[product.category] ?? HOWTO_DEFAULT,
-    variants: buildVariants(product),
+    // Real DB-backed products (getProductBySlug in lib/api/products.js)
+    // already attach `product.variants` — the actual product_variants rows,
+    // not a guess. buildVariants() only fires for the bundled static
+    // catalog, which has no real variant data and never will.
+    variants: product.variants ?? buildVariants(product),
     gallery: buildGallery(product),
-    hasVideo: true,
+    // Real per-product video (0023_product_video.sql) — this used to be
+    // hardcoded true, showing a fake "60s ritual demo" tab and video-slot
+    // thumbnail on every single product regardless of whether one existed.
+    // Now only true when the admin has actually uploaded one.
+    hasVideo: !!product.videoUrl,
+    videoUrl: product.videoUrl ?? null,
     reviewCount: product.reviews,
     reviews: reviewsForProduct(product, rand),
     ratingBreakdown: ratingBreakdown(product, rand),

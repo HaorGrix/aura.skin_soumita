@@ -206,13 +206,31 @@ function Slide({ slide, active, reserveCaption, tilt }) {
 
   const body = (
     <>
+      {/* Two nested transform layers, deliberately kept separate:
+       *
+       *   outer — hover "pop", pure CSS (group-hover:scale)
+       *   inner — magnetic tilt, written as an INLINE style by useTilt
+       *
+       * They cannot share an element. An inline `transform` beats any
+       * stylesheet rule, so a CSS hover-scale on the tilt node would simply
+       * never apply while the pointer is over it. Nested, the two transforms
+       * compose and each keeps its own transition.
+       *
+       * The pop is limited to the focal slide — the neighbours are peek
+       * slivers, and scaling those on hover reads as a glitch, not a flourish. */}
       <div
-        ref={ref}
-        onMouseMove={onMove}
-        onMouseLeave={onLeave}
-        className="relative will-change-transform transition-transform duration-300 ease-out"
+        className={`will-change-transform transition-transform duration-300 ease-out ${
+          active ? "group-hover:scale-[1.04]" : ""
+        }`}
       >
-        <SlideMedia slide={slide} active={active} />
+        <div
+          ref={ref}
+          onMouseMove={onMove}
+          onMouseLeave={onLeave}
+          className="relative will-change-transform transition-transform duration-300 ease-out"
+        >
+          <SlideMedia slide={slide} active={active} />
+        </div>
       </div>
 
       {reserveCaption && (
@@ -244,7 +262,9 @@ function Slide({ slide, active, reserveCaption, tilt }) {
     </>
   );
 
-  if (!href) return <div className="block">{body}</div>;
+  // `group` is what the hover-pop hangs off, so a banner with no link still
+  // gets the effect — without it, only linked slides would react.
+  if (!href) return <div className="group block">{body}</div>;
 
   return (
     <a

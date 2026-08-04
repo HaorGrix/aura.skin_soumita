@@ -24,15 +24,6 @@ export async function signIn(email, password) {
   return { data, error };
 }
 
-/** Passwordless fallback — useful for a client who forgets passwords. */
-export async function signInWithMagicLink(email) {
-  const { data, error } = await supabase.auth.signInWithOtp({
-    email,
-    options: { emailRedirectTo: `${window.location.origin}/admin` },
-  });
-  return { data, error };
-}
-
 export async function signOut() {
   const { error } = await supabase.auth.signOut();
   return { error };
@@ -93,18 +84,17 @@ export function onAuthChange(cb) {
 /**
  * Turn a Supabase auth error into something a store owner can act on.
  * "Invalid login credentials" is technically accurate and practically
- * useless — it's the same message whether the account doesn't exist, the
- * password is wrong, or the account has no password set at all (which is
- * the case for a user created by an invite or a magic link).
+ * useless — it's the same message whether the account doesn't exist or the
+ * password is simply wrong.
  */
 export function friendlyAuthError(error) {
   const raw = (error?.message || "").toLowerCase();
 
   if (raw.includes("invalid login credentials")) {
-    return "That email and password combination didn't work. If this account was set up with an email link, it may not have a password yet — use “Email me a sign-in link” below, or reset the password.";
+    return "That email and password combination didn't work. If you're not sure of the password, use “Forgot your password?” below to reset it.";
   }
   if (raw.includes("email not confirmed")) {
-    return "This account's email hasn't been confirmed yet. Use the sign-in link option below.";
+    return "This account's email hasn't been confirmed yet. Ask an owner to check the account, or use “Forgot your password?” to reset it.";
   }
   if (raw.includes("rate limit") || raw.includes("too many")) {
     return "Too many attempts. Wait a minute and try again.";

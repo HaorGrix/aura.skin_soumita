@@ -10,7 +10,7 @@ import { formatPrice } from "../../lib/format.js";
 export default function LineItem({ item, compact = false, readOnly = false }) {
   const { inc, dec, removeItem, atMaxQty } = useCart();
   const thumb = compact ? "h-16 w-16" : "h-24 w-24";
-  const maxed = atMaxQty(item.id);
+  const maxed = atMaxQty(item.id, item.variantId);
 
   return (
     <motion.div
@@ -49,12 +49,17 @@ export default function LineItem({ item, compact = false, readOnly = false }) {
               {item.name}
             </a>
             {!compact && (
-              <p className="mt-0.5 text-xs text-ink-soft">{item.category}</p>
+              <p className="mt-0.5 text-xs text-ink-soft">
+                {item.sizeLabel ? `${item.sizeLabel} · ${item.category}` : item.category}
+              </p>
+            )}
+            {compact && item.sizeLabel && (
+              <p className="mt-0.5 text-[11px] text-ink-soft">{item.sizeLabel}</p>
             )}
           </div>
           {!readOnly && (
             <button
-              onClick={() => removeItem(item.id)}
+              onClick={() => removeItem(item.id, item.variantId)}
               aria-label={`Remove ${item.name}`}
               className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-ink-soft transition-colors hover:bg-error/10 hover:text-error"
             >
@@ -69,7 +74,7 @@ export default function LineItem({ item, compact = false, readOnly = false }) {
           ) : (
             <div className="flex items-center rounded-full border border-ink/15">
               <button
-                onClick={() => dec(item.id)}
+                onClick={() => dec(item.id, item.variantId)}
                 aria-label="Decrease quantity"
                 className="grid h-8 w-8 place-items-center rounded-full text-ink-soft transition-colors hover:text-magenta"
               >
@@ -79,7 +84,7 @@ export default function LineItem({ item, compact = false, readOnly = false }) {
                 {item.qty}
               </span>
               <button
-                onClick={() => inc(item.id)}
+                onClick={() => inc(item.id, item.variantId)}
                 disabled={maxed}
                 aria-label={maxed ? "Maximum available quantity reached" : "Increase quantity"}
                 className="grid h-8 w-8 place-items-center rounded-full text-ink-soft transition-colors hover:text-magenta disabled:pointer-events-none disabled:opacity-40"

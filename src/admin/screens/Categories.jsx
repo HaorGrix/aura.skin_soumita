@@ -7,15 +7,21 @@
  * different act from doing it to an empty one, and the client should be able
  * to see which they're about to do.
  *
- * There is no delete. products.category_id is a real foreign key, so the
- * database would refuse to remove a category that still has products — and
- * removing an empty one still breaks any existing link to it. Hiding is
- * offered instead, which is the operation people actually want.
+ * Delete vs. Hide — two different intents, both offered:
+ *   Hide   — the common case. Pulls a category out of the storefront filters
+ *            while its products stay published and reachable by search/link.
+ *   Delete — for a category that should stop EXISTING, not just stop
+ *            showing (an empty taxonomy branch, a mistaken add). Only
+ *            enabled when the category has zero products and zero
+ *            sub-categories — both are real foreign keys with ON DELETE
+ *            RESTRICT, so the database enforces this regardless of what the
+ *            UI does. The UI checks first so a blocked delete reads as a
+ *            plain-English reason, not a raw constraint-violation string.
  * =================================================================== */
 import { useEffect, useState } from "react";
-import { ArrowDown, ArrowUp, Plus } from "lucide-react";
+import { AlertTriangle, ArrowDown, ArrowUp, Plus, Trash2 } from "lucide-react";
 import {
-  listCategoriesWithCounts, reorderCategories, setCategoryActive, slugify, upsertCategory,
+  deleteCategory, listCategoriesWithCounts, reorderCategories, setCategoryActive, slugify, upsertCategory,
 } from "../../lib/api/admin/catalog.js";
 import { useAdmin } from "../context.js";
 import { adminNavigate } from "../AdminApp.jsx";
@@ -31,6 +37,8 @@ export default function Categories() {
   const [original, setOriginal] = useState(null);
   const [editing, setEditing] = useState(null);
   const [toggling, setToggling] = useState(null);
+  const [deleting, setDeleting] = useState(null);
+  const [deleteError, setDeleteError] = useState(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
 
@@ -70,6 +78,16 @@ export default function Categories() {
     setRows(next);
   }
 
+  /* These guards MUST stay above the `ordered` build below.
+   *
+   * `rows` starts as null and is only filled by the load() effect, so the
+   * tree-building `rows.filter(...)` runs on the very first render too —
+   * before any data exists. With the guards below it, this screen crashed
+   * every single time with "Cannot read properties of null (reading
+   * 'filter')" and the error boundary swallowed the whole panel. */
+  if (error && !rows) return <p className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>;
+  if (!rows) return <div className="grid place-items-center py-24"><Spinner className="h-7 w-7" /></div>;
+
   /* Parents first, each followed by its own children — so the list reads the
      way the mega menu renders. */
   const ordered = [];
@@ -84,8 +102,18 @@ export default function Categories() {
     ordered.push({ ...orphan, depth: 0, orphaned: true });
   }
 
-  if (error && !rows) return <p className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>;
-  if (!rows) return <div className="grid place-items-center py-24"><Spinner className="h-7 w-7" /></div>;
+  const childCount = (id) => rows.filter((r) => r.parent_id === id).length;
+  /* Mirrors the two DB constraints exactly (products.category_id and
+     categories.parent_id, both ON DELETE RESTRICT) — this is prediction, not
+     enforcement. The database still has the final say if something changes
+     between this render and the click (deleteCategory's error-translation
+     handles that race). */
+  const blockedReason = (c) => {
+    if (c.productCount > 0) return `Has ${c.productCount} product${c.productCount === 1 ? "" : "s"} — move or remove them first.`;
+    const kids = childCount(c.id);
+    if (kids > 0) return `Has ${kids} sub-categor${kids === 1 ? "y" : "ies"} — delete those first.`;
+    return null;
+  };
 
   return (
     <>
@@ -100,6 +128,11 @@ export default function Categories() {
       />
 
       {error && <p className="mb-4 rounded-xl bg-red-50 px-4 py-2.5 text-sm text-red-700">{error}</p>}
+      {deleteError && (
+        <p className="mb-4 flex items-start gap-2 rounded-xl bg-red-50 px-4 py-2.5 text-sm text-red-700">
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" /> {deleteError}
+        </p>
+      )}
 
       <Card>
         <ul className="divide-y divide-line">
@@ -145,6 +178,15 @@ export default function Categories() {
                   <Btn size="sm" variant="ghost" onClick={() => setToggling(c)}>
                     {c.is_active ? "Hide" : "Show"}
                   </Btn>
+                  <Btn
+                    size="sm" variant="ghost"
+                    disabled={!!blockedReason(c)}
+                    title={blockedReason(c) ?? "Permanently delete this category"}
+                    onClick={() => setDeleting(c)}
+                    className="text-red-600 hover:text-red-700 disabled:text-ink-soft/40"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </Btn>
                 </>
               )}
             </li>
@@ -186,6 +228,19 @@ export default function Categories() {
             : `“${toggling?.name}” will appear in the storefront filters again.`
         }
         onConfirm={async () => { await setCategoryActive(toggling.id, !toggling.is_active); load(); }}
+      />
+
+      <ConfirmModal
+        open={!!deleting} onClose={() => setDeleting(null)} danger
+        title={`Delete “${deleting?.name}”?`}
+        confirmLabel="Delete permanently"
+        body={`This removes the category itself, not just from the storefront — it can't be undone. It has no products and no sub-categories, so nothing else is affected.`}
+        onConfirm={async () => {
+          setDeleteError(null);
+          const { error } = await deleteCategory(deleting.id);
+          if (error) setDeleteError(error.message);
+          else load();
+        }}
       />
     </>
   );

@@ -12,7 +12,9 @@
  * =================================================================== */
 import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { supabase } from "../lib/api/client.js";
-import { getStaffProfile, getPendingInvite, acceptInvite, onAuthChange, hasRole } from "../lib/api/admin/auth.js";
+import {
+  getStaffProfile, getPendingInvite, acceptInvite, onAuthChange, hasRole, consumeAuthRedirectError,
+} from "../lib/api/admin/auth.js";
 import { AdminContext } from "./context.js";
 import Shell from "./layout/Shell.jsx";
 import Login from "./screens/Login.jsx";
@@ -59,6 +61,10 @@ export default function AdminApp() {
   const [profileLoading, setProfileLoading] = useState(true);
   const [recovering, setRecovering] = useState(false);
   const [pendingInvite, setPendingInvite] = useState(null);
+  // Read once, on mount, before Supabase's own session-from-URL parsing has
+  // a chance to run again on a later render — an expired/reused link's
+  // error params need to be caught on the very first pass.
+  const [linkError] = useState(() => consumeAuthRedirectError());
 
   useEffect(() => {
     const onPop = () => setRoute(parseAdminRoute());
@@ -169,7 +175,7 @@ export default function AdminApp() {
   // Signed out, or signed in without a staff profile — both land on Login,
   // which explains the difference and offers the sign-in-link / reset paths.
   if (!session || !profile) {
-    return <Login session={session} onSignedIn={loadProfile} />;
+    return <Login session={session} onSignedIn={loadProfile} linkError={linkError} />;
   }
 
   return (

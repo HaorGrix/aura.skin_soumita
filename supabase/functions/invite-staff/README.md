@@ -24,14 +24,27 @@ No secrets to set by hand — `SUPABASE_URL`, `SUPABASE_ANON_KEY`, and
 `SUPABASE_SERVICE_ROLE_KEY` are injected automatically into every edge
 function by the platform.
 
-## 3. (Optional) point the invite link somewhere specific
+## 3. Point the invite link at production, explicitly
 
-By default the invite email's link lands the person back on your site's
-root. If you want it to land directly on `/admin`, set:
+Without this, the link falls back to Supabase's **Site URL** — which is easy
+to leave pointing at `localhost:3000` from early development and forget
+about (this is exactly what broke previously). Set it explicitly:
 
 ```
-npx supabase secrets set INVITE_REDIRECT_URL=https://your-domain.com/admin
+npx supabase secrets set INVITE_REDIRECT_URL=https://your-production-domain.com/admin
 ```
+
+This should be the same host as `VITE_SITE_URL` in your production
+environment variables (`.env.example` — used by the password-reset flow,
+which redirects the same way).
+
+**Also required, separately, in the dashboard:** Authentication → URL
+Configuration → **Redirect URLs** must include
+`https://your-production-domain.com/admin` (or a wildcard covering it,
+e.g. `https://your-production-domain.com/**`). Supabase silently ignores
+any `redirectTo` that isn't on this allow-list and falls back to the Site
+URL instead — setting the secret above alone is not enough if this list is
+missing or still has a `localhost` entry.
 
 ## 4. Check the email template
 
@@ -44,6 +57,11 @@ expecting it.
 
 1. In `/admin/staff`, click **Invite staff**, use a real inbox you control
    (a `+test` alias on your own address works — e.g. `you+staffcheck@gmail.com`).
+   Don't use a made-up address at a domain with no mail server (e.g.
+   `@example.org`, used by this project's other disposable test-account
+   scripts) — Supabase validates deliverability before sending and rejects
+   it outright with "Email address is invalid", which looks like a bug but
+   isn't one.
 2. Confirm the email arrives (check spam if not within a minute or two).
 3. Click the link — it should land you on a "set your password" screen.
 4. Set a password, confirm you land on the dashboard, and that the role

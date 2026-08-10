@@ -23,12 +23,15 @@ import {
 } from "../../lib/api/admin/auth.js";
 import { Btn, Card, TextField } from "../components/kit.jsx";
 
-export default function Login({ session, onSignedIn }) {
-  const [mode, setMode] = useState("password");
+export default function Login({ session, onSignedIn, linkError }) {
+  // An expired/already-used invite or recovery link always needs a fresh
+  // one — land straight on the "email me a link" form instead of the
+  // password box nobody asked for.
+  const [mode, setMode] = useState(linkError ? "reset" : "password");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState(linkError ? friendlyLinkError(linkError) : null);
   const [notice, setNotice] = useState(null);
 
   const clear = () => { setError(null); setNotice(null); };
@@ -128,6 +131,14 @@ export default function Login({ session, onSignedIn }) {
       </Card>
     </Shell>
   );
+}
+
+/** Supabase's own error_description is accurate but terse ("Email link is
+ *  invalid or has expired") — this just makes the "what do I do now" part
+ *  explicit, since that's the part a plain error string leaves out. */
+function friendlyLinkError(linkError) {
+  const base = linkError.message || "This link is invalid or has expired.";
+  return `${base} This can happen if it was already used, or if too much time passed since it was sent. Request a new one below.`;
 }
 
 function Shell({ children }) {

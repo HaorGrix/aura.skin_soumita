@@ -9,6 +9,17 @@
  * =================================================================== */
 import { supabase } from "../client.js";
 
+/**
+ * Where password-reset (and, via Supabase's Site URL, invite) links should
+ * land. Deliberately NOT `window.location.origin` — that broke production
+ * emails whenever someone triggered "Forgot password?" from a local dev
+ * server, since the link then pointed at their own localhost. `VITE_SITE_URL`
+ * is set once in the deploy environment (see `.env.example`) and always
+ * wins when present; only a genuinely unconfigured environment falls back
+ * to the current origin, which is what you want for local-only testing.
+ */
+const SITE_URL = (import.meta.env.VITE_SITE_URL || window.location.origin).replace(/\/+$/, "");
+
 /** Privilege ordering — mirrors is_staff() in SQL. Index = rank. */
 export const ROLES = ["support", "editor", "admin", "owner"];
 
@@ -89,7 +100,7 @@ export async function acceptInvite() {
  */
 export async function sendPasswordReset(email) {
   const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: `${window.location.origin}/admin`,
+    redirectTo: `${SITE_URL}/admin`,
   });
   return { data, error };
 }
@@ -98,6 +109,35 @@ export async function sendPasswordReset(email) {
 export async function updatePassword(password) {
   const { data, error } = await supabase.auth.updateUser({ password });
   return { data, error };
+}
+
+/**
+ * Detect a failed auth redirect — an expired or already-used invite /
+ * recovery link. Supabase sends these back with `error=...` in the URL
+ * hash (implicit flow) rather than establishing a session, so neither
+ * PASSWORD_RECOVERY nor a pending-invite check ever fires for them; without
+ * this, the user would land on a plain sign-in form with zero explanation.
+ * Reads once and strips the params from the URL so a page refresh doesn't
+ * keep re-showing a stale error.
+ */
+export function consumeAuthRedirectError() {
+  const hash = window.location.hash?.replace(/^#/, "") ?? "";
+  const search = window.location.search?.replace(/^\?/, "") ?? "";
+  const params = new URLSearchParams(hash || search);
+  const code = params.get("error_code");
+  const description = params.get("error_description");
+  if (!params.get("error") && !code) return null;
+
+  // Only strip if we actually found an error — never touch a URL that's
+  // mid-way through a real (successful) Supabase redirect.
+  window.history.replaceState(null, "", window.location.pathname);
+
+  return {
+    code,
+    message: description
+      ? decodeURIComponent(description.replace(/\+/g, " "))
+      : "This link is invalid or has expired.",
+  };
 }
 
 /**

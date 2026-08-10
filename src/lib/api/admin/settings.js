@@ -42,9 +42,30 @@ export async function saveSettings(input) {
 export async function listStaff() {
   const { data, error } = await supabase
     .from("profiles")
-    .select("id, role, full_name, email, is_active, created_at, last_seen_at")
+    .select(
+      "id, role, full_name, email, is_active, created_at, last_seen_at, " +
+      "is_test_account, invited_by, invited_at, invite_accepted_at"
+    )
     .order("created_at", { ascending: true });
   return { data, error };
+}
+
+/** Invite a new staff member by email. Runs entirely through the
+ *  `invite-staff` edge function — this app never generates or sees a
+ *  password. The invitee gets Supabase's own email with a link to set
+ *  their own. See supabase/functions/invite-staff for the server side. */
+export async function inviteStaff(email, role, fullName = "") {
+  const { data, error } = await supabase.functions.invoke("invite-staff", {
+    body: { email, role, fullName },
+  });
+  if (error) {
+    // FunctionsHttpError bodies carry the real message; the top-level
+    // error is a generic "non-2xx status code" otherwise.
+    const detail = await error.context?.json?.().catch(() => null);
+    return { data: null, error: { message: detail?.error || error.message } };
+  }
+  if (data?.error) return { data: null, error: { message: data.error } };
+  return { data, error: null };
 }
 
 export async function setStaffRole(userId, role) {

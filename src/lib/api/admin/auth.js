@@ -52,6 +52,36 @@ export async function getStaffProfile() {
 }
 
 /**
+ * Check whether the signed-in user has a not-yet-accepted staff invite —
+ * a `profiles` row with `invited_by` set, `is_active: false`, and no
+ * `invite_accepted_at` yet. Distinct from a revoked account, which also
+ * has `is_active: false` but no `invited_by`.
+ */
+export async function getPendingInvite() {
+  const { data: userData } = await supabase.auth.getUser();
+  const user = userData?.user;
+  if (!user) return { data: null, error: null };
+
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("id, role, full_name, email, is_active, invited_by, invite_accepted_at")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  if (error) return { data: null, error };
+  const pending = data && data.invited_by && !data.is_active && !data.invite_accepted_at;
+  return { data: pending ? data : null, error: null };
+}
+
+/** Accept a pending invite: flips the caller's own profile active. Must be
+ *  called after they've set a password, so "accepted" always means the
+ *  account is actually usable, not just clicked-through. */
+export async function acceptInvite() {
+  const { data, error } = await supabase.rpc("accept_staff_invite");
+  return { data, error };
+}
+
+/**
  * Email a password-reset link.
  *
  * `redirectTo` points back at /admin, where <AdminApp> notices the

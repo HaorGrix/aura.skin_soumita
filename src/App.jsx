@@ -88,6 +88,13 @@ export default function App() {
 
   const trending = useMemo(() => [...PRODUCTS].sort((a, b) => b.popularity - a.popularity).slice(0, 3), []);
 
+  // Same "full-bleed, owns its own top spacing" set the padding logic below
+  // already uses — these are the only routes with a hero/banner directly
+  // under the header for it to transparently overlay. Every other route has
+  // no hero image at all, so the header should just be solid from the start
+  // there (see Navbar's hasHero prop).
+  const hasHero = ["home", "about", "contact"].includes(route.name);
+
   // Feed our own route stack — BackButton resolves a loop-proof target from it.
   useEffect(() => {
     recordRoute(route.name);
@@ -142,7 +149,7 @@ export default function App() {
           {/* Entry ritual */}
           <Loader onComplete={() => setLoaded(true)} />
 
-          <Navbar onOpenSearch={() => setIsSearchOpen(true)} />
+          <Navbar onOpenSearch={() => setIsSearchOpen(true)} hasHero={hasHero} />
 
           <AnimatePresence>
             {isSearchOpen && (
@@ -196,11 +203,7 @@ export default function App() {
               so first paint (before measurement) never overlaps. */}
           <main
             className="relative w-full overflow-x-hidden"
-            style={
-              ["home", "about", "contact"].includes(route.name)
-                ? undefined
-                : { paddingTop: "var(--header-h, 11rem)" }
-            }
+            style={hasHero ? undefined : { paddingTop: "var(--header-h, 11rem)" }}
           >
             <Suspense fallback={<RouteFallback />}>
               {route.name === "product" ? (

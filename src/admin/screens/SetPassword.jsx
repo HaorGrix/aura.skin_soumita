@@ -11,7 +11,7 @@ import { Check, KeyRound } from "lucide-react";
 import { friendlyAuthError, signOut, updatePassword } from "../../lib/api/admin/auth.js";
 import { Btn, Card, TextField } from "../components/kit.jsx";
 
-export default function SetPassword({ email, onDone }) {
+export default function SetPassword({ email, onDone, onAfterPassword, heading, doneCopy }) {
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [busy, setBusy] = useState(false);
@@ -27,6 +27,13 @@ export default function SetPassword({ email, onDone }) {
 
     setBusy(true);
     const { error } = await updatePassword(password);
+    if (!error && onAfterPassword) {
+      const after = await onAfterPassword();
+      if (after?.error) {
+        setBusy(false);
+        return setError(after.error.message || "Password saved, but activating the account failed. Contact an owner.");
+      }
+    }
     setBusy(false);
     if (error) return setError(friendlyAuthError(error));
 
@@ -47,14 +54,14 @@ export default function SetPassword({ email, onDone }) {
               <Check className="mx-auto h-8 w-8 text-emerald-600" strokeWidth={1.5} />
               <p className="mt-3 text-sm font-medium text-ink">Password updated</p>
               <p className="mt-1 text-xs text-ink-soft">
-                You can use it to sign in from now on.
+                {doneCopy || "You can use it to sign in from now on."}
               </p>
               <Btn className="mt-4 w-full" onClick={onDone}>Continue to the dashboard</Btn>
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <p className="text-sm font-medium text-ink">Choose a new password</p>
+                <p className="text-sm font-medium text-ink">{heading || "Choose a new password"}</p>
                 {email && <p className="mt-0.5 text-xs text-ink-soft">for {email}</p>}
               </div>
 

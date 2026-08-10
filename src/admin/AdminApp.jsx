@@ -12,7 +12,7 @@
  * =================================================================== */
 import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { supabase } from "../lib/api/client.js";
-import { getStaffProfile, onAuthChange, hasRole } from "../lib/api/admin/auth.js";
+import { getStaffProfile, getPendingInvite, acceptInvite, onAuthChange, hasRole } from "../lib/api/admin/auth.js";
 import { AdminContext } from "./context.js";
 import Shell from "./layout/Shell.jsx";
 import Login from "./screens/Login.jsx";
@@ -58,6 +58,7 @@ export default function AdminApp() {
   const [profile, setProfile] = useState(null);
   const [profileLoading, setProfileLoading] = useState(true);
   const [recovering, setRecovering] = useState(false);
+  const [pendingInvite, setPendingInvite] = useState(null);
 
   useEffect(() => {
     const onPop = () => setRoute(parseAdminRoute());
@@ -108,10 +109,18 @@ export default function AdminApp() {
   }, []);
 
   const loadProfile = useCallback(async () => {
-    if (!session) { setProfile(null); setProfileLoading(false); return; }
+    if (!session) { setProfile(null); setPendingInvite(null); setProfileLoading(false); return; }
     setProfileLoading(true);
     const { data } = await getStaffProfile();
     setProfile(data);
+    // No active staff profile could mean "not staff at all" or "invited,
+    // hasn't accepted yet" — check the latter before falling back to Login.
+    if (!data) {
+      const { data: invite } = await getPendingInvite();
+      setPendingInvite(invite);
+    } else {
+      setPendingInvite(null);
+    }
     setProfileLoading(false);
   }, [session]);
 
@@ -139,6 +148,21 @@ export default function AdminApp() {
       <div className="grid min-h-screen place-items-center bg-snow">
         <Spinner className="h-8 w-8" />
       </div>
+    );
+  }
+
+  // Invited but hasn't set a password yet: same screen as password reset,
+  // but activates the account (accept_staff_invite) right after, so
+  // "accepted" always means the account actually works.
+  if (session && !profile && pendingInvite) {
+    return (
+      <SetPassword
+        email={session.user?.email}
+        heading="Set your password"
+        doneCopy="You're all set — welcome aboard."
+        onAfterPassword={acceptInvite}
+        onDone={() => loadProfile()}
+      />
     );
   }
 

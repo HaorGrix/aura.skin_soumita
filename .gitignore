@@ -32,3 +32,6 @@ dist-ssr
 # thumbnails). Not app source — the finished art lives in assests/cate/.
 # Committing it would bloat the repo permanently.
 category-row-with-pink-tiles/
+
+# Supabase CLI local state (project link cache) — machine-specific, not source.
+supabase/.temp/

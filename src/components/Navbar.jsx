@@ -41,7 +41,12 @@ const BRANDS = [
 
 const MOBILE_QUOTE = "Glass skin is a daily ritual — and you’re already glowing. 🌸";
 
-export default function Navbar({ onOpenSearch }) {
+// Past this scroll depth the header switches from transparent (overlaying a
+// hero) to solid. "Even a small amount" per the design spec — 64px is a
+// couple of finger-swipes on mobile, not a deliberate "scroll down" action.
+const SCROLL_THRESHOLD = 64;
+
+export default function Navbar({ onOpenSearch, hasHero = false }) {
   const reduce = useReducedMotion();
   const { count, openCart, isOpen: cartOpen } = useCart();
   const { points, authed, openAuth } = useUser();
@@ -50,9 +55,13 @@ export default function Navbar({ onOpenSearch }) {
   // sensible default (same pattern as shipping/tax settings) if the row or
   // the migration adding these columns hasn't landed yet.
   const { announcementEnabled, announcementText } = useStoreSettings();
-  const [scrolled, setScrolled] = useState(false);
+  // `scrolled` doubles as "should the header be solid" — true either from
+  // scroll depth (hero pages) or unconditionally (every other page, which
+  // has no hero image to overlay and would otherwise show a transparent
+  // header directly over grid tiles/content from the very first paint).
+  const [scrolled, setScrolled] = useState(!hasHero);
   const [open, setOpen] = useState(false);
-  
+
   const drawerRef = useRef(null);
   const headerRef = useRef(null);
   useFocusTrap(drawerRef, open);
@@ -60,11 +69,18 @@ export default function Navbar({ onOpenSearch }) {
   useBodyScrollLock(open);
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 24);
+    // No hero to overlay (Shop, PDP, category, account, …) — solid from the
+    // first frame, permanently. Not "start transparent then flip on scroll":
+    // there's nothing under it to justify a transparent moment at all.
+    if (!hasHero) {
+      setScrolled(true);
+      return;
+    }
+    const onScroll = () => setScrolled(window.scrollY > SCROLL_THRESHOLD);
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
-  }, []);
+  }, [hasHero]);
 
   // Publish the header's real height as `--header-h` so page clearance tracks it
   // instead of a hardcoded pt-40/44 (which breaks if the marquee grows or the
@@ -76,7 +92,7 @@ export default function Navbar({ onOpenSearch }) {
     const el = headerRef.current;
     if (!el) return;
     const measure = () => {
-      if (window.scrollY > 24) return; // only trust the expanded layout
+      if (window.scrollY > SCROLL_THRESHOLD) return; // only trust the expanded layout
       document.documentElement.style.setProperty("--header-h", `${el.offsetHeight}px`);
     };
     measure();
@@ -96,11 +112,23 @@ export default function Navbar({ onOpenSearch }) {
         initial={{ y: -90, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.9, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
-        className="fixed inset-x-0 top-0 z-50"
+        // Solid on the OUTER wrapper, full width, no inset gaps — this is
+        // what actually stops content from showing through. The previous
+        // "scrolled" state only painted an inset, 66%-opacity blurred pill
+        // (see .glass in index.css) around the nav row; the full-width strip
+        // around it — and the pill itself, being translucent — stayed see-
+        // through, so tiles/banners scrolling underneath visibly bled into
+        // the header text. transparent<->solid is a plain background-color/
+        // border/shadow transition, 300ms, reversible in either scroll
+        // direction since it's driven by the same `scrolled` state read on
+        // every scroll event.
+        className={`fixed inset-x-0 top-0 z-50 border-b transition-[background-color,box-shadow,border-color] duration-300 ${
+          scrolled ? "border-line bg-white shadow-soft" : "border-transparent bg-transparent"
+        }`}
       >
         {/* Static announcement bar — a slim deep-navy strip of boutique
             signage, replacing the scrolling ticker. No animation, no loop:
-            one considered line, then the glass nav floats below it. Text
+            one considered line, then the nav row sits below it. Text
             and visibility are admin-editable (Settings → Announcement bar). */}
         {announcementEnabled && (
           <div className="relative z-50 bg-magenta-deep py-2.5 text-center">
@@ -110,9 +138,12 @@ export default function Navbar({ onOpenSearch }) {
           </div>
         )}
 
+        {/* The compact-padding/logo-shrink polish on scroll stays — only the
+            translucent glass-pill background moved up to the outer header,
+            which is now the single source of truth for solid vs transparent. */}
         <div
           className={`mx-auto flex max-w-7xl items-center justify-between px-6 transition-all duration-500 sm:px-9 ${
-            scrolled ? "my-3 rounded-full glass shadow-soft py-3" : "py-5"
+            scrolled ? "py-3" : "py-5"
           }`}
         >
           {/* Logo — scales up on larger viewports where the header has room to

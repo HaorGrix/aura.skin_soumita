@@ -5,18 +5,19 @@
  * into the user's JWT claim, which is what RLS actually reads. So a demoted
  * admin loses write access on their next token refresh, not just visually.
  *
- * There is no "invite" button because creating auth users needs the
- * service_role key, which must never reach the browser. The flow is:
- * the person signs up on the storefront, then the owner grants them a role
- * here. That's stated on-screen rather than left as a mystery.
+ * Inviting is real now: it calls the `invite-staff` edge function, which is
+ * the only place the service_role key runs outside a local script — never
+ * in this browser bundle. The invited person sets their own password from
+ * Supabase's own email; nobody else ever sees it.
  * =================================================================== */
 import { useState } from "react";
-import { ShieldCheck } from "lucide-react";
-import { listStaff, setStaffActive, setStaffRole } from "../../lib/api/admin/settings.js";
+import { Mail, ShieldCheck, TestTube2 } from "lucide-react";
+import { inviteStaff, listStaff, setStaffActive, setStaffRole } from "../../lib/api/admin/settings.js";
 import { useAdmin } from "../context.js";
 import {
-  Btn, Card, ConfirmModal, DataTable, PageHeader, Pill, SelectField, useAsync,
+  Btn, Card, ConfirmModal, DataTable, Modal, PageHeader, Pill, SelectField, TextField, useAsync,
 } from "../components/kit.jsx";
+import MfaCard from "../components/MfaCard.jsx";
 
 const ROLE_OPTIONS = [
   { id: "support", label: "Support — view orders, update status" },
@@ -30,6 +31,7 @@ const ROLE_TONE = { owner: "magenta", admin: "violet", editor: "sky", support: "
 export default function Staff() {
   const { profile } = useAdmin();
   const [confirm, setConfirm] = useState(null);
+  const [inviteOpen, setInviteOpen] = useState(false);
   const list = useAsync(() => listStaff(), []);
 
   return (
@@ -37,16 +39,20 @@ export default function Staff() {
       <PageHeader
         title="Staff & roles"
         subtitle="Who can access this admin panel, and what they're allowed to do."
+        actions={<Btn onClick={() => setInviteOpen(true)}><Mail className="h-4 w-4" /> Invite staff</Btn>}
       />
+
+      <MfaCard />
 
       <Card className="mb-5">
         <div className="flex gap-3">
           <ShieldCheck className="h-5 w-5 shrink-0 text-ink-soft" strokeWidth={1.75} />
           <div className="text-sm text-ink-soft">
-            <p className="font-medium text-ink">Adding someone</p>
+            <p className="font-medium text-ink">Inviting someone</p>
             <p className="mt-0.5">
-              Ask them to create a normal account on the store first, using the email they'll work with.
-              Once they've done that they appear in this list, and you can give them a role.
+              Enter their email and role above. They get an email with a link to set their own password —
+              nobody here ever sees, sets, or shares it. They show up in this list right away as
+              "invited", and become active once they accept.
             </p>
           </div>
         </div>
@@ -61,12 +67,24 @@ export default function Staff() {
                 <p className="font-medium text-ink">
                   {r.full_name || "—"}
                   {r.id === profile?.id && <span className="ml-2 text-xs font-normal text-ink-soft">(you)</span>}
+                  {r.is_test_account && (
+                    <span title="Test/QA account" className="ml-2 inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-medium text-amber-700 ring-1 ring-amber-200">
+                      <TestTube2 className="h-3 w-3" /> test
+                    </span>
+                  )}
                 </p>
                 <p className="text-xs text-ink-soft">{r.email}</p>
               </div>
             ) },
           { key: "role", header: "Role", render: (r) => (
               <Pill tone={ROLE_TONE[r.role]}>{r.role}</Pill>
+            ) },
+          { key: "status", header: "Status", render: (r) => (
+              r.invited_by && !r.is_active && !r.invite_accepted_at
+                ? <Pill tone="amber">invited — pending</Pill>
+                : r.is_active
+                  ? <Pill tone="green">active</Pill>
+                  : <Pill tone="grey">revoked</Pill>
             ) },
           { key: "change", header: "Change role", render: (r) => (
               <SelectField
@@ -102,6 +120,53 @@ export default function Staff() {
         }
         onConfirm={async () => { await setStaffActive(confirm.id, !confirm.is_active); list.reload(); }}
       />
+
+      <InviteModal open={inviteOpen} onClose={() => setInviteOpen(false)} onInvited={() => { setInviteOpen(false); list.reload(); }} />
     </>
+  );
+}
+
+function InviteModal({ open, onClose, onInvited }) {
+  const [email, setEmail] = useState("");
+  const [fullName, setFullName] = useState("");
+  const [role, setRole] = useState("editor");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState(null);
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    setError(null);
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email.trim())) return setError("Enter a valid email address.");
+
+    setBusy(true);
+    const { error } = await inviteStaff(email.trim(), role, fullName.trim());
+    setBusy(false);
+    if (error) return setError(error.message);
+
+    setEmail(""); setFullName(""); setRole("editor");
+    onInvited?.();
+  }
+
+  return (
+    <Modal open={open} onClose={onClose} title="Invite staff">
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <TextField label="Email" type="email" required autoFocus
+          value={email} onChange={(e) => { setEmail(e.target.value); setError(null); }} />
+        <TextField label="Name (optional)" value={fullName} onChange={(e) => setFullName(e.target.value)} />
+        <SelectField label="Role" value={role} onChange={(e) => setRole(e.target.value)} options={ROLE_OPTIONS} />
+
+        {error && <p className="rounded-lg bg-red-50 px-3 py-2 text-xs text-red-700">{error}</p>}
+
+        <p className="text-xs text-ink-soft">
+          They'll get an email with a link to set their own password. This never generates, shows, or
+          stores a password on your behalf.
+        </p>
+
+        <div className="flex justify-end gap-2 pt-1">
+          <Btn type="button" variant="secondary" onClick={onClose}>Cancel</Btn>
+          <Btn type="submit" loading={busy}><Mail className="h-4 w-4" /> Send invite</Btn>
+        </div>
+      </form>
+    </Modal>
   );
 }

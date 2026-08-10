@@ -11,7 +11,7 @@
  * Supabase's own email; nobody else ever sees it.
  * =================================================================== */
 import { useState } from "react";
-import { Mail, ShieldCheck, TestTube2 } from "lucide-react";
+import { Mail, RefreshCw, ShieldCheck, TestTube2 } from "lucide-react";
 import { inviteStaff, listStaff, setStaffActive, setStaffRole } from "../../lib/api/admin/settings.js";
 import { useAdmin } from "../context.js";
 import {
@@ -32,7 +32,24 @@ export default function Staff() {
   const { profile } = useAdmin();
   const [confirm, setConfirm] = useState(null);
   const [inviteOpen, setInviteOpen] = useState(false);
+  const [resendingId, setResendingId] = useState(null);
+  const [resendResult, setResendResult] = useState(null); // { email, ok, message }
   const list = useAsync(() => listStaff(), []);
+
+  // Re-sends through the exact same invite-staff function as a fresh invite —
+  // Supabase's inviteUserByEmail happily regenerates the link for an
+  // account that's still pending (only errors on one that's already
+  // active), so this is safe to call as many times as needed. The most
+  // common reason to need it: an email security scanner pre-fetched and
+  // silently burned the original single-use link before a human clicked it.
+  async function resendInvite(row) {
+    setResendingId(row.id);
+    setResendResult(null);
+    const { error } = await inviteStaff(row.email, row.role, row.full_name || "");
+    setResendingId(null);
+    setResendResult({ email: row.email, ok: !error, message: error?.message || "New invite sent." });
+    if (!error) list.reload();
+  }
 
   return (
     <>
@@ -43,6 +60,14 @@ export default function Staff() {
       />
 
       <MfaCard />
+
+      {resendResult && (
+        <p className={`mb-5 rounded-lg px-3 py-2 text-sm ${resendResult.ok ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-700"}`}>
+          {resendResult.ok
+            ? `New invite sent to ${resendResult.email}.`
+            : `Couldn't resend to ${resendResult.email}: ${resendResult.message}`}
+        </p>
+      )}
 
       <Card className="mb-5">
         <div className="flex gap-3">
@@ -96,16 +121,23 @@ export default function Staff() {
                 options={ROLE_OPTIONS}
               />
             ) },
-          { key: "is_active", header: "Access", align: "right", render: (r) => (
-              r.id === profile?.id ? (
-                <span className="text-xs text-ink-soft">—</span>
-              ) : (
+          { key: "is_active", header: "Access", align: "right", render: (r) => {
+              const pending = r.invited_by && !r.is_active && !r.invite_accepted_at;
+              if (r.id === profile?.id) return <span className="text-xs text-ink-soft">—</span>;
+              if (pending) {
+                return (
+                  <Btn size="sm" variant="secondary" loading={resendingId === r.id} onClick={() => resendInvite(r)}>
+                    <RefreshCw className="h-3.5 w-3.5" /> Resend invite
+                  </Btn>
+                );
+              }
+              return (
                 <Btn size="sm" variant={r.is_active ? "secondary" : "primary"}
                   onClick={() => setConfirm(r)}>
                   {r.is_active ? "Revoke" : "Restore"}
                 </Btn>
-              )
-            ) },
+              );
+            } },
         ]}
       />
 

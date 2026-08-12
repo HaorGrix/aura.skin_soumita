@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Star, X, Sparkles } from "lucide-react";
 import { useUser } from "../../context/UserContext.jsx";
-import { POINTS_PER_REVIEW } from "../../data/reviews.js";
+import { submitVerifiedReview, reviewErrorMessage } from "../../lib/api/reviews.js";
 import { useToast } from "../ui/Toast.jsx";
 import Button from "../ui/Button.jsx";
 import { Input } from "../ui/index.js";
@@ -10,16 +10,23 @@ import { useBodyScrollLock } from "../../lib/scrollLock.js";
 
 /**
  * WriteReviewModal — verified-buyer review composer. Reused by the PDP and the
- * Account/Order History page. On submit it calls useUser().addReview, which
- * publishes the review and awards a loyalty point.
+ * Account/Order History page.
+ *
+ * Two write paths, chosen by whether `orderItemId` is passed:
+ *  - orderItemId set  -> a REAL order line from a magic-link-verified
+ *    session (OrdersTab). Submits to submit_review() (0031), a real
+ *    Postgres table, publicly visible on the PDP for everyone.
+ *  - orderItemId absent -> the legacy mock login's local review (no real
+ *    order/order_item exists in Postgres for it to reference).
  */
-export default function WriteReviewModal({ product, open, onClose }) {
-  const { addReview, points } = useUser();
+export default function WriteReviewModal({ product, orderItemId, open, onClose, onReviewed }) {
+  const { addReview, points, refreshVerifiedPoints, pointsPerReview } = useUser();
   const { toast } = useToast();
   const [stars, setStars] = useState(0);
   const [hover, setHover] = useState(0);
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
   // Reset fields whenever a fresh modal opens.
   useEffect(() => {
@@ -42,16 +49,36 @@ export default function WriteReviewModal({ product, open, onClose }) {
 
   if (!product) return null;
 
-  const canSubmit = stars > 0 && body.trim().length >= 4;
+  const canSubmit = stars > 0 && body.trim().length >= 4 && !submitting;
 
-  function submit() {
+  async function submit() {
     if (!canSubmit) return;
+
+    if (orderItemId) {
+      setSubmitting(true);
+      const { error } = await submitVerifiedReview(orderItemId, { rating: stars, title, body });
+      setSubmitting(false);
+      if (error) {
+        toast.error(reviewErrorMessage(error));
+        return;
+      }
+      const freshTotal = await refreshVerifiedPoints();
+      toast.success(
+        freshTotal != null
+          ? `Your review is live · ${freshTotal} points total ✨`
+          : "Thanks — your review is live on the product page.",
+        "Review published"
+      );
+      onReviewed?.(orderItemId);
+      onClose();
+      return;
+    }
+
+    // Legacy mock-login path — no real order_item to reference in Postgres.
     const ok = addReview({ productId: product.id, stars, title, body });
     if (ok) {
-      // Read the rate from the config — hardcoding "+1" silently lied the
-      // moment POINTS_PER_REVIEW changed.
       toast.success(
-        `+${POINTS_PER_REVIEW} point${POINTS_PER_REVIEW > 1 ? "s" : ""} earned · ${points + POINTS_PER_REVIEW} total ✨`,
+        `+${pointsPerReview} point${pointsPerReview > 1 ? "s" : ""} earned · ${points + pointsPerReview} total ✨`,
         "Review published"
       );
       onClose();
@@ -96,7 +123,7 @@ export default function WriteReviewModal({ product, open, onClose }) {
               Review · {product.name}
             </h2>
             <p className="mt-1 inline-flex items-center gap-1.5 text-xs font-medium text-cyan">
-              <Sparkles className="h-3.5 w-3.5" strokeWidth={2} /> Verified purchase — earn 1 loyalty point
+              <Sparkles className="h-3.5 w-3.5" strokeWidth={2} /> Verified purchase — earn {pointsPerReview} loyalty point{pointsPerReview === 1 ? "" : "s"}
             </p>
 
             {/* Star picker */}
@@ -159,7 +186,7 @@ export default function WriteReviewModal({ product, open, onClose }) {
                 Cancel
               </button>
               <Button variant="primary" size="md" magnetic={false} onClick={submit} className={!canSubmit ? "pointer-events-none opacity-50" : ""}>
-                Publish review
+                {submitting ? "Publishing…" : "Publish review"}
               </Button>
             </div>
           </motion.div>

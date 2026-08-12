@@ -2,6 +2,7 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Sparkles, Gift, Check, Ticket, Truck, Star, ShoppingBag, Package } from "lucide-react";
 import { useUser } from "../context/UserContext.jsx";
+import { useStoreSettings } from "../lib/api/settings.js";
 import OrdersTab from "../components/account/OrdersTab.jsx";
 
 /* ── Motion ─────────────────────────────────────────────────────────────── */
@@ -43,6 +44,7 @@ function TabBtn({ active, onClick, icon: Icon, children }) {
 /* ── Points card ─────────────────────────────────────────────────────────── */
 
 function PointsCard({ points, nextMilestone, milestones }) {
+  const { storeName } = useStoreSettings();
   const pct = progressPct(points, milestones);
   return (
     <div className="relative overflow-hidden rounded-[1.75rem] bg-gradient-to-br from-magenta to-magenta-deep p-6 text-white shadow-[var(--shadow-glow-pink)] sm:p-8">
@@ -51,7 +53,7 @@ function PointsCard({ points, nextMilestone, milestones }) {
       <div className="relative flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="inline-flex items-center gap-1.5 text-xs font-medium uppercase tracking-[0.16em] text-white/80">
-            <Sparkles className="h-4 w-4" strokeWidth={2} /> Skin Script Rewards
+            <Sparkles className="h-4 w-4" strokeWidth={2} /> {storeName} Rewards
           </p>
           <p className="mt-2 font-serif text-5xl leading-none">{points}</p>
           <p className="mt-1 text-sm text-white/85">loyalty points · 1 per verified review</p>
@@ -102,12 +104,13 @@ function PointsCard({ points, nextMilestone, milestones }) {
 /* ── Guest teaser ────────────────────────────────────────────────────────── */
 
 function GuestTeaser({ openAuth }) {
+  const { storeName } = useStoreSettings();
   return (
     <div className="relative overflow-hidden rounded-[1.75rem] bg-gradient-to-br from-magenta to-magenta-deep p-6 text-white shadow-[var(--shadow-glow-pink)] sm:p-8">
       <div aria-hidden className="pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full bg-white/15 blur-2xl" />
       <div className="relative space-y-4">
         <p className="inline-flex items-center gap-1.5 text-xs font-medium uppercase tracking-[0.16em] text-white/80">
-          <Sparkles className="h-4 w-4" strokeWidth={2} /> Skin Script Rewards
+          <Sparkles className="h-4 w-4" strokeWidth={2} /> {storeName} Rewards
         </p>
         <p className="font-serif text-2xl">
           Sign in to track your points and unlock exclusive rewards.
@@ -238,6 +241,7 @@ function HowToEarn() {
 
 export default function Rewards() {
   const { points, coupons, nextMilestone, milestones, authed, openAuth } = useUser();
+  const { storeName } = useStoreSettings();
   const [view, setView] = useState("rewards");
 
   return (
@@ -252,7 +256,7 @@ export default function Rewards() {
           className="mt-12 mb-8"
         >
           <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-magenta">
-            Skin Script Rewards
+            {storeName} Rewards
           </p>
           <h1 className="mt-2 font-serif text-[clamp(2rem,5vw,3.25rem)] leading-tight text-ink">
             Your Glow, Rewarded

@@ -1,5 +1,5 @@
 -- ===================================================================
--- skin.script — trim the 139-item dummy catalog to a lean sample set
+-- skin.theory — trim the 139-item dummy catalog to a lean sample set
 -- -------------------------------------------------------------------
 -- The full 139-product catalog was seed/migration data for building and
 -- testing the storefront. The real client will load their own inventory,

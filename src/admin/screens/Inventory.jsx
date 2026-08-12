@@ -1,5 +1,5 @@
 /* =================================================================== *
- * skin.script admin — inventory
+ * skin.theory admin — inventory
  * -------------------------------------------------------------------
  * A stock-only grid with inline editing, one row per SIZE — not per
  * product. A single-size product still shows exactly one row here (the

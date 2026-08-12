@@ -1,5 +1,5 @@
 -- ===================================================================
--- skin.script — dual-mode testimonials (text quote OR single image)
+-- skin.theory — dual-mode testimonials (text quote OR single image)
 -- -------------------------------------------------------------------
 -- One table, two shapes, distinguished by `type`:
 --   'text'  — customer_name, quote_text, rating, duration_label

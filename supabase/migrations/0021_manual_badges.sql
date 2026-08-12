@@ -1,5 +1,5 @@
 -- ===================================================================
--- skin.script — manual badge flags: Staff Pick, Limited Edition, and a
+-- skin.theory — manual badge flags: Staff Pick, Limited Edition, and a
 -- Bestseller override
 -- -------------------------------------------------------------------
 -- Today `is_best_seller` is entirely computed by the products_public view

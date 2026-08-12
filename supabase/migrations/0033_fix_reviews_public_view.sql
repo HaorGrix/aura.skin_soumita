@@ -1,0 +1,42 @@
+-- ===================================================================
+-- skin.theory — fix: reviews_public unreadable by anon (wrong view mode)
+-- -------------------------------------------------------------------
+-- ROOT CAUSE, caught by a live test, not guessing:
+-- 0031_reviews_table.sql created `reviews_public` with
+-- `security_invoker = true`. That makes the view execute with the
+-- QUERYING role's own table privileges — but `anon` has no direct
+-- SELECT grant on `public.products` (only `products_public` is meant
+-- to be publicly readable; the base table was locked down in
+-- 0005_lock_down_products_table.sql). `reviews_public` joins straight
+-- to `public.products` for the slug, so every anon SELECT on it failed
+-- with "permission denied for table products" — the exact same bug
+-- class 0005 already fixed once for products_public itself (see its
+-- own header: "A view runs with its owner's privileges unless
+-- security_invoker = true... would break the entire [public read]").
+--
+-- This would have silently broken the PDP reviews list for EVERY
+-- visitor (anon), even though reviews existed and submit_review()
+-- worked fine — a live "does the base table return zero to anon"
+-- check would not have caught this, since the break was one layer up,
+-- in the view itself. Caught by directly querying reviews_public as
+-- anon.
+--
+-- FIX: security_invoker = false (the project's established default for
+-- every other public-facing view — products_public, product_variants_public,
+-- product_category_map all set this explicitly). The view then runs with
+-- its owner's privileges, reads `products` and `reviews` directly, and
+-- the `where status = 'approved'` clause baked into the view body (not
+-- RLS) is what keeps unapproved reviews from ever being exposed.
+--
+-- HOW TO APPLY: Supabase Dashboard -> SQL Editor -> paste -> Run.
+-- ===================================================================
+
+alter view public.reviews_public set (security_invoker = false);
+
+-- -------------------------------------------------------------------
+-- VERIFY
+--   -- as anon (no session):
+--   select * from reviews_public limit 5;
+--   -- expect: rows (or an empty set if none exist yet) — NOT a
+--   -- "permission denied for table products" error
+-- -------------------------------------------------------------------

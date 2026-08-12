@@ -1,5 +1,5 @@
 /* =================================================================== *
- * skin.script — category tiles
+ * skin.theory — category tiles
  * -------------------------------------------------------------------
  * The shop-by-category row directly beneath the hero carousel. Five
  * destinations, each a single artwork card.

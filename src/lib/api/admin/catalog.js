@@ -1,5 +1,5 @@
 /* =================================================================== *
- * skin.script admin — catalog CRUD (products, categories, images)
+ * skin.theory admin — catalog CRUD (products, categories, images)
  * -------------------------------------------------------------------
  * Reads go against the BASE `products` table here, not `products_public`:
  * the admin needs drafts, archived rows, stock depth and cost price, all
@@ -74,6 +74,69 @@ export async function listProducts({
   return { data, error, count: count ?? 0 };
 }
 
+/**
+ * The Products list, expanded so a multi-variant product shows one row per
+ * size instead of one ambiguous row — same idea as listInventoryRows, same
+ * source table, but scoped to whatever page of PRODUCTS listProducts()
+ * already fetched (pagination stays product-count-based, not row-count-
+ * based, so page size doesn't balloon just because a few products happen to
+ * have five sizes each).
+ *
+ * A single-variant product (the common case) contributes exactly one row,
+ * shaped identically to what listProducts() alone would have produced —
+ * this is purely additive for multi-variant products, never a behavior
+ * change for anything else. Each row carries a `kind`:
+ *   "single"       — one row, one product, exactly today's shape
+ *   "variant-lead"  — first size of a multi-variant product; carries the
+ *                     product's own id so bulk select/actions still target
+ *                     the PRODUCT, not any one size
+ *   "variant"       — every other size; not bulk-selectable (no checkbox),
+ *                     its own unique row id (the variant id) for React/
+ *                     DataTable identity only
+ */
+export async function listProductsWithVariants(opts) {
+  const { data: products, error, count } = await listProducts(opts);
+  if (error) return { data: null, error, count: 0 };
+  if (!products.length) return { data: [], error: null, count };
+
+  const { data: variants, error: vErr } = await supabase
+    .from("product_variants")
+    .select("id, product_id, size_label, price_minor, compare_at_price_minor, stock_quantity, is_default, sort_order")
+    .in("product_id", products.map((p) => p.id))
+    .order("sort_order", { ascending: true });
+  if (vErr) return { data: null, error: vErr, count: 0 };
+
+  const byProduct = new Map();
+  for (const v of variants) {
+    if (!byProduct.has(v.product_id)) byProduct.set(v.product_id, []);
+    byProduct.get(v.product_id).push(v);
+  }
+
+  const rows = [];
+  for (const p of products) {
+    const vs = byProduct.get(p.id) ?? [];
+    if (vs.length <= 1) {
+      rows.push({ ...p, kind: "single", rowId: p.id, variantId: vs[0]?.id ?? null });
+      continue;
+    }
+    vs.forEach((v, i) => {
+      rows.push({
+        ...p,
+        kind: i === 0 ? "variant-lead" : "variant",
+        rowId: i === 0 ? p.id : v.id,
+        variantId: v.id,
+        sizeLabel: v.size_label,
+        price_minor: v.price_minor,
+        compare_at_minor: v.compare_at_price_minor,
+        variantStock: v.stock_quantity,
+        variantCount: vs.length,
+      });
+    });
+  }
+
+  return { data: rows, error: null, count };
+}
+
 /** Full product row + its images, for the editor. */
 export async function getProduct(id) {
   const { data, error } = await supabase
@@ -96,7 +159,7 @@ export async function getProduct(id) {
 // reviews table for the DB to aggregate yet. When one exists these two become
 // derived columns and must come OUT of this list.
 const WRITABLE = [
-  "slug", "name", "brand", "category_id", "subtitle", "description", "how_to_use",
+  "slug", "name", "brand", "brand_id", "category_id", "subtitle", "description", "how_to_use",
   "price_minor", "compare_at_minor", "cost_minor", "sku", "low_stock_at",
   "max_per_order", "backorder_ok", "status", "is_new", "popularity", "tone",
   "concern", "skin_type", "ingredients", "seo_title", "seo_description",
@@ -138,6 +201,16 @@ export async function updateProduct(id, input, { previousSlug } = {}) {
 
   const { data, error } = await supabase
     .from("products").update(row).eq("id", id).select().single();
+  return { data, error };
+}
+
+/** Name/brand for a specific set of product ids — used by pickers (Sales'
+ *  "specific products" scope) that store only ids and need to redisplay
+ *  what those ids actually are without loading the whole catalog. */
+export async function listProductsByIds(ids) {
+  if (!ids?.length) return { data: [], error: null };
+  const { data, error } = await supabase
+    .from("products").select("id, name, brand").in("id", ids);
   return { data, error };
 }
 
@@ -268,6 +341,32 @@ export async function upsertVariant(row) {
   const { data, error } = await supabase
     .from("product_variants").upsert(payload).select().single();
   return { data, error };
+}
+
+/**
+ * Price-only patch for one variant row — the write behind the Products
+ * list's inline quick-edit (listProductsWithVariants below). Deliberately a
+ * plain partial UPDATE on the exact same `product_variants` row/columns
+ * `upsertVariant` writes, not a parallel path: same table, same triggers
+ * (mirror_variant_to_product keeps `products.price_minor` in step when this
+ * is the default variant), same everything — just narrower, since the list
+ * view only ever needs to change one field without re-sending the whole row.
+ */
+export async function updateVariantPrice(variantId, priceMinor) {
+  const { data, error } = await supabase
+    .from("product_variants")
+    .update({ price_minor: priceMinor, updated_at: new Date().toISOString() })
+    .eq("id", variantId)
+    .select()
+    .single();
+  if (!error) return { data, error: null };
+  // product_variants_compare_at_price_minor_check: compare-at must stay
+  // above price. Raising price past an existing compare-at from this quick
+  // field hits that constraint — plain English instead of a raw DB error.
+  if (/compare_at_price_minor_check/.test(error.message)) {
+    return { data: null, error: { message: "This price would be at or above the size's “compare at” price. Lower the compare-at first in the Variants tab, or pick a lower price." } };
+  }
+  return { data: null, error };
 }
 
 /**
@@ -540,12 +639,79 @@ export async function reorderCategories(ordered) {
   return { data, error };
 }
 
-/** Distinct brand names — brand is a text column, not its own table, so the
- *  admin offers a datalist of existing values rather than a hard FK picker. */
+/** Distinct brand names actually IN USE on products right now — kept for
+ *  Sales.jsx's brand filter, which wants "what can I filter sales by",
+ *  not "what brands exist to assign" (a brand with zero products has
+ *  nothing to filter, so it correctly doesn't show up here). The product
+ *  editor's own brand picker uses listBrandRows() below instead — the
+ *  real, managed list from `brands` (0028_brands_table.sql). */
 export async function listBrands() {
   const { data, error } = await supabase
     .from("products").select("brand").not("brand", "is", null);
   if (error) return { data: null, error };
   const names = [...new Set(data.map((r) => r.brand))].sort();
   return { data: names, error: null };
+}
+
+/* ---------------------------------------------------------------- *
+ * Brands (0028_brands_table.sql) — a real, managed table. Renaming one
+ * cascades to every product's `brand` text via a DB trigger
+ * (cascade_brand_rename), so this file never has to touch products
+ * itself to keep them in sync.
+ * ---------------------------------------------------------------- */
+
+export async function listBrandRows() {
+  const { data, error } = await supabase
+    .from("brands").select("id, name, slug, created_at").order("name", { ascending: true });
+  return { data, error };
+}
+
+/** Brands plus how many products use each — same "see the blast radius
+ *  before you act" reasoning as listCategoriesWithCounts(). */
+export async function listBrandsWithCounts() {
+  const [brands, prods] = await Promise.all([
+    supabase.from("brands").select("id, name, slug, created_at").order("name", { ascending: true }),
+    supabase.from("products").select("brand_id").not("brand_id", "is", null),
+  ]);
+  if (brands.error) return { data: null, error: brands.error };
+  if (prods.error) return { data: null, error: prods.error };
+
+  const counts = {};
+  for (const p of prods.data ?? []) counts[p.brand_id] = (counts[p.brand_id] ?? 0) + 1;
+
+  return {
+    data: brands.data.map((b) => ({ ...b, productCount: counts[b.id] ?? 0 })),
+    error: null,
+  };
+}
+
+/** Insert or rename a brand. `id` present -> rename; absent -> create.
+ *  The slug is always derived from the name — same rule as slugify()
+ *  everywhere else in this file, never hand-edited. */
+export async function upsertBrand({ id, name }) {
+  const trimmed = (name ?? "").trim();
+  if (!trimmed) return { data: null, error: { message: "Brand name can't be empty." } };
+
+  const payload = { name: trimmed, slug: slugify(trimmed), ...(id ? { id } : {}) };
+  const { data, error } = await supabase.from("brands").upsert(payload).select().single();
+  if (!error) return { data, error: null };
+  if (/brands_name_key/.test(error.message)) {
+    return { data: null, error: { message: "A brand with this name already exists." } };
+  }
+  return { data: null, error };
+}
+
+/**
+ * Delete a brand. The database refuses this outright if any product still
+ * references it via brand_id (a real FK, `on delete` defaults to NO
+ * ACTION) — translated to plain English rather than shown as a raw
+ * constraint-violation message, same pattern as deleteCategory().
+ */
+export async function deleteBrand(id) {
+  const { error } = await supabase.from("brands").delete().eq("id", id);
+  if (!error) return { error: null };
+  if (/products_brand_id_fkey/.test(error.message)) {
+    return { error: { message: "This brand is still assigned to one or more products. Reassign those first." } };
+  }
+  return { error };
 }

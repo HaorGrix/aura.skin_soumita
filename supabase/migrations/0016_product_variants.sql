@@ -1,5 +1,5 @@
 -- ===================================================================
--- skin.script — product variants (multiple sizes per product)
+-- skin.theory — product variants (multiple sizes per product)
 -- -------------------------------------------------------------------
 -- Each product can now have one or more size options (e.g. 30ml, 150ml),
 -- each with its own price, compare-at price, stock and SKU. A product that

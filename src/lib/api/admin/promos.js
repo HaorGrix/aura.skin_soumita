@@ -1,11 +1,11 @@
 /* =================================================================== *
- * skin.script admin — coupons & flash sales
+ * skin.theory admin — coupons & flash sales
  * -------------------------------------------------------------------
  * Two kinds of coupon share one table, distinguished by `required_points`:
  *   • Manual coupons (required_points IS NULL) — anything the client makes.
- *   • Loyalty coupons (required_points set)    — SKN3/SKN5/SKN8FS, which
- *     unlock at a points milestone. Deleting one would break the Rewards
- *     page, so the UI marks them and blocks deletion.
+ *   • Loyalty coupons (required_points set)    — unlock at a points
+ *     milestone, shown on the Rewards page. Both kinds can be created,
+ *     turned off, and (if unused) deleted the same way.
  * =================================================================== */
 import { supabase } from "../client.js";
 
@@ -63,6 +63,18 @@ export async function deactivateCoupon(id) {
   return { data, error };
 }
 
+/** Hard delete — only ever safe for a coupon nobody has redeemed yet (the
+ *  redemptions FK has no ON DELETE clause, so Postgres itself blocks this
+ *  the moment a redemption row exists; that failure is translated into a
+ *  message that points the admin at "Turn off" instead). */
+export async function deleteCoupon(id) {
+  const { error } = await supabase.from("coupons").delete().eq("id", id);
+  if (error?.code === "23503") {
+    return { error: { message: "This coupon has already been used, so it can't be deleted — turn it off instead to keep the redemption history intact." } };
+  }
+  return { error };
+}
+
 export async function couponRedemptions(couponId, limit = 50) {
   const { data, error } = await supabase
     .from("coupon_redemptions")
@@ -104,6 +116,8 @@ export async function saveSale(input) {
     ends_at: input.ends_at,
     scope: input.scope ?? { all: false, products: [], categories: [], brands: [] },
     banner_text: input.banner_text ?? null,
+    badge_label: input.badge_label ?? null,
+    image_path: input.image_path ?? null,
     show_countdown: input.show_countdown ?? true,
     priority: input.priority ?? 0,
     is_active: input.is_active ?? true,

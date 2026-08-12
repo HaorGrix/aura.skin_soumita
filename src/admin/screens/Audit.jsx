@@ -1,5 +1,5 @@
 /* =================================================================== *
- * skin.script admin — audit log (owner only)
+ * skin.theory admin — audit log (owner only)
  * -------------------------------------------------------------------
  * Append-only at the database level: there is no UPDATE or DELETE policy
  * on audit_log for any role, including owner. Each entry stores only the

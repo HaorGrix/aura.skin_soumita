@@ -1,5 +1,5 @@
 /* =================================================================== *
- * skin.script admin — CMS media picker (image OR video)
+ * skin.theory admin — CMS media picker (image OR video)
  * -------------------------------------------------------------------
  * Sibling to SingleImageField (ImageManager.jsx), which is image-only and
  * uploads into the product-images bucket. This uploads into `site-media`

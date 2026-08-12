@@ -6,7 +6,15 @@ import {
   useReducer,
   useState,
 } from "react";
-import { validate } from "../lib/coupons.js";
+import { validateCouponLive } from "../lib/api/coupons.js";
+import { trackEvent } from "../lib/analytics.js";
+import { CONVERSION_RATE, CURRENCY } from "../lib/format.js";
+
+// price/subtotal in this file run on the legacy "USD-ish" float scale
+// (see lib/format.js's CONVERSION_RATE comment) — the DB's minor-unit
+// (paisa) values are ×12000 of it. Converting at this one boundary is
+// simpler than threading two price scales through the whole cart.
+const LEGACY_PRICE_SCALE = 120 * 100;
 
 /**
  * Cart store — line items with quantity, localStorage persistence, and the
@@ -167,7 +175,10 @@ export function CartProvider({ children }) {
     const discountAmount = appliedCoupon
       ? appliedCoupon.type === "flat"
         ? Math.min(appliedCoupon.value, subtotal)
-        : Math.round(((subtotal * appliedCoupon.value) / 100) * 100) / 100
+        : Math.min(
+            Math.round(((subtotal * appliedCoupon.value) / 100) * 100) / 100,
+            appliedCoupon.maxValue ?? Infinity
+          )
       : 0;
     const promoCode = appliedCoupon?.code ?? null;
     const discountPercentage = appliedCoupon?.type === "percent" ? appliedCoupon.value : 0;
@@ -181,28 +192,95 @@ export function CartProvider({ children }) {
       discountAmount,
       promoCode,
       discountPercentage,
-      // Validate every coupon through the unified registry.
-      applyPromo: (code, userOrCoupons = [], usedCoupons = [], orders = [], points = 0) => {
-        const user = Array.isArray(userOrCoupons)
-          ? { coupons: userOrCoupons, usedCoupons, orders, points }
-          : userOrCoupons ?? {};
-        const result = validate(code, user);
-        if (!result?.success) return result;
+      /**
+       * Validates against the LIVE `coupons` table (via a narrow RPC —
+       * see 0030_validate_coupon_rpc.sql) instead of the old hardcoded
+       * lib/coupons.js object, so an admin edit (amount, expiry, active
+       * status, even the code itself) is reflected the moment this runs
+       * — no rebuild/redeploy needed. place_order() remains the actual
+       * authority at checkout; this only has to agree with it.
+       *
+       * `email` is optional (Cart page usually doesn't have one yet) —
+       * without it, per-customer usage/first-order checks are simply
+       * skipped here, same limitation the old client-side check had.
+       * Now async — both call sites (Cart.jsx, Checkout.jsx) already
+       * invoke this from a plain event handler, so awaiting it there is
+       * a one-line change.
+       */
+      applyPromo: async (code, { points = 0, usedCoupons = [], email = null } = {}) => {
+        const normalized = code?.trim().toUpperCase();
+        if (!normalized) return null;
 
-        const coupon = result.coupon;
+        // Purely local, pre-existing signal (a code this account has
+        // already redeemed, tracked client-side) — cheap, and the only
+        // "already used" signal available before we even know if the
+        // code exists. The RPC's own DB-verified check (when email is
+        // available) is authoritative; this is a fast pre-filter.
+        if (usedCoupons.map((c) => c?.trim().toUpperCase()).includes(normalized)) {
+          return { success: false, alreadyUsed: true };
+        }
+
+        const result = await validateCouponLive(normalized, { subtotalMinor: subtotal * LEGACY_PRICE_SCALE, email });
+        if (!result) return { success: false }; // network/RPC failure — generic "invalid" toast
+
+        // first_order_only needs a real EMAIL to check against, not an
+        // account — validate_coupon_preview() looks it up against
+        // `orders.email`, no auth.uid() involved (0030_validate_coupon_rpc.sql).
+        // Without an email the RPC skipped that check entirely and its
+        // "valid" here can't be trusted for this rule; with one, a guest
+        // is checked exactly the same way a signed-in shopper is.
+        if (result.firstOrderOnly && !email) {
+          return { success: false, requiresEmail: true };
+        }
+
+        if (!result.valid) {
+          if (result.reason === "already_used") return { success: false, alreadyUsed: true };
+          if (result.reason === "first_order_only") return { success: false, firstOrderOnly: true };
+          // Server-verified (an email was available) — required_points is
+          // now enforced in validate_coupon_preview()/place_order() too,
+          // not just here, see 0036_enforce_required_points.sql.
+          if (result.reason === "not_unlocked") {
+            return { success: false, notUnlocked: true, coupon: { points: result.requiredPoints } };
+          }
+          return { success: false };
+        }
+
+        // No email yet (Cart page, pre-Checkout) — the RPC couldn't check
+        // required_points server-side, so this client-side comparison is
+        // the only signal available. Once an email exists, the RPC's own
+        // `reason: "not_unlocked"` above is authoritative and this never
+        // needs to fire (place_order() enforces it regardless either way).
+        if (result.requiredPoints && points < result.requiredPoints) {
+          return { success: false, notUnlocked: true, coupon: { points: result.requiredPoints } };
+        }
+
+        const isFlat = result.kind === "fixed" || result.kind === "free_shipping";
         setAppliedCoupon({
           code: result.code,
-          type: coupon.type,
-          value: coupon.value,
-          label: coupon.label ?? coupon.reward ?? coupon.short ?? result.code,
-          freeShipping: !!coupon.freeShipping,
+          type: isFlat ? "flat" : "percent",
+          value: isFlat ? (result.valueMinor ?? 0) / LEGACY_PRICE_SCALE : (result.valuePercent ?? 0),
+          maxValue: result.maxDiscountMinor != null ? result.maxDiscountMinor / LEGACY_PRICE_SCALE : undefined,
+          label: result.kind === "percent" ? `${result.valuePercent}% off` : `৳${Math.round((result.valueMinor ?? 0) / 100)} off`,
+          freeShipping: result.kind === "free_shipping" || result.alsoFreeShipping,
         });
-        return { success: true, label: result.label };
+        return { success: true, label: result.kind === "percent" ? `${result.valuePercent}% off applied` : "Coupon applied" };
       },
       removeCoupon: () => setAppliedCoupon(null),
       // --- Cart actions. `variantId` is optional on every call — omit it
       // for a plain (non-variant) product, exactly like before. ---
-      addItem: (item, qty = 1) => dispatch({ type: "ADD", item, qty }),
+      addItem: (item, qty = 1) => {
+        dispatch({ type: "ADD", item, qty });
+        // maxPerOrder === 0 means the reducer's ADD case is a no-op (item
+        // never actually enters the cart) — don't report a phantom add.
+        if (item.maxPerOrder === 0) return;
+        trackEvent("AddToCart", {
+          content_ids: [item.id],
+          content_name: item.name,
+          content_type: "product",
+          value: (Number(item.price) || 0) * qty * CONVERSION_RATE,
+          currency: CURRENCY.code,
+        });
+      },
       setQty: (id, qty, variantId = null) => dispatch({ type: "SET_QTY", id, qty, variantId }),
       inc: (id, variantId = null) => {
         const it = state.items.find((i) => sameLine(i, { id, variantId }));

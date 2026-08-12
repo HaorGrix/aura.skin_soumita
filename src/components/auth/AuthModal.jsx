@@ -7,6 +7,8 @@ import Button from "../ui/Button.jsx";
 import { Input } from "../ui/index.js";
 import { useFocusTrap } from "../../lib/useFocusTrap.js";
 import { useBodyScrollLock } from "../../lib/scrollLock.js";
+import { isValidEmail } from "../../lib/email-validation.js";
+import { useStoreSettings } from "../../lib/api/settings.js";
 
 /**
  * AuthModal — the single, shared login / sign-up surface. Light and
@@ -15,11 +17,12 @@ import { useBodyScrollLock } from "../../lib/scrollLock.js";
  * on the UserContext; on success it runs the optional callback (e.g. the
  * checkout flow continues) and closes itself.
  */
-const emailOk = (v) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+const emailOk = isValidEmail;
 
 export default function AuthModal() {
   const { auth, closeAuth, login, signup } = useUser();
   const { toast } = useToast();
+  const { storeName } = useStoreSettings();
   const { open, mode: initialMode, onSuccess } = auth;
 
   const dialogRef = useRef(null);
@@ -62,7 +65,7 @@ export default function AuthModal() {
 
     if (isSignup) {
       signup({ name: form.name.trim(), email: form.email.trim() });
-      toast.success(`Welcome to skin.script, ${form.name.trim()} 🌸`, "Account created");
+      toast.success(`Welcome to ${storeName}, ${form.name.trim()} 🌸`, "Account created");
     } else {
       login({ email: form.email.trim() });
       toast.success("You're glowing — welcome back ✨", "Signed in");
@@ -106,7 +109,7 @@ export default function AuthModal() {
               <Sparkles className="h-5 w-5" strokeWidth={1.8} />
             </span>
             <h2 className="mt-4 font-serif text-[1.8rem] leading-tight text-ink">
-              {isSignup ? "Create your Skin Script account" : "Welcome back"}
+              {isSignup ? `Create your ${storeName} account` : "Welcome back"}
             </h2>
             <p className="mt-1 text-sm text-ink-soft">
               {isSignup
@@ -142,7 +145,15 @@ export default function AuthModal() {
             </div>
 
             {/* Form */}
-            <form onSubmit={submit} className="mt-6 space-y-3">
+            {/* noValidate: without it, the browser's OWN native email
+                constraint runs first on submit and silently blocks anything
+                with no "@" before our onSubmit ever fires — different
+                wording per browser, and it never reaches isValidEmail at
+                all, so disposable domains / bad-TLD shapes that DO pass the
+                loose native check show our message while missing-"@" shapes
+                would show the browser's instead. isValidEmail below is the
+                single source of truth for every malformed shape. */}
+            <form onSubmit={submit} noValidate className="mt-6 space-y-3">
               <AnimatePresence initial={false}>
                 {isSignup && (
                   <motion.div
@@ -194,7 +205,7 @@ export default function AuthModal() {
             </form>
 
             <p className="mt-4 text-center text-xs text-ink-soft">
-              {isSignup ? "Already have an account? " : "New to skin.script? "}
+              {isSignup ? "Already have an account? " : `New to ${storeName}? `}
               <button
                 type="button"
                 onClick={() => { setMode(isSignup ? "login" : "signup"); setError(""); }}

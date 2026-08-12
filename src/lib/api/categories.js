@@ -1,5 +1,5 @@
 /* =================================================================== *
- * skin.script — the category tree
+ * skin.theory — the category tree
  * -------------------------------------------------------------------
  * ONE source for three consumers:
  *   • the navbar mega menu        (columns = top level, links = children)

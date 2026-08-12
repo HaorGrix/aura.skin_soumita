@@ -1,5 +1,5 @@
 /* =================================================================== *
- * skin.script — Supabase Storage public URL builder (SDK-free)
+ * skin.theory — Supabase Storage public URL builder (SDK-free)
  * -------------------------------------------------------------------
  * Deliberately does NOT import @supabase/supabase-js. A public object URL is
  * a deterministic string, so resolving one shouldn't drag a ~200 kB SDK into

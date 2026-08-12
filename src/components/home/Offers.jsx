@@ -1,43 +1,23 @@
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { ArrowRight, Flame } from "lucide-react";
+import { listActiveSales } from "../../lib/api/sales.js";
 
-// Sale banners (bundled at build; full image always visible via object-contain).
+// Fallback banners for a campaign with no uploaded image yet — bundled at
+// build, cycled by index so a run of image-less sales still looks intentional
+// rather than showing a blank tile.
 import summerSale from "../../../assests/summersale2.jpg";
 import clearanceSale from "../../../assests/sale3.jpg";
 import flashSale from "../../../assests/sale4.jpg";
 
 const EASE = [0.22, 1, 0.36, 1];
+const FALLBACK_IMAGES = [summerSale, clearanceSale, flashSale];
+const TONES = ["var(--color-gold-soft)", "var(--color-cyan-soft)", "var(--color-petal)"];
 
-/* Each offer routes into the Shop pre-filtered to its OWN discount tier
-   (discount=30|50|75 — see DISCOUNT_TIERS + queryProducts in data/products.js),
-   so every banner lands on a set of products that actually matches its headline
-   percentage. */
-const OFFERS = [
-  {
-    img: summerSale,
-    badge: "Summer Sale",
-    title: "Up to 50% off",
-    blurb: "Sun-kissed glow essentials, half price.",
-    href: "/shop?discount=50",
-    tone: "var(--color-gold-soft)",
-  },
-  {
-    img: clearanceSale,
-    badge: "Clearance",
-    title: "Up to 75% off",
-    blurb: "Personal-care blowout while stocks last.",
-    href: "/shop?discount=75",
-    tone: "var(--color-cyan-soft)",
-  },
-  {
-    img: flashSale,
-    badge: "Flash Sale",
-    title: "30% off select",
-    blurb: "Friday flash — gone by midnight.",
-    href: "/shop?discount=30",
-    tone: "var(--color-petal)",
-  },
-];
+/** "20% off" / "৳100 off" — the same summary shown in the admin preview. */
+function discountSummary(sale) {
+  return sale.kind === "percent" ? `${sale.valuePercent}% off` : `৳${Math.round((sale.valueMinor ?? 0) / 100)} off`;
+}
 
 function OfferCard({ offer, index }) {
   return (
@@ -86,7 +66,41 @@ function OfferCard({ offer, index }) {
   );
 }
 
+/**
+ * "Glow deals" — live flash-sale campaigns from the admin Sales screen
+ * (list_active_sales(), 0039_flash_sales_storefront.sql), not a fixed
+ * array. The RPC itself only ever returns is_active rows whose window
+ * covers right now, so a scheduled-but-not-started or already-ended
+ * campaign simply never appears here — no manual toggling needed, and
+ * nothing to poll: this component just re-fetches on mount, same as any
+ * other homepage section.
+ */
 export default function Offers() {
+  const [sales, setSales] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let alive = true;
+    listActiveSales().then((rows) => {
+      if (!alive) return;
+      setSales(rows);
+      setLoading(false);
+    });
+    return () => { alive = false; };
+  }, []);
+
+  // Nothing running right now — no empty grid, no section at all.
+  if (!loading && sales.length === 0) return null;
+
+  const offers = sales.map((sale, i) => ({
+    img: sale.imageUrl || FALLBACK_IMAGES[i % FALLBACK_IMAGES.length],
+    badge: sale.badgeLabel || sale.name,
+    title: discountSummary(sale),
+    blurb: sale.bannerText || `Ends ${new Date(sale.endsAt).toLocaleDateString()}`,
+    href: `/shop?sale=${sale.id}`,
+    tone: TONES[i % TONES.length],
+  }));
+
   return (
     <section id="offers" className="py-10 sm:py-14">
       <div className="mx-auto max-w-7xl px-5 sm:px-8">
@@ -105,9 +119,13 @@ export default function Offers() {
         </div>
 
         <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {OFFERS.map((offer, i) => (
-            <OfferCard key={offer.badge} offer={offer} index={i} />
-          ))}
+          {loading
+            ? Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="aspect-[4/3] animate-pulse rounded-[1.75rem] bg-white/60 ring-1 ring-line" />
+              ))
+            : offers.map((offer, i) => (
+                <OfferCard key={sales[i].id} offer={offer} index={i} />
+              ))}
         </div>
       </div>
     </section>

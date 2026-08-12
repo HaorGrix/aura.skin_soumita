@@ -1,5 +1,5 @@
 -- ===================================================================
--- skin.script — real product video: base column + view passthrough
+-- skin.theory — real product video: base column + view passthrough
 -- -------------------------------------------------------------------
 -- Part 5 removed the fake `hasVideo: true` that showed a video tab/thumb
 -- and a static "60s ritual demo" caption on every single product,

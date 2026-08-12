@@ -1,5 +1,5 @@
 /* =================================================================== *
- * skin.script admin — CMS block editor
+ * skin.theory admin — CMS block editor
  * -------------------------------------------------------------------
  * Renders a typed form from the slot's field schema (lib/api/admin/
  * schemas.js). The client never sees or edits raw JSON — that's the whole

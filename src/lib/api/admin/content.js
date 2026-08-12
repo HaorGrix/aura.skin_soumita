@@ -1,5 +1,5 @@
 /* =================================================================== *
- * skin.script admin — CMS content blocks
+ * skin.theory admin — CMS content blocks
  * -------------------------------------------------------------------
  * Each editable region of the storefront is one row in `content_blocks`,
  * keyed by a slot id, holding a JSONB payload. The client never sees JSON:

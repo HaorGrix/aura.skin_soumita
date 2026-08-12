@@ -39,76 +39,18 @@ const COUPONS = {
   },
 };
 
-export const PROMOS = COUPONS;
-
+// `MILESTONES` still drives the Rewards page's tier-progress display
+// (PointsCard/TiersGrid in pages/Rewards.jsx, via UserContext) — that's a
+// standalone "here's what you've earned" showcase, unrelated to checkout.
+// Everything else that used to live here (validate(), findCoupon(),
+// FIRST_ORDER_CODES, LOYALTY_BY_CODE, PROMOS) was the actual coupon
+// apply/validate logic — fully replaced by the live RPCs in
+// lib/api/coupons.js (validateCouponLive/listEligibleCoupons, backed by
+// validate_coupon_preview()/list_eligible_coupons()) and removed here
+// rather than left running in parallel showing whatever this hardcoded
+// object happened to say, which is the exact bug that was just fixed.
 export const MILESTONES = Object.values(COUPONS).filter((coupon) => coupon.points);
-
-export const FIRST_ORDER_CODES = new Set(
-  Object.values(COUPONS)
-    .filter((coupon) => coupon.firstOrderOnly)
-    .map((coupon) => coupon.code)
-);
-
-export const LOYALTY_BY_CODE = Object.fromEntries(
-  MILESTONES.map((coupon) => [coupon.code, coupon])
-);
 
 export function couponForPoints(points = 0) {
   return MILESTONES.filter((coupon) => points >= coupon.points);
-}
-
-export function findCoupon(code) {
-  const normalized = code?.trim().toUpperCase();
-  if (!normalized) return null;
-  return COUPONS[normalized] ?? null;
-}
-
-function normalizeUser(user) {
-  return {
-    authed: !!user?.authed,
-    points: Number(user?.points ?? 0),
-    orders: Array.isArray(user?.orders) ? user.orders : [],
-    usedCoupons: Array.isArray(user?.usedCoupons)
-      ? user.usedCoupons.map((c) => c?.trim().toUpperCase()).filter(Boolean)
-      : [],
-    coupons: Array.isArray(user?.coupons) ? user.coupons : [],
-  };
-}
-
-export function validate(code, user = {}) {
-  const normalized = code?.trim().toUpperCase();
-  if (!normalized) return null;
-
-  const coupon = findCoupon(normalized);
-  if (!coupon) return null;
-
-  const account = normalizeUser(user);
-  if (account.usedCoupons.includes(normalized)) {
-    return { success: false, alreadyUsed: true, coupon };
-  }
-
-  // First-order codes need an account: redemption is tracked via `usedCoupons`
-  // / `orders`, and neither persists for a guest — so a guest could otherwise
-  // reuse the same welcome code on every order.
-  if (coupon.firstOrderOnly && !account.authed) {
-    return { success: false, requiresAuth: true, coupon };
-  }
-
-  if (coupon.firstOrderOnly && account.orders.length > 0) {
-    return { success: false, firstOrderOnly: true, coupon };
-  }
-
-  const unlockedByPoints = coupon.points ? account.points >= coupon.points : true;
-  const unlockedByList = account.coupons.some((item) => item?.code?.trim().toUpperCase() === normalized);
-
-  if (coupon.points && !unlockedByPoints && !unlockedByList) {
-    return { success: false, notUnlocked: true, coupon };
-  }
-
-  return {
-    success: true,
-    code: normalized,
-    label: coupon.label ?? coupon.reward ?? coupon.short ?? normalized,
-    coupon,
-  };
 }

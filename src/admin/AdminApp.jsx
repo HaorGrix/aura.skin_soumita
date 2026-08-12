@@ -1,5 +1,5 @@
 /* =================================================================== *
- * skin.script — Admin panel root
+ * skin.theory — Admin panel root
  * -------------------------------------------------------------------
  * Mounted by App.jsx for any /admin* path, OUTSIDE the storefront chrome:
  * no Lenis smooth scroll, no Loader, no Navbar, no FloatingCart. The admin
@@ -25,7 +25,9 @@ const Dashboard   = lazy(() => import("./screens/Dashboard.jsx"));
 const Products    = lazy(() => import("./screens/Products.jsx"));
 const ProductEdit = lazy(() => import("./screens/ProductEdit.jsx"));
 const Categories  = lazy(() => import("./screens/Categories.jsx"));
+const Brands      = lazy(() => import("./screens/Brands.jsx"));
 const Inventory   = lazy(() => import("./screens/Inventory.jsx"));
+const Shipping    = lazy(() => import("./screens/Shipping.jsx"));
 const Orders      = lazy(() => import("./screens/Orders.jsx"));
 const OrderDetail = lazy(() => import("./screens/OrderDetail.jsx"));
 const Customers   = lazy(() => import("./screens/Customers.jsx"));
@@ -195,7 +197,9 @@ function Screen({ route }) {
     case "dashboard": return <Dashboard />;
     case "products":  return id ? <ProductEdit id={id} /> : <Products />;
     case "categories": return <Categories />;
+    case "brands":    return <Brands />;
     case "inventory": return <Inventory />;
+    case "shipping": return <Shipping />;
     case "orders":    return id ? <OrderDetail id={id} /> : <Orders />;
     case "customers": return <Customers />;
     case "content":   return id ? <ContentEdit slot={id} /> : <Content />;

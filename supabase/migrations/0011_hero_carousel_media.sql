@@ -1,5 +1,5 @@
 -- ===================================================================
--- skin.script — dedicated storage bucket for CMS-uploaded media
+-- skin.theory — dedicated storage bucket for CMS-uploaded media
 -- -------------------------------------------------------------------
 -- The existing `product-images` bucket is locked to image mimetypes only
 -- (0004) — correct for product photos, but the new admin-editable Hero

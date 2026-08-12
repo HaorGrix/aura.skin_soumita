@@ -1,5 +1,5 @@
 /* =================================================================== *
- * skin.script — category tile artwork generator
+ * skin.theory — category tile artwork generator
  * -------------------------------------------------------------------
  * Authors the five category visuals as vector compositions and rasterises
  * each to a transparent PNG via headless Chromium.

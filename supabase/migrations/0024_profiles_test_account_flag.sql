@@ -1,5 +1,5 @@
 -- ===================================================================
--- skin.script — profiles.is_test_account: an explicit flag, not a naming
+-- skin.theory — profiles.is_test_account: an explicit flag, not a naming
 -- convention, for what's safe to auto-delete
 -- -------------------------------------------------------------------
 -- Every disposable staff account created during live end-to-end testing

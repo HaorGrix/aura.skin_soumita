@@ -1,5 +1,5 @@
 /* =================================================================== *
- * skin.script — storefront-side CMS reader
+ * skin.theory — storefront-side CMS reader
  * -------------------------------------------------------------------
  * The read half of the admin's Content screens. Whatever the client saves
  * in /admin/content lands here.

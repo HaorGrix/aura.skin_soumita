@@ -1,5 +1,5 @@
 /* =================================================================== *
- * skin.script admin — store settings, staff, audit log
+ * skin.theory admin — store settings, staff, audit log
  * -------------------------------------------------------------------
  * `store_settings` is a single row (id = true). It replaces the hardcoded
  * constants in lib/shop-config.js — free shipping threshold, shipping
@@ -16,10 +16,10 @@ export async function getSettings() {
 
 const SETTINGS_FIELDS = [
   "store_name", "free_shipping_threshold_minor", "standard_shipping_minor",
-  "express_shipping_minor", "tax_rate", "currency_code", "currency_symbol",
+  "tax_rate", "currency_code", "currency_symbol",
   "points_per_taka", "points_per_review", "low_stock_threshold",
   "support_email", "support_phone", "socials", "announcement_enabled",
-  "announcement_text", "maintenance_mode",
+  "announcement_text", "maintenance_mode", "meta_pixel_id", "meta_pixel_enabled",
 ];
 
 export async function saveSettings(input) {

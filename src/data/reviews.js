@@ -1,5 +1,5 @@
 /* =================================================================== *
- * skin.script — REVIEWS + LOYALTY DATA
+ * skin.theory — REVIEWS + LOYALTY DATA
  * -------------------------------------------------------------------
  * Curated, realistic reviews from Bangladeshi/Indian shoppers, mapped
  * to real catalog product ids. These seed the public review lists; the

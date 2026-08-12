@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { useAdaptiveLoader } from "../lib/useAdaptiveLoader.js";
+import { useStoreSettings } from "../lib/api/settings.js";
 
 /**
  * Loader — the first 5–6 seconds of the skin.script experience.
@@ -41,6 +42,7 @@ const SPARKLES = Array.from({ length: 14 }, (_, i) => ({
 
 export default function Loader({ onComplete }) {
   const reduce = useReducedMotion();
+  const { storeName } = useStoreSettings();
   const { perLine, totalLines, markSeen } = useAdaptiveLoader();
   const [index, setIndex] = useState(0);
   const [done, setDone] = useState(false);
@@ -147,7 +149,7 @@ export default function Loader({ onComplete }) {
                 transition={{ type: "spring", stiffness: 140, damping: 18, mass: 0.7 }}
               >
                 {reduce ? (
-                  "Welcome to skin.script 🌸"
+                  `Welcome to ${storeName} 🌸`
                 ) : (
                   <>
                     {lines[index].text}{" "}
@@ -186,7 +188,7 @@ export default function Loader({ onComplete }) {
             animate={{ opacity: 0.85 }}
             transition={{ delay: 0.4, duration: 1 }}
           >
-            skin<span className="text-magenta">.</span>script
+            {storeName}
           </motion.span>
         </motion.div>
       )}

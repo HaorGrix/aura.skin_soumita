@@ -1,5 +1,5 @@
 /* =================================================================== *
- * skin.script admin — testimonials (dual-mode: text quote or image)
+ * skin.theory admin — testimonials (dual-mode: text quote or image)
  * -------------------------------------------------------------------
  * `testimonials` (0014_testimonials.sql) — RLS lets staff (editor+) see
  * every row; anon/authenticated only ever see is_featured = true rows

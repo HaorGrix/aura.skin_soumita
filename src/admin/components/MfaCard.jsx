@@ -1,5 +1,5 @@
 /* =================================================================== *
- * skin.script admin — two-factor authentication (TOTP)
+ * skin.theory admin — two-factor authentication (TOTP)
  * -------------------------------------------------------------------
  * Recommended for owner-level accounts specifically: an owner's password
  * alone gates every other account (role changes, invites, revocation), so

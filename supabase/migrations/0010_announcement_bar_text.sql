@@ -1,5 +1,5 @@
 -- ===================================================================
--- skin.script — make the header announcement bar admin-editable
+-- skin.theory — make the header announcement bar admin-editable
 -- -------------------------------------------------------------------
 -- store_settings already had `announcement_enabled` from 0002, but no
 -- text field, and nothing on the storefront actually read either column

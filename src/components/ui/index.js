@@ -1,4 +1,4 @@
-/* skin.script — UI kit barrel export */
+/* skin.theory — UI kit barrel export */
 export { default as Button } from "./Button.jsx";
 export { default as MagneticButton } from "./MagneticButton.jsx";
 export { default as Badge } from "./Badge.jsx";

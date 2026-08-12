@@ -1,14 +1,32 @@
-/* skin.script admin — product list with search, filters and bulk actions. */
+/* =================================================================== *
+ * skin.theory admin — product list with search, filters and bulk actions.
+ * -------------------------------------------------------------------
+ * A multi-variant product shows one row per size ("Rice Toner — 30ml",
+ * "Rice Toner — 150ml") instead of one row that can't represent more than
+ * one price — same idea as the Inventory screen, applied here so price can
+ * be quick-edited without opening the full editor. A single-variant product
+ * (the common case) still shows exactly one row, pixel-identical to before.
+ *
+ * The inline price edit writes through updateVariantPrice(), a plain
+ * UPDATE on the exact product_variants row the Variants tab itself edits —
+ * same table, same triggers (mirror_variant_to_product keeps products.
+ * price_minor in step when it's the default size). No parallel price path.
+ *
+ * Bulk select/actions still target PRODUCTS, not sizes: only the first row
+ * of a multi-variant product carries a checkbox (rowSelectable below); its
+ * later size-rows are display + quick-edit only.
+ * =================================================================== */
 import { useState } from "react";
-import { Plus } from "lucide-react";
+import { Check, Plus } from "lucide-react";
 import {
-  bulkPrice, categoryOptions, listCategoryTree, listProducts, setProductStatus,
+  bulkPrice, categoryOptions, listCategoryTree, listProductsWithVariants,
+  setProductStatus, updateVariantPrice,
 } from "../../lib/api/admin/catalog.js";
 import { useAdmin } from "../context.js";
 import { adminNavigate } from "../AdminApp.jsx";
 import {
   Btn, DataTable, Modal, PageHeader, Pill, SearchInput, SelectField, StockPill,
-  TextField, money, useAsync,
+  TextField, minorToMajor, majorToMinor, money, useAsync,
 } from "../components/kit.jsx";
 
 const STATUS_TONE = { active: "green", draft: "amber", archived: "grey" };
@@ -22,12 +40,37 @@ export default function Products() {
   const [page, setPage] = useState(0);
   const [selected, setSelected] = useState([]);
   const [priceModal, setPriceModal] = useState(false);
+  // variantId -> typed value (string, major currency units) while editing
+  // inline; cleared on commit/cancel. Separate from the full editor's own
+  // price field entirely — this only ever touches one variant row.
+  const [priceEdits, setPriceEdits] = useState({});
+  const [savingPrice, setSavingPrice] = useState({});
+  const [priceError, setPriceError] = useState({});
 
   const categories = useAsync(() => listCategoryTree(), []);
   const list = useAsync(
-    () => listProducts({ search, status, categoryId, stockFilter, page }),
+    () => listProductsWithVariants({ search, status, categoryId, stockFilter, page }),
     [search, status, categoryId, stockFilter, page]
   );
+
+  async function commitPrice(row) {
+    const raw = priceEdits[row.variantId];
+    const nextMinor = majorToMinor(raw);
+    if (nextMinor == null || nextMinor === row.price_minor) {
+      setPriceEdits((e) => ({ ...e, [row.variantId]: undefined }));
+      return;
+    }
+    setSavingPrice((s) => ({ ...s, [row.variantId]: true }));
+    setPriceError((e) => ({ ...e, [row.variantId]: undefined }));
+    const { error } = await updateVariantPrice(row.variantId, nextMinor);
+    setSavingPrice((s) => ({ ...s, [row.variantId]: false }));
+    if (error) {
+      setPriceError((e) => ({ ...e, [row.variantId]: error.message }));
+      return;
+    }
+    setPriceEdits((e) => ({ ...e, [row.variantId]: undefined }));
+    list.reload();
+  }
 
   // A filter change with a stale page number shows an empty table and reads
   // as "no results". Reset to the first page whenever the query changes.
@@ -82,27 +125,92 @@ export default function Products() {
         loading={list.loading} error={list.error} rows={list.data} total={list.count}
         page={page} onPage={setPage}
         selectable={can("admin")} selected={selected} onSelect={setSelected}
-        onRowClick={(r) => adminNavigate(`/admin/products/${r.id}`)}
+        rowKey={(r) => r.rowId}
+        // A size row (kind "variant") isn't individually bulk-selectable —
+        // status/archive/bulk-price all operate on the PRODUCT, and the
+        // lead row already represents it. See listProductsWithVariants().
+        rowSelectable={(r) => r.kind !== "variant"}
+        // Every row still opens the same product; a size row lands
+        // straight on the Variants tab instead of Details, since that's
+        // almost certainly why an admin clicked past the quick-edit price.
+        onRowClick={(r) => adminNavigate(`/admin/products/${r.id}${r.kind === "single" ? "" : "?tab=variants"}`)}
         empty={search || status || categoryId ? "No products match these filters." : "No products yet. Add your first one."}
         columns={[
-          { key: "name", header: "Product", render: (r) => (
-              <div className="min-w-0">
-                <p className="truncate font-medium text-ink">{r.name}</p>
-                <p className="truncate text-xs text-ink-soft">{r.brand}</p>
-              </div>
-            ) },
+          { key: "name", header: "Product", render: (r) => {
+              if (r.kind === "single") {
+                return (
+                  <div className="min-w-0">
+                    <p className="truncate font-medium text-ink">{r.name}</p>
+                    <p className="truncate text-xs text-ink-soft">{r.brand}</p>
+                  </div>
+                );
+              }
+              // Multi-variant sizes — each its own row, grouped visually
+              // with a left accent bar and de-emphasized brand line so
+              // it reads as "this product, this size" rather than a
+              // separate product ("Rice Toner — 30ml" / "— 150ml").
+              return (
+                <div className={`min-w-0 ${r.kind === "variant" ? "border-l-2 border-magenta/25 pl-3" : ""}`}>
+                  <p className="truncate font-medium text-ink">
+                    {r.name} <span className="font-normal text-ink-soft">— {r.sizeLabel}</span>
+                  </p>
+                  <p className="truncate text-xs text-ink-soft/80">
+                    {r.kind === "variant-lead" ? `${r.brand} · ${r.variantCount} sizes` : r.brand}
+                  </p>
+                </div>
+              );
+            } },
           { key: "status", header: "Status", render: (r) => (
               <Pill tone={STATUS_TONE[r.status]}>{r.status}</Pill>
             ) },
-          { key: "stock", header: "Stock", render: (r) => <StockPill stock={r.stock} lowAt={r.low_stock_at ?? 5} /> },
-          { key: "price_minor", header: "Price", align: "right", render: (r) => (
-              <div>
-                <span className="font-medium text-ink">{money(r.price_minor)}</span>
-                {r.compare_at_minor > r.price_minor && (
-                  <span className="ml-1.5 text-xs text-ink-soft line-through">{money(r.compare_at_minor)}</span>
-                )}
-              </div>
+          { key: "stock", header: "Stock", render: (r) => (
+              <StockPill stock={r.kind === "single" ? r.stock : r.variantStock} lowAt={r.low_stock_at ?? 5} />
             ) },
+          { key: "price_minor", header: "Price", align: "right", render: (r) => {
+              if (r.kind === "single") {
+                return (
+                  <div>
+                    <span className="font-medium text-ink">{money(r.price_minor)}</span>
+                    {r.compare_at_minor > r.price_minor && (
+                      <span className="ml-1.5 text-xs text-ink-soft line-through">{money(r.compare_at_minor)}</span>
+                    )}
+                  </div>
+                );
+              }
+              // Inline quick-edit for a size's price — pre-filled with the
+              // current value (click straight in and adjust), Enter or the
+              // checkmark commits. Writes through updateVariantPrice(), the
+              // exact same product_variants row/columns the Variants tab
+              // itself edits.
+              const editVal = priceEdits[r.variantId];
+              const changed = editVal !== undefined && editVal !== "" && majorToMinor(editVal) !== r.price_minor;
+              return (
+                <div onClick={(e) => e.stopPropagation()} className="flex flex-col items-end gap-1">
+                  <div className="flex items-center justify-end gap-2">
+                    {r.compare_at_minor > r.price_minor && (
+                      <span className="text-xs text-ink-soft line-through">{money(r.compare_at_minor)}</span>
+                    )}
+                    <input
+                      type="number" min="0" step="1" inputMode="decimal"
+                      disabled={!can("admin")}
+                      className="w-24 rounded-lg bg-white px-2 py-1.5 text-right text-sm ring-1 ring-line outline-none focus:ring-2 focus:ring-magenta/50 disabled:bg-snow disabled:text-ink-soft"
+                      value={editVal ?? minorToMajor(r.price_minor)}
+                      onChange={(e) => setPriceEdits((s) => ({ ...s, [r.variantId]: e.target.value }))}
+                      onKeyDown={(e) => e.key === "Enter" && commitPrice(r)}
+                      aria-label={`Price for ${r.sizeLabel}`}
+                    />
+                    {changed && (
+                      <Btn size="sm" loading={savingPrice[r.variantId]} onClick={() => commitPrice(r)} aria-label={`Save price for ${r.sizeLabel}`}>
+                        <Check className="h-3.5 w-3.5" />
+                      </Btn>
+                    )}
+                  </div>
+                  {priceError[r.variantId] && (
+                    <span className="max-w-[14rem] text-right text-[11px] text-red-600">{priceError[r.variantId]}</span>
+                  )}
+                </div>
+              );
+            } },
           { key: "sales_count", header: "Sold", align: "right", cellClassName: "text-ink-soft" },
         ]}
       />

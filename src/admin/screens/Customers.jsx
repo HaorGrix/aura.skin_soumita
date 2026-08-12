@@ -1,4 +1,4 @@
-/* skin.script admin — customers, with their order history in a side panel. */
+/* skin.theory admin — customers, with their order history in a side panel. */
 import { useState } from "react";
 import { getCustomerOrders, listCustomers, statusMeta } from "../../lib/api/admin/orders.js";
 import { adminNavigate } from "../AdminApp.jsx";

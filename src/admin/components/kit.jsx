@@ -1,5 +1,5 @@
 /* =================================================================== *
- * skin.script admin — shared UI kit
+ * skin.theory admin — shared UI kit
  * -------------------------------------------------------------------
  * Every admin screen is assembled from these. They deliberately reuse the
  * storefront's design tokens (--color-magenta, --color-line, --color-ink…
@@ -140,9 +140,130 @@ export function SelectField({ label, hint, options = [], placeholder, className 
   );
 }
 
+/**
+ * Searchable single-select with an inline "+ Add new" option — for picking
+ * from a small managed table (brands today) instead of free text, while
+ * still letting an admin create a genuinely new entry without leaving the
+ * form. Built for that shape specifically: `options` is `[{id, name}]`,
+ * `value` is the selected id, `onCreate` is expected to persist the new
+ * row and resolve to `{id, name}` (or throw/return null on failure, shown
+ * inline rather than silently swallowed).
+ *
+ * A plain `<select>` can't do the "create" half at all, and a native
+ * `<datalist>` (TagsField's approach elsewhere in this file) can only
+ * ever REPLACE the whole input on pick — no distinct "this is a new one"
+ * affordance, which is exactly the gap this task is closing.
+ */
+export function SearchableCreatableSelect({
+  label, hint, required, error, disabled, className = "",
+  options = [], value, onChange, onCreate, placeholder = "Search or add new…",
+}) {
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
+  const [creating, setCreating] = useState(false);
+  const [createError, setCreateError] = useState(null);
+  const rootRef = useRef(null);
+
+  const selected = options.find((o) => o.id === value) ?? null;
+
+  useEffect(() => {
+    function onDocClick(e) {
+      if (rootRef.current && !rootRef.current.contains(e.target)) {
+        setOpen(false);
+        setQuery("");
+        setCreateError(null);
+      }
+    }
+    document.addEventListener("mousedown", onDocClick);
+    return () => document.removeEventListener("mousedown", onDocClick);
+  }, []);
+
+  const q = query.trim().toLowerCase();
+  const filtered = q ? options.filter((o) => o.name.toLowerCase().includes(q)) : options;
+  const exactMatch = options.some((o) => o.name.toLowerCase() === q);
+  const canCreate = q.length > 0 && !exactMatch;
+
+  async function handleCreate() {
+    const name = query.trim();
+    if (!name) return;
+    setCreating(true);
+    setCreateError(null);
+    const result = await onCreate(name);
+    setCreating(false);
+    if (!result) { setCreateError("Couldn't create it — try again."); return; }
+    if (result.error) { setCreateError(result.error.message ?? "Couldn't create it — try again."); return; }
+    onChange(result.id);
+    setOpen(false);
+    setQuery("");
+  }
+
+  function pick(option) {
+    onChange(option.id);
+    setOpen(false);
+    setQuery("");
+  }
+
+  return (
+    <div ref={rootRef} className={`relative ${className}`}>
+      {label && <Label hint={hint} required={required}>{label}</Label>}
+      <input
+        type="text"
+        className={`${inputCls} ${error ? "ring-red-400" : ""}`}
+        disabled={disabled}
+        placeholder={placeholder}
+        value={open ? query : selected?.name ?? ""}
+        onFocus={() => { setOpen(true); setQuery(""); }}
+        onChange={(e) => setQuery(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Escape") { setOpen(false); setQuery(""); e.currentTarget.blur(); }
+          else if (e.key === "Enter") {
+            e.preventDefault();
+            if (filtered.length > 0) pick(filtered[0]);
+            else if (canCreate) handleCreate();
+          }
+        }}
+      />
+      {error && <span className="mt-1 flex items-center gap-1 text-[11px] text-red-600"><AlertCircle className="h-3 w-3" />{error}</span>}
+
+      {open && !disabled && (
+        <div className="absolute z-[var(--z-dropdown)] mt-1 max-h-64 w-full overflow-y-auto rounded-xl bg-white py-1 shadow-lift ring-1 ring-line">
+          {filtered.map((o) => (
+            <button
+              key={o.id} type="button"
+              onClick={() => pick(o)}
+              className={`block w-full truncate px-3 py-2 text-left text-sm hover:bg-petal hover:text-magenta ${
+                o.id === value ? "font-semibold text-magenta" : "text-ink"
+              }`}
+            >
+              {o.name}
+            </button>
+          ))}
+          {filtered.length === 0 && !canCreate && (
+            <p className="px-3 py-2 text-sm text-ink-soft">No matches.</p>
+          )}
+          {canCreate && (
+            <button
+              type="button"
+              onClick={handleCreate}
+              disabled={creating}
+              className="flex w-full items-center gap-2 border-t border-line px-3 py-2 text-left text-sm font-medium text-magenta hover:bg-petal disabled:opacity-60"
+            >
+              {creating ? <Spinner className="h-3.5 w-3.5" /> : <span className="text-base leading-none">+</span>}
+              Add new: “{query.trim()}”
+            </button>
+          )}
+          {createError && (
+            <p className="border-t border-line px-3 py-2 text-[11px] text-red-600">{createError}</p>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 /** Money input. Displays taka, emits paisa — so no screen ever does the
  *  ×100 itself and no screen can forget to. */
-export function MoneyField({ label, hint, valueMinor, onChangeMinor, required, error, className = "" }) {
+export function MoneyField({ label, hint, valueMinor, onChangeMinor, required, error, disabled, className = "" }) {
   return (
     <label className={`block ${className}`}>
       {label && <Label hint={hint} required={required}>{label}</Label>}
@@ -151,7 +272,7 @@ export function MoneyField({ label, hint, valueMinor, onChangeMinor, required, e
           {CURRENCY.symbol}
         </span>
         <input
-          type="number" min="0" step="1" inputMode="decimal"
+          type="number" min="0" step="1" inputMode="decimal" disabled={disabled}
           className={`${inputCls} pl-8 ${error ? "ring-red-400" : ""}`}
           value={minorToMajor(valueMinor)}
           onChange={(e) => onChangeMinor(majorToMinor(e.target.value))}
@@ -271,9 +392,15 @@ export function DataTable({
   columns, rows, loading, error, empty = "Nothing here yet.",
   page = 0, pageSize = 25, total = 0, onPage,
   selectable, selected = [], onSelect, rowKey = (r) => r.id, onRowClick,
+  // Per-row override for whether a checkbox renders at all — default true
+  // (every existing caller is unaffected). Products.jsx uses this so a
+  // multi-variant product's extra size rows don't each get their own
+  // checkbox; bulk actions target the PRODUCT, not one size of it.
+  rowSelectable = () => true,
 }) {
-  const allSelected = rows?.length > 0 && selected.length === rows.length;
-  const toggleAll = () => onSelect(allSelected ? [] : rows.map(rowKey));
+  const selectableRows = rows?.filter(rowSelectable) ?? [];
+  const allSelected = selectableRows.length > 0 && selected.length === selectableRows.length;
+  const toggleAll = () => onSelect(allSelected ? [] : selectableRows.map(rowKey));
   const toggleOne = (id) =>
     onSelect(selected.includes(id) ? selected.filter((s) => s !== id) : [...selected, id]);
 
@@ -323,7 +450,9 @@ export function DataTable({
                 >
                   {selectable && (
                     <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
-                      <input type="checkbox" checked={selected.includes(id)} onChange={() => toggleOne(id)} className="accent-magenta" aria-label={`Select ${id}`} />
+                      {rowSelectable(row) && (
+                        <input type="checkbox" checked={selected.includes(id)} onChange={() => toggleOne(id)} className="accent-magenta" aria-label={`Select ${id}`} />
+                      )}
                     </td>
                   )}
                   {columns.map((c) => (

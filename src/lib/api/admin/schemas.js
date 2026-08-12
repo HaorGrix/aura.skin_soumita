@@ -1,5 +1,5 @@
 /* =================================================================== *
- * skin.script admin — CMS slot definitions
+ * skin.theory admin — CMS slot definitions
  * -------------------------------------------------------------------
  * The contract between an editable region of the storefront and the admin
  * form that edits it. Adding a new editable block = adding an entry here
@@ -125,7 +125,7 @@ export const SLOTS = [
   },
   {
     slot: "home.why",
-    label: "Why skin.script",
+    label: "Why skin.theory",
     group: "Homepage",
     fields: [
       { key: "heading", label: "Heading", type: "text", max: 48, default: "" },

@@ -1,5 +1,5 @@
 /* =================================================================== *
- * skin.script admin — staff & roles (owner only)
+ * skin.theory admin — staff & roles (owner only)
  * -------------------------------------------------------------------
  * Role changes here update `profiles.role`; a database trigger mirrors it
  * into the user's JWT claim, which is what RLS actually reads. So a demoted

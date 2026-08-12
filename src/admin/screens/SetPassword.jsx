@@ -1,5 +1,5 @@
 /* =================================================================== *
- * skin.script admin — choose a new password
+ * skin.theory admin — choose a new password
  * -------------------------------------------------------------------
  * Shown when Supabase emits PASSWORD_RECOVERY, i.e. the user arrived from a
  * reset link. That event comes with a VALID session, so without this screen
@@ -10,8 +10,10 @@ import { useState } from "react";
 import { Check, KeyRound } from "lucide-react";
 import { friendlyAuthError, signOut, updatePassword } from "../../lib/api/admin/auth.js";
 import { Btn, Card, TextField } from "../components/kit.jsx";
+import { useStoreSettings } from "../../lib/api/settings.js";
 
 export default function SetPassword({ email, onDone, onAfterPassword, heading, doneCopy }) {
+  const { storeName } = useStoreSettings();
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [busy, setBusy] = useState(false);
@@ -44,7 +46,7 @@ export default function SetPassword({ email, onDone, onAfterPassword, heading, d
     <div className="grid min-h-screen place-items-center bg-snow px-4">
       <div className="w-full max-w-sm">
         <div className="mb-6 text-center">
-          <p className="font-serif text-3xl text-ink">skin.script</p>
+          <p className="font-serif text-3xl text-ink">{storeName}</p>
           <p className="text-[11px] uppercase tracking-widest text-ink-soft">Admin</p>
         </div>
 

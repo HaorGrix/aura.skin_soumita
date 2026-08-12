@@ -1,5 +1,5 @@
 /* =================================================================== *
- * skin.script — Shop mega menu
+ * skin.theory — Shop mega menu
  * -------------------------------------------------------------------
  * Columns come straight from the category tree in the database, so the menu
  * reshapes itself when the client edits /admin/categories. Nothing here is

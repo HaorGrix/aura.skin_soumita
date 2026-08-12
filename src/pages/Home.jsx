@@ -32,9 +32,9 @@ export default function Home() {
       <FeaturedProducts />
       <ShopByConcern />
       <Rituals />
+      <Testimonials />
       <Journal />
       <WhyAura />
-      <Testimonials />
       <Footer />
     </>
   );

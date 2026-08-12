@@ -8,7 +8,7 @@ import {
 import { btn } from "../../lib/design-system.js";
 
 /**
- * Button — the canonical skin.script button. Reads variants from the design
+ * Button — the canonical skin.theory button. Reads variants from the design
  * system so every CTA across the site stays consistent.
  *
  * Props:

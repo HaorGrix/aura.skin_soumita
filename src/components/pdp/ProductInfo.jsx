@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import {
   Star,
@@ -15,12 +15,12 @@ import {
   Bell,
 } from "lucide-react";
 import Badge from "../ui/Badge.jsx";
-import Button from "../ui/Button.jsx";
 import NotifyMeModal from "../ui/NotifyMeModal.jsx";
 import { useCart } from "../../context/CartContext.jsx";
 import { useWishlist } from "../../context/WishlistContext.jsx";
 import { useToast } from "../ui/Toast.jsx";
 import { formatPrice } from "../../lib/format.js";
+import { useStoreSettings } from "../../lib/api/settings.js";
 
 function Stars({ value, className = "h-4 w-4" }) {
   return (
@@ -44,11 +44,12 @@ const TRUST = [
   { icon: Sparkles, label: "Dermatologist-Tested" },
 ];
 
-export default function ProductInfo({ product, related = [], onWriteReview }) {
+export default function ProductInfo({ product, onWriteReview }) {
   const reduce = useReducedMotion();
   const { addItem } = useCart();
   const { has: wishHas, toggle: wishToggle } = useWishlist();
   const { toast } = useToast();
+  const { freeShippingThreshold } = useStoreSettings();
 
   // One flat list of size options (real product_variants rows), not the old
   // "variant groups with price deltas" model — a product only ever varies
@@ -135,14 +136,6 @@ export default function ProductInfo({ product, related = [], onWriteReview }) {
       toast.cart(`${product.brand} — ${product.name} ×${qty}`);
       setTimeout(() => setAdded(false), 1600);
     }, 700);
-  }
-
-  const bundle = useMemo(() => [product, ...related.slice(0, 2)], [product, related]);
-  const bundleTotal = bundle.reduce((s, p) => s + p.price, 0);
-
-  function addBundle() {
-    bundle.forEach((p) => addItem(p));
-    toast.cart(`Ritual bundle · ${bundle.length} items added`);
   }
 
   return (
@@ -360,12 +353,12 @@ export default function ProductInfo({ product, related = [], onWriteReview }) {
             <span className="font-semibold text-magenta">
               Only a few left
             </span>
-            · <Truck className="h-4 w-4" strokeWidth={1.7} /> Free shipping over ৳6000
+            · <Truck className="h-4 w-4" strokeWidth={1.7} /> Free shipping over {formatPrice(freeShippingThreshold)}
           </>
         ) : unitInStock ? (
           <>
             <span className="inline-block h-2 w-2 rounded-full bg-success" />
-            In stock · <Truck className="h-4 w-4" strokeWidth={1.7} /> Free shipping over ৳6000
+            In stock · <Truck className="h-4 w-4" strokeWidth={1.7} /> Free shipping over {formatPrice(freeShippingThreshold)}
           </>
         ) : (
           <>
@@ -373,38 +366,6 @@ export default function ProductInfo({ product, related = [], onWriteReview }) {
           </>
         )}
       </div>
-
-      {/* Frequently bought together / Add to Ritual */}
-      {bundle.length === 3 && (
-        <div className="mt-7 rounded-[1.25rem] bg-snow p-4 ring-1 ring-line">
-          <p className="mb-3 text-sm font-semibold text-ink">
-            ✨ Complete the ritual — frequently bought together
-          </p>
-          <div className="flex items-center gap-2">
-            {bundle.map((p, i) => (
-              <div key={p.id} className="flex items-center gap-2">
-                <div
-                  className="h-14 w-14 shrink-0 rounded-xl ring-1 ring-line"
-                  style={{ background: `radial-gradient(120% 100% at 50% 0%, #fff 0%, ${p.tone} 75%, #ffe1ec 100%)` }}
-                  title={`${p.brand} ${p.name}`}
-                />
-                {i < bundle.length - 1 && <Plus className="h-4 w-4 text-ink-soft" />}
-              </div>
-            ))}
-          </div>
-          <div className="mt-3 flex items-center justify-between">
-            <span className="text-sm text-ink-soft">
-              Bundle total{" "}
-              <span className="font-semibold text-ink">
-                {formatPrice(bundleTotal)}
-              </span>
-            </span>
-            <Button variant="secondary" size="sm" magnetic={false} onClick={addBundle}>
-              Add all 3
-            </Button>
-          </div>
-        </div>
-      )}
 
       {/* Trust signals */}
       <div className="mt-6 flex flex-wrap gap-4 border-t border-line pt-5">

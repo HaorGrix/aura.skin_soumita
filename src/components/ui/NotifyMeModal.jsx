@@ -5,6 +5,7 @@ import { X, BellRing, Check, Mail } from "lucide-react";
 import Button from "./Button.jsx";
 import { Input } from "./index.js";
 import { useBodyScrollLock } from "../../lib/scrollLock.js";
+import { isValidEmail } from "../../lib/email-validation.js";
 
 /**
  * NotifyMeModal — back-in-stock waitlist (mock). Reused by ProductCard, the PDP
@@ -36,7 +37,7 @@ export default function NotifyMeModal({ product, open, onClose }) {
   }, [open, onClose]);
 
   if (!product || !mounted) return null;
-  const valid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  const valid = isValidEmail(email);
 
   return createPortal(
     <AnimatePresence>

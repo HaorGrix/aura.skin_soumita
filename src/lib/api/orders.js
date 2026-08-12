@@ -1,5 +1,5 @@
 /* =================================================================== *
- * skin.script — storefront checkout
+ * skin.theory — storefront checkout
  * -------------------------------------------------------------------
  * Wraps the place_order() RPC, which is the ONLY way an order is created.
  * Direct inserts into `orders` are denied by RLS, so there is no second
@@ -15,6 +15,51 @@ import { supabase } from "./client.js";
 import { fromMinor as toLegacyAmount } from "../format.js";
 
 export { toLegacyAmount };
+
+/**
+ * Real order history for the CURRENT verified session (see
+ * lib/api/customerAuth.js). Returns [] — never an error the UI has to
+ * handle specially — for "not verified" or "verified but no orders yet";
+ * callers can't tell those apart from this response alone, which is
+ * intentional: the RLS policy (0029_magic_link_order_access.sql) is what
+ * actually decides visibility, this just reflects whatever it allowed.
+ *
+ * Shape matches what components/account/OrdersTab.jsx (and the modals it
+ * opens) already expect from the old localStorage mock, so those
+ * components didn't need a rewrite — only their DATA SOURCE changed.
+ * `items` stays an array of product slugs for that reason; a real order
+ * referencing a product since removed from the trimmed sample catalog
+ * will silently skip that line in the UI, same as the mock system's own
+ * `if (!p) return null` already did for any unknown id.
+ */
+export async function listMyOrders() {
+  const { data, error } = await supabase
+    .from("orders")
+    .select("id, number, status, total_minor, placed_at, tracking_number, order_items(id, product_slug)")
+    .order("placed_at", { ascending: false });
+
+  if (error) return { data: null, error };
+
+  return {
+    data: (data ?? []).map((o) => ({
+      orderId: o.number,
+      timestamp: o.placed_at,
+      date: o.placed_at,
+      status: o.status,
+      total: toLegacyAmount(o.total_minor),
+      trackingNumber: o.tracking_number ?? null,
+      items: (o.order_items ?? []).map((i) => i.product_slug).filter(Boolean),
+      // Real order_items rows, kept alongside the flat `items` slug list
+      // above (which OrderDetailsModal/TrackingModal already expect) —
+      // review submission needs the actual order_item id, not just the
+      // product slug, since one review is tied to one purchased line.
+      itemDetails: (o.order_items ?? [])
+        .filter((i) => i.product_slug)
+        .map((i) => ({ orderItemId: i.id, slug: i.product_slug })),
+    })),
+    error: null,
+  };
+}
 
 /**
  * Turn a Postgres exception from place_order() into something a shopper can
@@ -42,6 +87,10 @@ export function checkoutErrorMessage(error, { productName } = {}) {
         : `Only ${args[1]} of ${name} left — please reduce the quantity.`;
     case "MAX_PER_ORDER":
       return `You can order at most ${args[1]} of ${name} at a time.`;
+    case "SHIPPING_METHOD_INVALID":
+      return "That delivery option isn't available anymore. Please pick another.";
+    case "SHIPPING_ZONE_INVALID":
+      return "That delivery price isn't valid anymore. Please reselect your delivery option.";
     case "COUPON_INVALID":
       return {
         unknown: "That coupon code doesn't exist.",
@@ -52,6 +101,7 @@ export function checkoutErrorMessage(error, { productName } = {}) {
         exhausted: "That coupon has been fully claimed.",
         first_order_only: "That coupon is only valid on a first order.",
         already_used: "You've already used that coupon.",
+        not_unlocked: "You haven't earned enough points for that reward yet.",
       }[args[0]] ?? "That coupon can't be used on this order.";
     default:
       if (/duplicate key/i.test(raw)) return "That order was already placed.";
@@ -67,14 +117,18 @@ export function checkoutErrorMessage(error, { productName } = {}) {
  * @param {string}   input.email
  * @param {Array}    input.items            cart lines — `{ id, qty }`
  * @param {object}   input.shippingAddress
- * @param {string}   input.paymentMethod    'cod' | 'card' | 'bkash'
- * @param {string}   [input.shippingMethod] 'standard' | 'express'
+ * @param {string}   input.paymentMethod      'cod' | 'card' | 'bkash'
+ * @param {string}   [input.shippingMethodId] shipping_methods.id — omit to fall back
+ *                                             server-side to the default active method
+ * @param {string}   [input.shippingZoneId]   shipping_zones.id — the resolved zone for
+ *                                             that method; omit to fall back to its
+ *                                             first zone (today's flat-price behaviour)
  * @param {string}   [input.couponCode]
  * @returns {{ data: object|null, error: Error|null }}
  */
 export async function placeOrder({
   email, items, shippingAddress, paymentMethod,
-  shippingMethod = "standard", couponCode = null,
+  shippingMethodId = null, shippingZoneId = null, couponCode = null,
 }) {
   // A line with a variantId (picked on the PDP's size selector) sends that
   // exact variant — place_order() locks, prices and decrements THAT row.
@@ -95,7 +149,8 @@ export async function placeOrder({
       items: payloadItems,
       shipping_address: shippingAddress ?? {},
       payment_method: paymentMethod ?? "cod",
-      shipping_method: shippingMethod,
+      shipping_method_id: shippingMethodId || null,
+      shipping_zone_id: shippingZoneId || null,
       coupon_code: couponCode || null,
     },
   });

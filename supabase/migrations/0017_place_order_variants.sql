@@ -1,5 +1,5 @@
 -- ===================================================================
--- skin.script — place_order(), rewritten to operate on variants
+-- skin.theory — place_order(), rewritten to operate on variants
 -- -------------------------------------------------------------------
 -- Supersedes 0006_place_order.sql's version. Same design rules as before
 -- (client never trusted for money, one transaction, rows locked FOR

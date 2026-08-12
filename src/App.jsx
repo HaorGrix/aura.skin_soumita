@@ -17,6 +17,8 @@ import FloatingCart from "./components/FloatingCart.jsx";
 import { recordRoute } from "./lib/nav-history.js";
 import { navigate, onRouteChange } from "./lib/navigate.js";
 import { applySeo } from "./lib/seo.js";
+import { useStoreSettings } from "./lib/api/settings.js";
+import { injectMetaPixel } from "./lib/analytics.js";
 
 // Route-level code splitting — the home page loads eagerly; the rest lazy-load.
 const Shop = lazy(() => import("./pages/Shop.jsx"));
@@ -30,6 +32,10 @@ const About = lazy(() => import("./pages/About.jsx"));
 const Rewards = lazy(() => import("./pages/Rewards.jsx"));
 const Offers = lazy(() => import("./pages/Offers.jsx"));
 const Journal = lazy(() => import("./pages/Articles.jsx"));
+const ShippingReturns = lazy(() => import("./pages/ShippingReturns.jsx"));
+const Privacy = lazy(() => import("./pages/Privacy.jsx"));
+const Terms = lazy(() => import("./pages/Terms.jsx"));
+const Cookies = lazy(() => import("./pages/Cookies.jsx"));
 const NotFound = lazy(() => import("./pages/NotFound.jsx"));
 // The whole admin panel is one lazy chunk — storefront visitors never
 // download a byte of it.
@@ -72,6 +78,10 @@ function useRoute() {
     if (p === "/rewards") return { name: "rewards" };
     if (p === "/offers") return { name: "offers" };
     if (p === "/journal") return { name: "journal" };
+    if (p === "/shipping") return { name: "shipping" };
+    if (p === "/privacy") return { name: "privacy" };
+    if (p === "/terms") return { name: "terms" };
+    if (p === "/cookies") return { name: "cookies" };
     return { name: "404" };
   }, []);
   const [route, setRoute] = useState(parse);
@@ -85,6 +95,7 @@ export default function App() {
   const [loaded, setLoaded] = useState(false);
   const route = useRoute();
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const storeSettings = useStoreSettings();
 
   const trending = useMemo(() => [...PRODUCTS].sort((a, b) => b.popularity - a.popularity).slice(0, 3), []);
 
@@ -101,9 +112,20 @@ export default function App() {
   }, [route.name]);
 
   // Per-route SEO: title, description, canonical, OG tags + robots noindex.
+  // Re-runs when the live store name changes too, so a rebrand from
+  // /admin/settings retitles the current page immediately.
   useEffect(() => {
-    applySeo(route);
-  }, [route]);
+    applySeo(route, storeSettings.storeName);
+  }, [route, storeSettings.storeName]);
+
+  // Meta Pixel: DB-driven, never hardcoded. Only fires once both a saved ID
+  // and the enable toggle are true — a fresh install or a disabled pixel
+  // injects nothing. Runs on the storefront only (admin returns early below).
+  useEffect(() => {
+    if (storeSettings.metaPixelEnabled && storeSettings.metaPixelId) {
+      injectMetaPixel(storeSettings.metaPixelId);
+    }
+  }, [storeSettings.metaPixelEnabled, storeSettings.metaPixelId]);
 
   // Honour a #fragment in the URL (e.g. the hero's #featured) by smooth-scrolling
   // to the matching element after React paints. rAF gives one frame for the DOM
@@ -228,6 +250,14 @@ export default function App() {
                 <ErrorBoundary><Offers /></ErrorBoundary>
               ) : route.name === "journal" ? (
                 <ErrorBoundary><Journal /></ErrorBoundary>
+              ) : route.name === "shipping" ? (
+                <ErrorBoundary><ShippingReturns /></ErrorBoundary>
+              ) : route.name === "privacy" ? (
+                <ErrorBoundary><Privacy /></ErrorBoundary>
+              ) : route.name === "terms" ? (
+                <ErrorBoundary><Terms /></ErrorBoundary>
+              ) : route.name === "cookies" ? (
+                <ErrorBoundary><Cookies /></ErrorBoundary>
               ) : route.name === "home" ? (
                 <ErrorBoundary><Home /></ErrorBoundary>
               ) : (

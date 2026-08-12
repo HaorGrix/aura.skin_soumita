@@ -1,5 +1,5 @@
 /* =================================================================== *
- * skin.script — products & categories data access (Supabase)
+ * skin.theory — products & categories data access (Supabase)
  * -------------------------------------------------------------------
  * Reads from `products_public` — the view that already computes inStock,
  * isLowStock, isOnSale, discountPercent, isBestSeller (see the DB migration,
@@ -63,7 +63,28 @@ function mapProduct(row) {
   // exactly what the admin typed, instead of reassigning a fixed label by
   // array index.
   const gallery = (row.gallery ?? []).map((g) => ({ url: publicImageUrl(g.path), label: g.alt || null }));
-  const compareAt = row.compare_at_minor != null ? row.compare_at_minor / LEGACY_PRICE_SCALE : undefined;
+
+  // A running flash sale (products_public.sale_price_minor, computed live
+  // by best_sale_price_minor() — see 0039_flash_sales_storefront.sql) is
+  // folded straight into the price the storefront already treats as "the"
+  // price, exactly like a manual compare_at_minor markdown does. This is
+  // deliberate: ProductCard, the PDP, and CartContext.addItem all read
+  // `price`/`compareAt`/`isOnSale` already and need zero changes to pick up
+  // a campaign discount — the alternative (a parallel "sale price" field
+  // every consumer has to remember to check) is exactly the kind of drift
+  // this view already avoids for is_on_sale/discount_percent.
+  const hasFlashSale = row.sale_price_minor != null && row.sale_price_minor < row.price_minor;
+  const effectivePriceMinor = hasFlashSale ? row.sale_price_minor : row.price_minor;
+  // Whichever "before" price is actually higher wins the strike-through —
+  // a manual markdown's compare_at_minor if it's still above the flash-sale
+  // price, else the pre-flash-sale price itself.
+  const compareAtMinor = row.compare_at_minor != null && row.compare_at_minor > effectivePriceMinor
+    ? row.compare_at_minor
+    : hasFlashSale ? row.price_minor : null;
+  const compareAt = compareAtMinor != null ? compareAtMinor / LEGACY_PRICE_SCALE : undefined;
+  const discountPercent = compareAtMinor != null
+    ? Math.round((1 - effectivePriceMinor / compareAtMinor) * 100)
+    : row.discount_percent;
 
   return {
     id: row.slug, // legacy string id — see header note 1
@@ -81,14 +102,19 @@ function mapProduct(row) {
     ingredients: row.ingredients ?? [],
     isNew: row.is_new,
     popularity: row.popularity,
-    price: row.price_minor / LEGACY_PRICE_SCALE, // see header note 2
+    price: effectivePriceMinor / LEGACY_PRICE_SCALE, // see header note 2
     compareAt,
     originalPrice: compareAt ?? null,
     maxPerOrder: row.max_per_order,
     inStock: row.in_stock,
     isLowStock: row.is_low_stock,
-    isOnSale: row.is_on_sale,
-    discountPercent: row.discount_percent,
+    isOnSale: row.is_on_sale || hasFlashSale,
+    discountPercent,
+    // Which flash-sale campaign (0039_flash_sales_storefront.sql) this
+    // product's price came from, if any — powers the homepage "Glow deals"
+    // card's "Shop the deal" filter (Shop.jsx's ?sale= param) and nothing
+    // else; unrelated to the manual isOnSale/discountPercent markdown.
+    activeSaleId: row.active_sale_id ?? null,
     salesCount: row.sales_count,
     rating: row.rating,
     reviews: row.review_count, // legacy field name

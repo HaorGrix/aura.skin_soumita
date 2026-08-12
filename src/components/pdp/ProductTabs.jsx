@@ -1,6 +1,8 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { Truck, RotateCcw, PackageCheck } from "lucide-react";
 import ReviewsSection from "../reviews/ReviewsSection.jsx";
+import { useStoreSettings } from "../../lib/api/settings.js";
+import { formatPrice } from "../../lib/format.js";
 
 const TABS = [
   { id: "description", label: "Description" },
@@ -157,9 +159,14 @@ function HowToUse({ product }) {
 }
 
 function Shipping({ product }) {
+  const { freeShippingThreshold } = useStoreSettings();
   const items = [
     { icon: PackageCheck, title: "Dispatch", text: product.shipping.ships },
-    { icon: Truck, title: "Delivery", text: product.shipping.delivery },
+    {
+      icon: Truck,
+      title: "Delivery",
+      text: `Free standard delivery on orders over ${formatPrice(freeShippingThreshold)} (3–5 business days).`,
+    },
     { icon: RotateCcw, title: "Returns", text: product.shipping.returns },
   ];
   return (

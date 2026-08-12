@@ -1,17 +1,15 @@
 /* =================================================================== *
- * skin.script admin — coupons
+ * skin.theory admin — coupons
  * -------------------------------------------------------------------
  * Two kinds share this screen, told apart by `required_points`:
  *   • Manual codes the client creates.
- *   • Loyalty codes (SKN3/SKN5/SKN8FS) that unlock at a points
- *     milestone and are referenced by the Rewards page. Those are marked
- *     and their points threshold is locked, because editing one silently
- *     changes what the Rewards page promises.
+ *   • Loyalty codes that unlock at a points milestone, set here and
+ *     shown on the Rewards page.
  * =================================================================== */
 import { useState } from "react";
 import { Plus, Sparkles } from "lucide-react";
 import {
-  DISCOUNT_KINDS, couponRedemptions, deactivateCoupon, listCoupons, saveCoupon, suggestCode,
+  DISCOUNT_KINDS, couponRedemptions, deactivateCoupon, deleteCoupon, listCoupons, saveCoupon, suggestCode,
 } from "../../lib/api/admin/promos.js";
 import { useAdmin } from "../context.js";
 import {
@@ -23,7 +21,7 @@ const BLANK = {
   code: "", kind: "percent", value_percent: 10, value_minor: null,
   also_free_shipping: false, min_subtotal_minor: 0, max_discount_minor: null,
   starts_at: "", ends_at: "", usage_limit: null, usage_limit_per_customer: 1,
-  first_order_only: false, is_active: true,
+  first_order_only: false, is_active: true, required_points: null,
 };
 
 export default function Coupons() {
@@ -31,6 +29,8 @@ export default function Coupons() {
   const [search, setSearch] = useState("");
   const [editing, setEditing] = useState(null);
   const [deactivating, setDeactivating] = useState(null);
+  const [deleting, setDeleting] = useState(null);
+  const [deleteError, setDeleteError] = useState(null);
 
   const list = useAsync(() => listCoupons({ search }), [search]);
 
@@ -56,6 +56,10 @@ export default function Coupons() {
       <div className="mb-4 max-w-md">
         <SearchInput value={search} onChange={setSearch} placeholder="Find a code…" />
       </div>
+
+      {deleteError && (
+        <p className="mb-4 rounded-xl bg-red-50 px-4 py-2.5 text-sm text-red-700">{deleteError}</p>
+      )}
 
       <DataTable
         loading={list.loading} error={list.error} rows={list.data}
@@ -95,6 +99,7 @@ export default function Coupons() {
           coupon={editing} onClose={() => setEditing(null)}
           onSaved={() => { setEditing(null); list.reload(); }}
           onDeactivate={() => { setDeactivating(editing); }}
+          onDelete={() => { setDeleteError(null); setDeleting(editing); }}
           readOnly={!can("editor")}
         />
       )}
@@ -105,17 +110,29 @@ export default function Coupons() {
         body="Shoppers won't be able to use it any more. The record of discounts already given stays intact, and you can switch it back on later."
         onConfirm={async () => { await deactivateCoupon(deactivating.id); setEditing(null); list.reload(); }}
       />
+
+      <ConfirmModal
+        open={!!deleting} onClose={() => setDeleting(null)} danger
+        title={`Delete ${deleting?.code}?`} confirmLabel="Delete"
+        body="This removes the coupon entirely. Only possible while it has never been used — once used, turn it off instead."
+        onConfirm={async () => {
+          const { error } = await deleteCoupon(deleting.id);
+          if (error) { setDeleteError(error.message); return; }
+          setDeleteError(null); setEditing(null); list.reload();
+        }}
+      />
     </>
   );
 }
 
-function CouponModal({ coupon, onClose, onSaved, onDeactivate, readOnly }) {
+function CouponModal({ coupon, onClose, onSaved, onDeactivate, onDelete, readOnly }) {
   const [form, setForm] = useState(coupon);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
 
   const isLoyalty = coupon.required_points != null;
   const isNew = !coupon.id;
+  const canDelete = !isNew && !readOnly && !coupon.used_count;
   const set = (k) => (v) => setForm((f) => ({ ...f, [k]: v }));
 
   const redemptions = useAsync(
@@ -141,10 +158,17 @@ function CouponModal({ coupon, onClose, onSaved, onDeactivate, readOnly }) {
     <Modal open onClose={onClose} wide title={isNew ? "New coupon" : `Coupon ${coupon.code}`}
       footer={
         <>
-          {!isNew && !isLoyalty && !readOnly && (
-            <Btn variant="ghost" size="sm" className="mr-auto text-red-600" onClick={onDeactivate}>
-              Turn off
-            </Btn>
+          {!isNew && !readOnly && (
+            <div className="mr-auto flex gap-2">
+              <Btn variant="ghost" size="sm" className="text-red-600" onClick={onDeactivate}>
+                Turn off
+              </Btn>
+              {canDelete && (
+                <Btn variant="ghost" size="sm" className="text-red-600" onClick={onDelete}>
+                  Delete
+                </Btn>
+              )}
+            </div>
           )}
           <Btn variant="secondary" size="sm" onClick={onClose}>Cancel</Btn>
           {!readOnly && <Btn size="sm" loading={busy} onClick={handleSave}>Save coupon</Btn>}
@@ -152,8 +176,8 @@ function CouponModal({ coupon, onClose, onSaved, onDeactivate, readOnly }) {
       }>
       {isLoyalty && (
         <p className="mb-4 rounded-xl bg-petal px-4 py-2.5 text-xs text-magenta-deep">
-          This is a loyalty reward, unlocked at {coupon.required_points} points. The Rewards page refers to it,
-          so its points threshold can't be changed here.
+          This is a loyalty reward{coupon.required_points != null ? `, unlocked at ${coupon.required_points} points` : ""}.
+          {" "}If this code is also shown on the Rewards page, keep its points threshold in sync with what's promised there.
         </p>
       )}
       {error && <p className="mb-4 rounded-xl bg-red-50 px-4 py-2.5 text-sm text-red-700">{error}</p>}
@@ -195,6 +219,11 @@ function CouponModal({ coupon, onClose, onSaved, onDeactivate, readOnly }) {
         <TextField label="Uses per customer" type="number" min="1"
           value={form.usage_limit_per_customer ?? 1} disabled={readOnly}
           onChange={(e) => set("usage_limit_per_customer")(Number(e.target.value))} />
+
+        <TextField label="Required points" type="number" min="0"
+          hint="Leave blank for a regular coupon — set this to make it a Rewards loyalty tier"
+          value={form.required_points ?? ""} disabled={readOnly}
+          onChange={(e) => set("required_points")(e.target.value === "" ? null : Number(e.target.value))} />
 
         <div className="space-y-2 sm:col-span-2">
           {form.kind === "percent" && (

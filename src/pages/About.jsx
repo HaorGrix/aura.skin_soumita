@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import Button from "../components/ui/Button.jsx";
 import Footer from "../components/Footer.jsx";
+import { useStoreSettings } from "../lib/api/settings.js";
 
 /* ─────────────────────────────────────────────
    Shared motion config — stays inside design
@@ -50,11 +51,11 @@ function Reveal({ children, delay = 0, className = "" }) {
 /* ─────────────────────────────────────────────
    TRUST PILLARS  — the four commitments
 ───────────────────────────────────────────── */
-const PILLARS = [
+const buildPillars = (storeName) => [
   {
     icon: ShieldCheck,
     title: "100% Authentic Guarantee",
-    body: "Every product on skin.script is sourced directly from authorized brand distributors. We verify each batch with lot-number tracing so you never unknowingly receive a counterfeit.",
+    body: `Every product on ${storeName} is sourced directly from authorized brand distributors. We verify each batch with lot-number tracing so you never unknowingly receive a counterfeit.`,
     accent: "magenta",
   },
   {
@@ -117,6 +118,8 @@ const ACCENT_BORDER = {
    PAGE
 ───────────────────────────────────────────── */
 export default function About() {
+  const { storeName } = useStoreSettings();
+  const PILLARS = buildPillars(storeName);
   return (
     <div className="flex min-h-screen flex-col bg-snow text-ink">
 
@@ -151,7 +154,7 @@ export default function About() {
           <Reveal delay={2}>
             <p className="mx-auto mt-8 max-w-2xl text-[1.1rem] leading-relaxed text-ink-soft sm:text-xl">
               We believe skincare is not just a market — it's a trust contract between
-              a brand and a person's skin. Every decision we make at skin.script flows
+              a brand and a person's skin. Every decision we make at {storeName} flows
               from one question:{" "}
               <em className="text-ink">"Would we use this ourselves?"</em>
             </p>
@@ -332,7 +335,7 @@ export default function About() {
       <section className="mx-auto w-full max-w-6xl px-5 py-20 sm:px-8 sm:py-28">
         <Reveal className="mb-12 text-center">
           <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-magenta">
-            The Skin Script Standard
+            The {storeName} Standard
           </p>
           <h2 className="mt-3 font-serif text-[clamp(2rem,5vw,3.2rem)] text-ink">
             Guided by science, grounded in care.
@@ -372,7 +375,7 @@ export default function About() {
               <ArrowRight className="h-4 w-4" strokeWidth={2} />
             </Button>
             <Button variant="secondary" size="lg" as="a" href="/account" magnetic={false}>
-              Join Skin Script Rewards
+              Join {storeName} Rewards
               <Sparkles className="h-4 w-4" strokeWidth={2} />
             </Button>
           </div>

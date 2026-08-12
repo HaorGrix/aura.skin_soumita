@@ -1,30 +1,28 @@
 import { navigate } from "../lib/navigate.js";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ChevronLeft,
   Check,
-  Lock,
-  CreditCard,
   Truck,
-  Zap,
   Banknote,
   ChevronDown,
   Loader2,
   PartyPopper,
-  LogIn,
-  UserPlus,
   Tag,
   Truck as TrackIcon,
 } from "lucide-react";
 import { stockFor, maxQtyFor } from "../data/products.js";
+import { isValidEmail } from "../lib/email-validation.js";
 import { useCart } from "../context/CartContext.jsx";
 import { useUser } from "../context/UserContext.jsx";
 import { useToast } from "../components/ui/Toast.jsx";
 import Button from "../components/ui/Button.jsx";
 import { Field, OptionCard, Input } from "../components/ui/index.js";
 import { useStoreSettings } from "../lib/api/settings.js";
-import { formatPrice } from "../lib/format.js";
+import { useShippingMethods, resolveShippingZone } from "../lib/api/shipping.js";
+import { formatPrice, CONVERSION_RATE, CURRENCY } from "../lib/format.js";
+import { trackEvent } from "../lib/analytics.js";
 // Aliased: this module already has a local `placeOrder()` (the pre-flight
 // stock guard). Importing under the same name would shadow it and make the
 // guard call itself instead of the API.
@@ -40,11 +38,9 @@ import PhoneInput from "../components/ui/PhoneInput.jsx";
 
 const STEPS = [
   { id: "info", label: "Information" },
-  { id: "delivery", label: "Delivery" },
-  { id: "payment", label: "Payment" },
+  { id: "delivery", label: "Delivery & Payment" },
 ];
 
-const emailOk = (v) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
 const postcodeOk = (v) => /^[0-9]{4}$/.test(v.trim());
 const CHECKOUT_KEY = "skinscript_checkout_state";
 
@@ -67,13 +63,14 @@ function saveCheckoutState(state) {
 
 export default function Checkout() {
   const { items, subtotal, count, clear, removeItem, setQty, discountAmount, appliedCoupon, applyPromo, removeCoupon: cartRemoveCoupon } = useCart();
-  const { authed, openAuth, email: userEmail, name: userName, points, coupons, addOrder, usedCoupons, markCouponUsed, orders } = useUser();
+  const { authed, openAuth, email: userEmail, name: userName, points, addOrder, usedCoupons, markCouponUsed, orders } = useUser();
   const { toast } = useToast();
   const savedCheckout = loadCheckoutState();
 
-  // Login is only required here. Signed-in shoppers skip the gate; everyone
-  // else can sign in/up or breeze through as a guest.
-  const [guest, setGuest] = useState(() => savedCheckout?.guest ?? false);
+  // Checkout is guest-first — no login gate here. `guest` is kept only so
+  // the rest of this file's authed/guest checks (resume snapshot, analytics)
+  // stay true without touching every call site.
+  const [guest] = useState(true);
   const [couponInput, setCouponInput] = useState("");
 
   const [step, setStep] = useState(() => savedCheckout?.step ?? 0);
@@ -90,10 +87,18 @@ export default function Checkout() {
     };
     return { ...base, ...(savedCheckout?.form ?? {}) };
   });
-  const [delivery, setDelivery] = useState(() => savedCheckout?.delivery ?? "standard");
-  const [payMethod, setPayMethod] = useState(() => savedCheckout?.payMethod ?? "card");
-  const [isPhoneValid, setIsPhoneValid] = useState(false); // "card" | "cod"
-  const [pay, setPay] = useState(() => savedCheckout?.pay ?? { name: "", number: "", expiry: "", cvc: "" });
+  // Which method the shopper picked, and — for a zoned method — which zone
+  // they explicitly picked (only set when auto-resolution from the typed
+  // city is ambiguous; see zoneResolution below). Both are DB ids now, not
+  // the old "standard"/"express" literal.
+  const [shippingMethodId, setShippingMethodId] = useState(() => savedCheckout?.shippingMethodId ?? null);
+  const [manualZoneId, setManualZoneId] = useState(() => savedCheckout?.manualZoneId ?? null);
+  // Cash on Delivery is the only payment method offered right now — no
+  // gateway (SSLCommerz/bKash/Nagad) is wired up yet, so it's fixed rather
+  // than a user choice. Kept as state (not a literal) so payment_method
+  // stays a real field on the order payload if a gateway is added later.
+  const [payMethod] = useState("cod");
+  const [isPhoneValid, setIsPhoneValid] = useState(false);
   const [processing, setProcessing] = useState(false);
   const [order, setOrder] = useState(null); // success snapshot
   const [summaryOpen, setSummaryOpen] = useState(false);
@@ -115,14 +120,13 @@ export default function Checkout() {
     const snapshot = {
       step,
       form,
-      delivery,
-      payMethod,
-      pay,
+      shippingMethodId,
+      manualZoneId,
       guest,
     };
     saveCheckoutState(snapshot);
     setResumeSnapshot(snapshot);
-  }, [step, form, delivery, payMethod, pay, guest]);
+  }, [step, form, shippingMethodId, manualZoneId, guest]);
 
   const set = (k) => (e) => {
     setForm((f) => ({ ...f, [k]: e.target.value }));
@@ -135,29 +139,66 @@ export default function Checkout() {
   // shipping to any future code that happens to contain "FS" (GIFTS, OFFSEASON…).
   const isFreeShippingCoupon = !!appliedCoupon?.freeShipping;
 
-  // Rates and threshold come from /admin/settings. These figures are for
-  // DISPLAY only — place_order() recomputes shipping from the same row
-  // server-side, so a stale client can never change what is charged.
-  const { freeShippingThreshold, standardShipping, expressShipping } = useStoreSettings();
+  // Threshold comes from /admin/settings; methods/zones from /admin/shipping.
+  // Both are for DISPLAY only — place_order() re-reads the zone's price
+  // server-side by shipping_zone_id, so a stale client can never change
+  // what is actually charged.
+  const { freeShippingThreshold } = useStoreSettings();
+  const { methods: shippingMethods, loading: shippingLoading } = useShippingMethods();
+
+  // Default to the first (lowest sort_order) active method once the list
+  // loads, same fallback place_order() applies server-side if none is sent.
+  useEffect(() => {
+    if (!shippingMethodId && shippingMethods.length > 0) {
+      setShippingMethodId(shippingMethods[0].id);
+    }
+  }, [shippingMethods, shippingMethodId]);
+
+  const selectedMethod = shippingMethods.find((m) => m.id === shippingMethodId) ?? null;
+  // Auto-resolve from the typed city; a manual pick (only offered when
+  // resolution is ambiguous) always wins over it once the shopper makes one.
+  const zoneResolution = resolveShippingZone(selectedMethod, form.city);
+  const manualZone = selectedMethod?.zones.find((z) => z.id === manualZoneId) ?? null;
+  const effectiveZone = manualZone ?? zoneResolution.zone;
+  const needsManualZone = !!selectedMethod && !effectiveZone && zoneResolution.ambiguous;
+
+  function chooseShippingMethod(id) {
+    setShippingMethodId(id);
+    setManualZoneId(null); // a different method's zones are a different set — don't carry a stale pick over
+  }
 
   const shipping =
-    delivery === "express"
-      ? expressShipping
-      : (newSubtotal >= freeShippingThreshold || isFreeShippingCoupon)
-      ? 0
-      : standardShipping;
+    newSubtotal >= freeShippingThreshold || isFreeShippingCoupon ? 0 : (effectiveZone?.price ?? 0);
   const total = newSubtotal + shipping;
 
-  const applyCoupon = (e) => {
-    e.preventDefault();
-    const code = couponInput.trim().toUpperCase();
+  // Fires once, only once the shopper is actually looking at the checkout
+  // wizard (cart non-empty, auth/guest gate already passed) — not on every
+  // step change or form edit within it.
+  const initiateFiredRef = useRef(false);
+  useEffect(() => {
+    if (initiateFiredRef.current) return;
+    if (count === 0 || (!authed && !guest)) return;
+    initiateFiredRef.current = true;
+    trackEvent("InitiateCheckout", {
+      content_ids: items.map((i) => i.id),
+      contents: items.map((i) => ({ id: i.id, quantity: i.qty })),
+      num_items: count,
+      value: total * CONVERSION_RATE,
+      currency: CURRENCY.code,
+    });
+  }, [count, authed, guest, items, total]);
+
+  const applyCoupon = async (e, codeOverride) => {
+    e?.preventDefault?.();
+    const code = codeOverride ?? couponInput.trim().toUpperCase();
     if (!code) return;
-    // applyPromo checks general PROMOS; the loyalty account is passed through
-    // so context can verify both types without importing UserContext itself.
-    const result = applyPromo(code, { authed, points, coupons, usedCoupons, orders });
-    if (result?.requiresAuth) {
-      toast.error("Sign in to use your welcome code — it's tied to your account.", "Login required");
-      openAuth("login");
+    // applyPromo validates live against the DB now (see CartContext) — the
+    // loyalty account fields are still passed through for the points-gate
+    // check, and `email` lets it verify first-order/per-customer usage
+    // server-side instead of skipping that check like the Cart page has to.
+    const result = await applyPromo(code, { authed, points, usedCoupons, orders, email: form.email || userEmail });
+    if (result?.requiresEmail) {
+      toast.error("Add your email above so we can check this welcome code for you.", "Email needed");
     } else if (result?.alreadyUsed) {
       toast.error("This coupon has already been used on a previous order.", "Already redeemed");
     } else if (result?.firstOrderOnly) {
@@ -178,7 +219,7 @@ export default function Checkout() {
   function validate() {
     if (step === 0) {
       const next = {};
-      if (!emailOk(form.email)) next.email = "Please enter a valid email address.";
+      if (!isValidEmail(form.email)) next.email = "Please enter a valid email address.";
       if (!form.firstName.trim()) next.firstName = "First name is required.";
       if (!form.lastName.trim()) next.lastName = "Last name is required.";
       if (!form.address.trim()) next.address = "Address is required.";
@@ -191,17 +232,9 @@ export default function Checkout() {
         return false;
       }
     }
-    if (step === 2 && payMethod === "card") {
-      const next = {};
-      if (!pay.name.trim()) next.payName = "Name on card is required.";
-      if (pay.number.replace(/\s/g, "").length < 16) next.payNumber = "Enter a valid 16-digit card number.";
-      if (pay.expiry.length < 4) next.payExpiry = "Enter a valid expiry date (MM/YY).";
-      if (pay.cvc.length < 3) next.payCvc = "CVC must be 3–4 digits.";
-      if (Object.keys(next).length) {
-        setErrors(next);
-        toast.error("Please complete your payment details.", "Check your details");
-        return false;
-      }
+    if (step === 1 && needsManualZone) {
+      toast.error("Please select your delivery zone.", "Check your details");
+      return false;
     }
     return true;
   }
@@ -259,7 +292,8 @@ export default function Checkout() {
       email: form.email,
       items,
       paymentMethod: payMethod,
-      shippingMethod: delivery,
+      shippingMethodId: selectedMethod?.id ?? null,
+      shippingZoneId: effectiveZone?.id ?? null,
       couponCode: appliedCoupon?.code ?? null,
       shippingAddress: {
         name: `${form.firstName ?? ""} ${form.lastName ?? ""}`.trim() || form.name || "",
@@ -285,6 +319,19 @@ export default function Checkout() {
     }
 
     setOrder({ ...data, count });
+
+    // Fired only here, after placeOrderRpc() has come back with no error —
+    // never optimistically before the server confirms the order. `data`
+    // is the server-computed order (real total), `items` is what was
+    // actually submitted and stock-checked for it.
+    trackEvent("Purchase", {
+      content_ids: items.map((i) => i.id),
+      contents: items.map((i) => ({ id: i.id, quantity: i.qty })),
+      num_items: count,
+      value: Number(data.total) * CONVERSION_RATE,
+      currency: CURRENCY.code,
+      order_id: data.number,
+    });
 
     // Mirror into the local history the Account page still reads. Once
     // account pages read from the DB (roadmap), this line goes away.
@@ -320,11 +367,6 @@ export default function Checkout() {
         />
       </div>
     );
-  }
-
-  // —— Auth gate —— the only place login is required (or skip as a guest).
-  if (!authed && !guest) {
-    return <AuthGate onGuest={() => setGuest(true)} openAuth={openAuth} />;
   }
 
   return (
@@ -371,8 +413,8 @@ export default function Checkout() {
                     discountAmount={discountAmount} appliedCoupon={appliedCoupon}
                     couponInput={couponInput} setCouponInput={setCouponInput}
                     applyCoupon={applyCoupon} removeCoupon={removeCoupon}
-                    authed={authed} openAuth={openAuth}
-                    orders={orders} coupons={coupons} usedCoupons={usedCoupons}
+                    authed={authed} openAuth={openAuth} points={points}
+                    email={form.email || userEmail}
                   />
                 </div>
               </motion.div>
@@ -431,14 +473,20 @@ export default function Checkout() {
                   {step === 0 && <InfoStep form={form} set={set} setForm={setForm} setIsPhoneValid={setIsPhoneValid} errors={errors} />}
                   {step === 1 && (
                     <DeliveryStep
-                      delivery={delivery}
-                      setDelivery={setDelivery}
-                      payMethod={payMethod}
-                      setPayMethod={setPayMethod}
-                      subtotal={subtotal}
+                      methods={shippingMethods}
+                      loading={shippingLoading}
+                      selectedMethodId={shippingMethodId}
+                      chooseMethod={chooseShippingMethod}
+                      selectedMethod={selectedMethod}
+                      zoneResolution={zoneResolution}
+                      manualZoneId={manualZoneId}
+                      setManualZoneId={setManualZoneId}
+                      freeShippingThreshold={freeShippingThreshold}
+                      newSubtotal={newSubtotal}
+                      isFreeShippingCoupon={isFreeShippingCoupon}
+                      total={total}
                     />
                   )}
-                  {step === 2 && <PaymentStep pay={pay} setPay={setPay} payMethod={payMethod} total={total} errors={errors} setErrors={setErrors} />}
                 </motion.div>
               </AnimatePresence>
             </div>
@@ -469,15 +517,9 @@ export default function Checkout() {
                     <Loader2 className="h-4 w-4 animate-spin" /> Placing order…
                   </>
                 ) : step === STEPS.length - 1 ? (
-                  payMethod === "cod" ? (
-                    <>
-                      <Banknote className="h-4 w-4" strokeWidth={2} /> Place order · {formatPrice(total)}
-                    </>
-                  ) : (
-                    <>
-                      <Lock className="h-4 w-4" strokeWidth={2} /> Pay {formatPrice(total)}
-                    </>
-                  )
+                  <>
+                    <Banknote className="h-4 w-4" strokeWidth={2} /> Place order · {formatPrice(total)}
+                  </>
                 ) : (
                   "Continue"
                 )}
@@ -492,69 +534,11 @@ export default function Checkout() {
               discountAmount={discountAmount} appliedCoupon={appliedCoupon}
               couponInput={couponInput} setCouponInput={setCouponInput}
               applyCoupon={applyCoupon} removeCoupon={removeCoupon}
-              authed={authed} openAuth={openAuth}
-              orders={orders} coupons={coupons} usedCoupons={usedCoupons}
+              authed={authed} openAuth={openAuth} points={points}
+              email={form.email || userEmail}
             />
           </div>
         </div>
-      </div>
-    </div>
-  );
-}
-
-/* ---------- Auth gate (checkout-only) ---------- */
-function AuthGate({ onGuest, openAuth }) {
-  return (
-    <div className="min-h-screen">
-      <div className="mx-auto max-w-md px-5 sm:px-8">
-        <a
-          href="/cart"
-          onClick={(e) => {
-            e.preventDefault();
-            smartNavigate("/cart", "cart", "checkout");
-          }}
-          className="mt-12 inline-flex items-center gap-1.5 text-sm font-medium text-ink-soft transition-colors hover:text-magenta"
-        >
-          <ChevronLeft className="h-4 w-4" strokeWidth={1.8} /> Back to bag
-        </a>
-
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-          className="mt-6 rounded-[1.75rem] bg-white p-7 text-center shadow-soft ring-1 ring-line sm:p-9"
-        >
-          <span className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-petal text-magenta">
-            <Lock className="h-6 w-6" strokeWidth={1.7} />
-          </span>
-          <h1 className="mt-5 font-serif text-[clamp(1.8rem,5vw,2.4rem)] leading-tight text-ink">
-            Almost there
-          </h1>
-          <p className="mt-2 text-sm leading-relaxed text-ink-soft">
-            Sign in to check out faster, save your details, and track your order
-            — or breeze through as a guest.
-          </p>
-
-          <div className="mt-6 space-y-3">
-            <Button variant="primary" magnetic={false} className="w-full" onClick={() => openAuth("login")}>
-              <LogIn className="h-4 w-4" strokeWidth={2} /> Log in
-            </Button>
-            <Button variant="secondary" magnetic={false} className="w-full" onClick={() => openAuth("signup")}>
-              <UserPlus className="h-4 w-4" strokeWidth={2} /> Create account
-            </Button>
-          </div>
-
-          <div className="my-5 flex items-center gap-3 text-xs uppercase tracking-wide text-ink-soft">
-            <span className="h-px flex-1 bg-line" /> or <span className="h-px flex-1 bg-line" />
-          </div>
-
-          <button
-            onClick={onGuest}
-            className="text-sm font-semibold text-ink-soft underline-offset-4 transition-colors hover:text-magenta hover:underline"
-          >
-            Continue as guest →
-          </button>
-        </motion.div>
       </div>
     </div>
   );
@@ -601,157 +585,123 @@ function InfoStep({ form, set, setForm, setIsPhoneValid, errors }) {
   );
 }
 
-function DeliveryStep({ delivery, setDelivery, payMethod, setPayMethod, subtotal }) {
-  // Same source as the order summary — reading it here too keeps the option
-  // prices and the totals from ever disagreeing.
-  const { freeShippingThreshold, standardShipping, expressShipping } = useStoreSettings();
+function DeliveryStep({
+  methods, loading, selectedMethodId, chooseMethod, selectedMethod,
+  zoneResolution, manualZoneId, setManualZoneId,
+  freeShippingThreshold, newSubtotal, isFreeShippingCoupon, total,
+}) {
+  const freeStd = newSubtotal >= freeShippingThreshold || isFreeShippingCoupon;
 
-  const freeStd = subtotal >= freeShippingThreshold;
-  const deliveryOptions = [
-    {
-      id: "standard",
-      icon: Truck,
-      title: "Home Delivery",
-      desc: "3–5 business days · to your door",
-      price: freeStd ? 0 : standardShipping,
-    },
-    {
-      id: "express",
-      icon: Zap,
-      title: "Express Delivery",
-      desc: "1–2 business days",
-      price: expressShipping,
-    },
-  ];
-  const payOptions = [
-    {
-      id: "card",
-      icon: CreditCard,
-      title: "Pay Online",
-      desc: "Card · secure encrypted checkout",
-    },
-    {
-      id: "cod",
-      icon: Banknote,
-      title: "Cash on Delivery",
-      desc: "Pay in cash when your order arrives",
-    },
-  ];
+  // A method's DISPLAYED price: the resolved zone for the SELECTED method
+  // comes from the parent (it depends on the typed city), but an unselected
+  // method just needs something reasonable to show in its row — the
+  // cheapest of its zones, since the exact one isn't resolved until it's
+  // actually chosen.
+  function displayPrice(method) {
+    if (freeStd) return 0;
+    if (method.id === selectedMethodId) {
+      const zone = manualZoneId ? method.zones.find((z) => z.id === manualZoneId) : zoneResolution.zone;
+      if (zone) return zone.price;
+    }
+    return method.zones.reduce((min, z) => Math.min(min, z.price), method.zones[0]?.price ?? 0);
+  }
+
   return (
     <div className="space-y-9">
       <div>
         <h2 className="font-serif text-2xl text-ink">Delivery method</h2>
         <div className="mt-5 space-y-3">
-          {deliveryOptions.map((o) => (
+          {loading && <p className="text-sm text-ink-soft">Loading delivery options…</p>}
+          {!loading && methods.length === 0 && (
+            <p className="text-sm text-red-600">No delivery options are available right now — please check back shortly.</p>
+          )}
+          {methods.map((m) => (
             <OptionCard
-              key={o.id}
-              on={delivery === o.id}
-              icon={o.icon}
-              title={o.title}
-              desc={o.desc}
-              trailing={o.price === 0 ? "Free" : formatPrice(o.price)}
-              onClick={() => setDelivery(o.id)}
+              key={m.id}
+              on={selectedMethodId === m.id}
+              icon={Truck}
+              title={m.name}
+              desc={m.description}
+              trailing={displayPrice(m) === 0 ? "Free" : formatPrice(displayPrice(m))}
+              onClick={() => chooseMethod(m.id)}
             />
           ))}
         </div>
+
+        {/* Zone couldn't be inferred from the typed city (multiple zones
+            matched, or none did) — ask directly instead of guessing. */}
+        {selectedMethod && !manualZoneId && zoneResolution.ambiguous && (
+          <div className="mt-3">
+            <SelectZoneField
+              zones={selectedMethod.zones}
+              value={manualZoneId ?? ""}
+              onChange={setManualZoneId}
+            />
+          </div>
+        )}
+        {/* Auto-resolved but the shopper may still know better than a
+            substring match on what they typed — let them override. */}
+        {selectedMethod && selectedMethod.zones.length > 1 && !zoneResolution.ambiguous && (
+          <div className="mt-3">
+            <SelectZoneField
+              zones={selectedMethod.zones}
+              value={manualZoneId ?? zoneResolution.zone?.id ?? ""}
+              onChange={setManualZoneId}
+              hint={`Detected from your city — change it if this isn't right.`}
+            />
+          </div>
+        )}
       </div>
 
+      {/* Only one gateway-free option exists right now (no SSLCommerz/bKash/
+          Nagad integration yet), so this is a confirmation, not a choice —
+          no OptionCard list to click through. */}
       <div>
         <h2 className="font-serif text-2xl text-ink">Payment method</h2>
-        <div className="mt-5 space-y-3">
-          {payOptions.map((o) => (
-            <OptionCard
-              key={o.id}
-              on={payMethod === o.id}
-              icon={o.icon}
-              title={o.title}
-              desc={o.desc}
-              onClick={() => setPayMethod(o.id)}
-            />
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function PaymentStep({ pay, setPay, payMethod, total, errors, setErrors }) {
-  // Cash on Delivery — nothing to collect here; reassure & confirm the amount.
-  if (payMethod === "cod") {
-    return (
-      <div>
-        <h2 className="font-serif text-2xl text-ink">Cash on Delivery</h2>
-        <p className="mt-1 flex items-center gap-1.5 text-sm text-ink-soft">
-          <Banknote className="h-3.5 w-3.5" strokeWidth={2} /> No card needed — pay at your doorstep.
-        </p>
-
         <div className="mt-5 flex items-start gap-4 rounded-2xl bg-petal/50 p-5 ring-1 ring-line">
           <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-magenta text-white">
             <Banknote className="h-5 w-5" strokeWidth={1.7} />
           </span>
           <div>
-            <p className="text-sm font-medium text-ink-soft">Amount due on delivery</p>
-            <p className="font-serif text-3xl text-magenta">{formatPrice(total)}</p>
-            <p className="mt-1.5 text-sm leading-relaxed text-ink-soft">
-              Please keep the exact amount ready. Our courier will collect it when
-              your order arrives.
+            <p className="font-medium text-ink">Cash on Delivery</p>
+            <p className="mt-1 text-sm leading-relaxed text-ink-soft">
+              Pay only when your order arrives — no card or advance payment
+              needed. Please inspect the seal and packaging before accepting
+              delivery, and let our courier know right away if anything looks
+              tampered with.
+            </p>
+            <p className="mt-3 text-sm font-medium text-ink-soft">
+              Amount due on delivery: <span className="font-serif text-lg text-magenta">{formatPrice(total)}</span>
             </p>
           </div>
         </div>
-      </div>
-    );
-  }
-
-  const PAY_ERR_KEY = { name: "payName", number: "payNumber", expiry: "payExpiry", cvc: "payCvc" };
-  const update = (k, fmt) => (e) => {
-    const v = fmt ? fmt(e.target.value) : e.target.value;
-    setPay((p) => ({ ...p, [k]: v }));
-    setErrors((err) => ({ ...err, [PAY_ERR_KEY[k]]: undefined }));
-  };
-  const fmtCard = (v) =>
-    v.replace(/\D/g, "").slice(0, 16).replace(/(.{4})/g, "$1 ").trim();
-  const fmtExp = (v) => {
-    const d = v.replace(/\D/g, "").slice(0, 4);
-    return d.length > 2 ? `${d.slice(0, 2)}/${d.slice(2)}` : d;
-  };
-  const fmtCvc = (v) => v.replace(/\D/g, "").slice(0, 4);
-
-  return (
-    <div>
-      <h2 className="font-serif text-2xl text-ink">Payment</h2>
-      <p className="mt-1 flex items-center gap-1.5 text-sm text-ink-soft">
-        <Lock className="h-3.5 w-3.5" strokeWidth={2} /> Encrypted & secure · this is a demo, no real charge
-      </p>
-
-      <div className="mt-5 grid gap-4 sm:grid-cols-2">
-        <Field label="Name on card" full error={errors.payName}>
-          <Input value={pay.name} onChange={update("name")} placeholder="SOUMITA PAUL" />
-        </Field>
-        <Field label="Card number" full error={errors.payNumber}>
-          <div className="relative">
-            <CreditCard className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-soft" strokeWidth={1.7} />
-            <Input
-              value={pay.number}
-              onChange={update("number", fmtCard)}
-              placeholder="4242 4242 4242 4242"
-              inputMode="numeric"
-              className="pl-11"
-            />
-          </div>
-        </Field>
-        <Field label="Expiry" error={errors.payExpiry}>
-          <Input value={pay.expiry} onChange={update("expiry", fmtExp)} placeholder="MM/YY" inputMode="numeric" />
-        </Field>
-        <Field label="CVC" error={errors.payCvc}>
-          <Input value={pay.cvc} onChange={update("cvc", fmtCvc)} placeholder="123" inputMode="numeric" />
-        </Field>
       </div>
     </div>
   );
 }
 
+function SelectZoneField({ zones, value, onChange, hint }) {
+  return (
+    <Field label="Delivery zone">
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value || null)}
+        className="w-full rounded-xl border border-line bg-white px-4 py-3 text-sm text-ink outline-none transition-colors focus:border-magenta"
+      >
+        <option value="" disabled>Choose your zone…</option>
+        {zones.map((z) => (
+          <option key={z.id} value={z.id}>
+            {z.zone_name} — {z.price === 0 ? "Free" : formatPrice(z.price)}
+          </option>
+        ))}
+      </select>
+      {hint && <p className="text-xs text-ink-soft">{hint}</p>}
+    </Field>
+  );
+}
+
 /* ---------- Summary panel (items + totals) ---------- */
-function SummaryPanel({ items, subtotal, shipping, total, discountAmount, appliedCoupon, couponInput, setCouponInput, applyCoupon, removeCoupon, authed, openAuth, orders, coupons, usedCoupons }) {
+function SummaryPanel({ items, subtotal, shipping, total, discountAmount, appliedCoupon, couponInput, setCouponInput, applyCoupon, removeCoupon, authed, openAuth, points, email }) {
   return (
     <div className="space-y-4">
       <div className="max-h-72 space-y-4 overflow-y-auto rounded-[1.5rem] bg-snow p-5 ring-1 ring-line">
@@ -785,11 +735,11 @@ function SummaryPanel({ items, subtotal, shipping, total, discountAmount, applie
           </form>
         )}
         <PromoHint
-          orders={orders}
-          coupons={coupons}
-          usedCoupons={usedCoupons}
+          subtotal={subtotal}
+          email={email}
+          points={points}
           appliedCoupon={appliedCoupon}
-          authed={authed}
+          onApply={(code) => applyCoupon(null, code)}
         />
         {!authed && !appliedCoupon && (
           <p className="mt-3 text-center text-xs text-ink-soft">

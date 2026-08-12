@@ -16,7 +16,7 @@ import { useWishlist } from "../context/WishlistContext.jsx";
 import { useFocusTrap } from "../lib/useFocusTrap.js";
 import { useBodyScrollLock } from "../lib/scrollLock.js";
 import { useStoreSettings } from "../lib/api/settings.js";
-import logoWordmark from "../../assests/skinscript-logo-header-v2.png";
+import logoWordmark from "../../assests/theory-logo-header.png";
 import MegaMenu, { MobileCategoryNav } from "./nav/MegaMenu.jsx";
 
 const LINKS = [
@@ -54,7 +54,7 @@ export default function Navbar({ onOpenSearch, hasHero = false }) {
   // Admin-editable (Store settings → Announcement bar); falls back to a
   // sensible default (same pattern as shipping/tax settings) if the row or
   // the migration adding these columns hasn't landed yet.
-  const { announcementEnabled, announcementText } = useStoreSettings();
+  const { announcementEnabled, announcementText, storeName } = useStoreSettings();
   // `scrolled` doubles as "should the header be solid" — true either from
   // scroll depth (hero pages) or unconditionally (every other page, which
   // has no hero image to overlay and would otherwise show a transparent
@@ -149,10 +149,10 @@ export default function Navbar({ onOpenSearch, hasHero = false }) {
           {/* Logo — scales up on larger viewports where the header has room to
               breathe, and steps back down a notch once scrolled/compact so it
               never outgrows the glass pill. */}
-          <a href="/" className="flex shrink-0 items-center" aria-label="skin.script — home">
+          <a href="/" className="flex shrink-0 items-center" aria-label={`${storeName} — home`}>
             <img
               src={logoWordmark}
-              alt="skin.script"
+              alt={storeName}
               className={`w-auto transition-[height] duration-500 ${
                 scrolled
                   ? "h-9 sm:h-10 md:h-12 lg:h-14"
@@ -245,7 +245,7 @@ export default function Navbar({ onOpenSearch, hasHero = false }) {
             ) : (
               <button
                 onClick={() => openAuth("signup")}
-                aria-label="Join Skin Script Rewards to start earning points"
+                aria-label={`Join ${storeName} Rewards to start earning points`}
                 className="hidden items-center gap-1.5 rounded-full bg-petal px-3 py-1.5 text-xs font-semibold text-magenta transition-colors hover:bg-rose/30 sm:inline-flex"
               >
                 <Sparkles className="h-3.5 w-3.5" strokeWidth={2} />
@@ -310,7 +310,7 @@ export default function Navbar({ onOpenSearch, hasHero = false }) {
               transition={{ type: "spring", stiffness: 260, damping: 30 }}
             >
               <div className="flex items-center justify-between px-7">
-                <img src={logoWordmark} alt="skin.script" className="h-9 w-auto" />
+                <img src={logoWordmark} alt={storeName} className="h-9 w-auto" />
                 <button
                   className={iconBtn}
                   aria-label="Close menu"
@@ -395,7 +395,7 @@ export default function Navbar({ onOpenSearch, hasHero = false }) {
                   </span>
                 </button>
 
-                {/* Skin Script Rewards — full-width accent row. Guests get a join CTA
+                {/* Skin Theory Rewards — full-width accent row. Guests get a join CTA
                     rather than a points balance they don't have. */}
                 <a
                   href={authed ? "/rewards" : "/account"}
@@ -412,7 +412,7 @@ export default function Navbar({ onOpenSearch, hasHero = false }) {
                     <span className="grid h-9 w-9 place-items-center rounded-full bg-white text-magenta">
                       <Sparkles className="h-4 w-4" strokeWidth={2} />
                     </span>
-                    Skin Script Rewards
+                    {storeName} Rewards
                   </span>
                   <span className="text-sm font-semibold text-magenta-deep">
                     {authed ? `${points} pts →` : "Join & earn →"}

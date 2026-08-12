@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /* =================================================================== *
- * skin.script — audit log summary, for a pre-handover review
+ * skin.theory — audit log summary, for a pre-handover review
  * -------------------------------------------------------------------
  * The audit log itself is append-only and already browsable inside the
  * admin panel (Staff & roles → Audit log). This script exists for the

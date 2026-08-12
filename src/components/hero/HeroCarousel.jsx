@@ -35,6 +35,7 @@ import { A11y, Autoplay, Keyboard } from "swiper/modules";
 import { useReducedMotion } from "framer-motion";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useContent, contentMedia, isVideoPath } from "../../lib/api/content.js";
+import { useStoreSettings } from "../../lib/api/settings.js";
 import "swiper/css";
 
 /* NO bundled banner assets by design.
@@ -134,6 +135,7 @@ function useTilt(enabled) {
 }
 
 function SlideMedia({ slide, active }) {
+  const { storeName } = useStoreSettings();
   const videoRef = useRef(null);
   const src = contentMedia(slide.media, slide.fallback);
   // Test the RESOLVED url, not just the CMS field: that way a bundled
@@ -188,7 +190,7 @@ function SlideMedia({ slide, active }) {
       ) : (
         <img
           src={src}
-          alt={slide.title || "skin.script promotion"}
+          alt={slide.title || `${storeName} promotion`}
           loading="eager"
           decoding="async"
           className="relative h-full w-full object-contain"

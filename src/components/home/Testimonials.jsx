@@ -1,5 +1,5 @@
 /* =================================================================== *
- * skin.script — homepage testimonial (dual-mode)
+ * skin.theory — homepage testimonial (dual-mode)
  * -------------------------------------------------------------------
  * Renders whichever type this week's featured entry is:
  *   text  — the quote card: flower icon, quote, star rating
@@ -23,6 +23,15 @@ export default function Testimonials() {
   return (
     <section className="py-10 sm:py-14">
       <div className="mx-auto max-w-3xl px-5 sm:px-8">
+        <div className="mb-8 text-center sm:mb-10">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-magenta">
+            Real reviews
+          </p>
+          <h2 className="mt-2 font-serif text-[clamp(1.9rem,4.5vw,3.25rem)] leading-tight text-ink">
+            What our <span className="italic text-gradient-glow">customers</span> are saying
+          </h2>
+        </div>
+
         <motion.div
           key={testimonial.id}
           initial={{ opacity: 0, y: 24 }}

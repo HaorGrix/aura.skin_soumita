@@ -1,5 +1,5 @@
 /* =================================================================== *
- * skin.script — SEARCH ENGINE (pure, frontend-only)
+ * skin.theory — SEARCH ENGINE (pure, frontend-only)
  * -------------------------------------------------------------------
  * Shared by `queryProducts` (Shop grid filter) and `<PredictiveSearch>`
  * (dropdown). Pure functions only — case-insensitive, memo-friendly,

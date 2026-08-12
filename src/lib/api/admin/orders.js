@@ -1,5 +1,5 @@
 /* =================================================================== *
- * skin.script admin — orders & customers
+ * skin.theory admin — orders & customers
  * -------------------------------------------------------------------
  * Status changes go through the set_order_status() RPC, never a direct
  * UPDATE. The RPC validates the transition, appends an order_events row,

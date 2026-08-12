@@ -1,5 +1,5 @@
 -- ===================================================================
--- skin.script — remove the K-Beauty category (genuinely, not hidden)
+-- skin.theory — remove the K-Beauty category (genuinely, not hidden)
 -- -------------------------------------------------------------------
 -- K-Beauty and all 7 of its children (Facewash, Serum, Moisturizer,
 -- Ampoule, Sunscreen, Toner, Essence) carry ZERO products — verified live

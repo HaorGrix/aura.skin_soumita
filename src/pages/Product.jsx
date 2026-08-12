@@ -13,6 +13,8 @@ import RelatedProducts from "../components/pdp/RelatedProducts.jsx";
 import PdpSkeleton from "../components/pdp/PdpSkeleton.jsx";
 import QuickViewModal from "../components/shop/QuickViewModal.jsx";
 import EmptyState from "../components/ui/EmptyState.jsx";
+import { trackEvent } from "../lib/analytics.js";
+import { CONVERSION_RATE, CURRENCY } from "../lib/format.js";
 
 export default function Product({ id }) {
   const { authed, openAuth } = useUser();
@@ -64,6 +66,14 @@ export default function Product({ id }) {
       const pdp = buildPdp(data);
       setProduct(pdp);
       setLoading(false);
+
+      trackEvent("ViewContent", {
+        content_ids: [pdp.id],
+        content_name: pdp.name,
+        content_type: "product",
+        value: (Number(pdp.price) || 0) * CONVERSION_RATE,
+        currency: CURRENCY.code,
+      });
 
       const { data: all } = await listProducts();
       if (alive && all) setRelated(pickRelated(all, pdp, 8));
@@ -153,7 +163,7 @@ export default function Product({ id }) {
             balance on Sephora/ASOS. Mobile stays single-column. */}
         <div className="mt-6 grid gap-8 sm:gap-10 lg:grid-cols-[1.05fr_1fr] xl:gap-14">
           <Gallery product={product} />
-          <ProductInfo product={product} related={related} onWriteReview={goReviews} />
+          <ProductInfo product={product} onWriteReview={goReviews} />
         </div>
 
         {/* Tabs */}

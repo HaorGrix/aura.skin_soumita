@@ -1,5 +1,5 @@
 /* =================================================================== *
- * skin.script admin — store settings
+ * skin.theory admin — store settings
  * -------------------------------------------------------------------
  * Replaces the hardcoded constants in lib/shop-config.js. Changing the
  * free-shipping threshold or a shipping rate here is a database write, not
@@ -32,7 +32,14 @@ export default function Settings() {
   const set = (k) => (v) => setForm((f) => ({ ...f, [k]: v }));
   const setInput = (k) => (e) => set(k)(e.target.value);
 
+  const pixelIdError = useMemo(() => {
+    const id = form?.meta_pixel_id?.trim();
+    if (!id) return null;
+    return /^\d{6,20}$/.test(id) ? null : "Must be a numeric ID (digits only, 6-20 characters).";
+  }, [form?.meta_pixel_id]);
+
   async function handleSave() {
+    if (pixelIdError) return setError(pixelIdError);
     setSaving(true); setError(null); setNotice(null);
     const { data, error } = await saveSettings(form);
     setSaving(false);
@@ -52,12 +59,10 @@ export default function Settings() {
       {notice && <p className="mb-4 rounded-xl bg-emerald-50 px-4 py-2.5 text-sm text-emerald-700">{notice}</p>}
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <Card title="Shipping" description="What customers pay for delivery.">
+        <Card title="Shipping" description="Applies across every delivery method — per-method/zone prices live under Shipping in the sidebar.">
           <div className="grid gap-4">
             <MoneyField label="Free shipping over" hint="Set to 0 to always charge shipping"
               valueMinor={form.free_shipping_threshold_minor} onChangeMinor={set("free_shipping_threshold_minor")} />
-            <MoneyField label="Standard shipping" valueMinor={form.standard_shipping_minor} onChangeMinor={set("standard_shipping_minor")} />
-            <MoneyField label="Express shipping" valueMinor={form.express_shipping_minor} onChangeMinor={set("express_shipping_minor")} />
           </div>
         </Card>
 
@@ -113,6 +118,17 @@ export default function Settings() {
             <TextField label="Announcement text" value={form.announcement_text ?? ""}
               onChange={setInput("announcement_text")}
               hint="Keep it to one short line — it's shown centered in a slim strip." />
+          </div>
+        </Card>
+
+        <Card title="Meta Pixel" description="Enables Facebook/Instagram ad tracking and retargeting.">
+          <div className="grid gap-4">
+            <Toggle label="Enable pixel tracking"
+              hint="Off means the base pixel never loads, even if an ID is saved below."
+              checked={form.meta_pixel_enabled} onChange={set("meta_pixel_enabled")} />
+            <TextField label="Pixel ID" value={form.meta_pixel_id ?? ""} onChange={setInput("meta_pixel_id")}
+              hint="Numeric ID from Meta Events Manager, e.g. 123456789012345."
+              error={pixelIdError} />
           </div>
         </Card>
       </div>

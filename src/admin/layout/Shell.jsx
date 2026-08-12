@@ -1,5 +1,5 @@
 /* =================================================================== *
- * skin.script admin — app shell (sidebar + topbar)
+ * skin.theory admin — app shell (sidebar + topbar)
  * -------------------------------------------------------------------
  * Nav items declare the minimum role that may see them. That's presentation
  * only — RLS still rejects the write if someone forges their way to a
@@ -8,11 +8,12 @@
  * =================================================================== */
 import { useEffect, useState } from "react";
 import {
-  BarChart3, Boxes, ClipboardList, FileText, FolderTree, LayoutDashboard, LogOut,
-  Menu, MessageSquareQuote, Package, Percent, Settings as SettingsIcon, ShieldCheck, Tag, Users, X,
+  Award, BarChart3, Boxes, ClipboardList, FileText, FolderTree, LayoutDashboard, LogOut,
+  Menu, MessageSquareQuote, Package, Percent, Settings as SettingsIcon, ShieldCheck, Tag, Truck, Users, X,
 } from "lucide-react";
 import { signOut } from "../../lib/api/admin/auth.js";
 import { useAdmin } from "../context.js";
+import { useStoreSettings } from "../../lib/api/settings.js";
 
 const NAV = [
   { group: "Overview", items: [
@@ -21,7 +22,11 @@ const NAV = [
   { group: "Catalog", items: [
     { id: "products",   label: "Products",   icon: Package,  min: "support" },
     { id: "categories", label: "Categories", icon: FolderTree, min: "admin" },
+    { id: "brands",     label: "Brands",     icon: Award,    min: "admin" },
     { id: "inventory",  label: "Inventory",  icon: Boxes,    min: "admin" },
+  ]},
+  { group: "Fulfillment", items: [
+    { id: "shipping", label: "Shipping", icon: Truck, min: "admin" },
   ]},
   { group: "Sales", items: [
     { id: "orders",    label: "Orders",    icon: ClipboardList, min: "support" },
@@ -42,6 +47,7 @@ const NAV = [
 
 export default function Shell({ route, onNavigate, children }) {
   const { profile, can } = useAdmin();
+  const { storeName } = useStoreSettings();
   const [mobileOpen, setMobileOpen] = useState(false);
 
   // Close the drawer on navigation, or it stays open over the new screen.
@@ -50,7 +56,7 @@ export default function Shell({ route, onNavigate, children }) {
   const nav = (
     <nav className="flex h-full flex-col">
       <div className="px-5 py-5">
-        <a href="/" className="font-serif text-xl text-ink">skin.script</a>
+        <a href="/" className="font-serif text-xl text-ink">{storeName}</a>
         <p className="text-[11px] uppercase tracking-widest text-ink-soft">Admin</p>
       </div>
 
@@ -122,7 +128,7 @@ export default function Shell({ route, onNavigate, children }) {
           <button onClick={() => setMobileOpen(true)} className="rounded-lg p-1.5 text-ink hover:bg-snow" aria-label="Open menu">
             <Menu className="h-5 w-5" />
           </button>
-          <span className="font-serif text-lg">skin.script admin</span>
+          <span className="font-serif text-lg">{storeName} admin</span>
         </header>
 
         <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8 lg:py-8">{children}</main>

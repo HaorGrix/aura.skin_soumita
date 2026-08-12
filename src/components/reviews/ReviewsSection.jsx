@@ -1,8 +1,9 @@
 import { navigate } from "../../lib/navigate.js";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Search, X, SlidersHorizontal, ShieldCheck, Sparkles, ChevronRight } from "lucide-react";
 import { useUser } from "../../context/UserContext.jsx";
+import { listApprovedReviews } from "../../lib/api/reviews.js";
 import ReviewCard, { Stars } from "./ReviewCard.jsx";
 
 const SORTS = [
@@ -32,6 +33,20 @@ export default function ReviewsSection({ product }) {
   const { myReviewsFor, authed, openAuth } = useUser();
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState("newest");
+  // Real, verified-purchase reviews from Postgres (0031_reviews_table.sql) —
+  // fetched by the storefront slug, which IS product.id in this static
+  // catalog (see data/products.js's `id: slug(brand)-slug(name)`).
+  const [dbReviews, setDbReviews] = useState([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    listApprovedReviews(product.id).then(({ data }) => {
+      if (!cancelled) setDbReviews(data);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [product.id]);
 
   // Deep-link straight to the Orders tab — the only place reviews are authored.
   const goToOrders = () => {
@@ -48,11 +63,19 @@ export default function ReviewsSection({ product }) {
     }
   };
 
-  // Merge the shopper's own reviews (live) with the seeded public ones.
+  // Merge the shopper's own local (mock-login) reviews, real verified
+  // reviews from Postgres, and the seeded demo ones — deduped by id so a
+  // review just submitted through the verified flow (which also lands in
+  // dbReviews on the next fetch) never doubles up.
   const all = useMemo(() => {
     const mine = myReviewsFor(product.id).map((r) => ({ ...r, tone: product.tone }));
-    return [...mine, ...product.reviews];
-  }, [myReviewsFor, product.id, product.reviews, product.tone]);
+    const seen = new Set();
+    return [...mine, ...dbReviews, ...product.reviews].filter((r) => {
+      if (seen.has(r.id)) return false;
+      seen.add(r.id);
+      return true;
+    });
+  }, [myReviewsFor, product.id, product.reviews, product.tone, dbReviews]);
 
   const visible = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -64,8 +87,15 @@ export default function ReviewsSection({ product }) {
     return [...filtered].sort(sorters[sort] ?? sorters.newest);
   }, [all, query, sort]);
 
-  const total = product.reviewCount ?? all.length;
-  const bd = product.ratingBreakdown ?? {};
+  // Rating summary is computed live from the merged set (not the static
+  // seed numbers) so a newly-submitted real review moves it immediately.
+  const total = all.length;
+  const bd = useMemo(() => {
+    const counts = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+    all.forEach((r) => { counts[r.stars] = (counts[r.stars] ?? 0) + 1; });
+    return counts;
+  }, [all]);
+  const avgRating = total ? all.reduce((sum, r) => sum + r.stars, 0) / total : product.rating;
 
   return (
     <div className="grid gap-10 lg:grid-cols-[300px_1fr]">
@@ -73,10 +103,10 @@ export default function ReviewsSection({ product }) {
       <div className="lg:sticky lg:top-40 lg:self-start">
         <div className="flex items-end gap-3">
           <span className="font-serif text-5xl text-ink">
-            {product.rating.toFixed(1)}
+            {avgRating.toFixed(1)}
           </span>
           <div className="pb-1.5">
-            <Stars value={product.rating} />
+            <Stars value={avgRating} />
             <p className="mt-1 text-xs text-ink-soft">
               {total.toLocaleString()} reviews
             </p>

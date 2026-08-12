@@ -1,5 +1,5 @@
 /* =================================================================== *
- * skin.script — storefront store settings
+ * skin.theory — storefront store settings
  * -------------------------------------------------------------------
  * Reads the single `store_settings` row so the shipping thresholds, rates
  * and tax the shopper sees are the ones the client set in /admin/settings,
@@ -17,21 +17,24 @@
 import { useEffect, useState } from "react";
 import { fromMinor } from "../format.js";
 import {
-  FREE_SHIPPING_THRESHOLD, STANDARD_SHIPPING, EXPRESS_SHIPPING, TAX_RATE,
+  FREE_SHIPPING_THRESHOLD, STANDARD_SHIPPING, TAX_RATE,
 } from "../shop-config.js";
+import { POINTS_PER_REVIEW } from "../../data/reviews.js";
 
 /** Exactly the previous hardcoded behaviour. */
 export const DEFAULT_SETTINGS = {
   freeShippingThreshold: FREE_SHIPPING_THRESHOLD,
   standardShipping: STANDARD_SHIPPING,
-  expressShipping: EXPRESS_SHIPPING,
   taxRate: TAX_RATE,
-  storeName: "skin.script",
+  pointsPerReview: POINTS_PER_REVIEW,
+  storeName: "skin.theory",
   supportEmail: null,
   supportPhone: null,
   maintenanceMode: false,
   announcementEnabled: true,
   announcementText: "Script Your Skin. Reveal Your Confidence.",
+  metaPixelId: null,
+  metaPixelEnabled: false,
 };
 
 let cache = null;
@@ -42,8 +45,10 @@ function mapRow(row) {
   return {
     freeShippingThreshold: fromMinor(row.free_shipping_threshold_minor),
     standardShipping: fromMinor(row.standard_shipping_minor),
-    expressShipping: fromMinor(row.express_shipping_minor),
     taxRate: Number(row.tax_rate) || 0,
+    // Falls back to the compiled-in constant if the column is missing
+    // (migration 0002 not yet applied) or left blank.
+    pointsPerReview: row.points_per_review ?? DEFAULT_SETTINGS.pointsPerReview,
     storeName: row.store_name ?? DEFAULT_SETTINGS.storeName,
     supportEmail: row.support_email ?? null,
     supportPhone: row.support_phone ?? null,
@@ -52,6 +57,10 @@ function mapRow(row) {
     // (e.g. migration 0009 not yet applied) or left blank in /admin.
     announcementEnabled: row.announcement_enabled ?? DEFAULT_SETTINGS.announcementEnabled,
     announcementText: row.announcement_text || DEFAULT_SETTINGS.announcementText,
+    // Falls back to "not configured" if the column is missing (migration
+    // 0035 not yet applied) — never inject a broken/empty pixel script.
+    metaPixelId: row.meta_pixel_id || null,
+    metaPixelEnabled: !!row.meta_pixel_enabled,
   };
 }
 

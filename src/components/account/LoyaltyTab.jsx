@@ -1,10 +1,12 @@
 import { motion } from "framer-motion";
 import { Sparkles, Gift, Check, Ticket, Truck } from "lucide-react";
 import { useUser } from "../../context/UserContext.jsx";
-import { POINTS_PER_REVIEW, TAKA_PER_POINT } from "../../data/reviews.js";
+import { useStoreSettings } from "../../lib/api/settings.js";
+import { TAKA_PER_POINT } from "../../data/reviews.js";
 
 export default function LoyaltyTab() {
-  const { points, coupons, nextMilestone, milestones } = useUser();
+  const { points, coupons, nextMilestone, milestones, pointsPerReview } = useUser();
+  const { storeName } = useStoreSettings();
 
   const prevTier = [...milestones].reverse().find((m) => points >= m.points)?.points ?? 0;
   const target = nextMilestone?.points ?? milestones[milestones.length - 1].points;
@@ -33,11 +35,11 @@ export default function LoyaltyTab() {
         <div className="relative flex flex-wrap items-end justify-between gap-4">
           <div>
             <p className="inline-flex items-center gap-1.5 text-xs font-medium uppercase tracking-[0.16em] text-white/80">
-              <Sparkles className="h-4 w-4" strokeWidth={2} /> Skin Script Rewards
+              <Sparkles className="h-4 w-4" strokeWidth={2} /> {storeName} Rewards
             </p>
             <p className="mt-2 font-serif text-5xl leading-none">{points}</p>
             <p className="mt-1 text-sm text-white/85">
-              loyalty points · 1 per ৳{TAKA_PER_POINT} spent, +{POINTS_PER_REVIEW} per review
+              loyalty points · 1 per ৳{TAKA_PER_POINT} spent, +{pointsPerReview} per review
             </p>
           </div>
           <div className="text-left sm:text-right">

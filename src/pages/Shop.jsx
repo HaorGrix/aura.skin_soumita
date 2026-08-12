@@ -9,9 +9,11 @@ import {
   PRICE_RANGES,
   DISCOUNT_TIERS,
   AVAILABILITY,
+  SORTS,
   queryProducts,
 } from "../data/products.js";
 import { listProducts } from "../lib/api/products.js";
+import { listActiveSales } from "../lib/api/sales.js";
 import {
   FilterPanel,
   ActiveChips,
@@ -151,6 +153,32 @@ export default function Shop() {
   const [activeCategoryName, setActiveCategoryName] = useState(null);
   const productCategory = useProductCategoryMap();
 
+  // ?sale=<id> — a homepage "Glow deals" card link, filtering to exactly
+  // the products that campaign's active discount currently covers
+  // (Product.activeSaleId, set by mapProduct() from products_public's
+  // live best_sale_price_minor() match). Same "one query param, resolved
+  // straight off the already-fetched product list" shape as ?category=,
+  // just without a slug/tree resolution step since a sale id is already
+  // the exact key products carry.
+  const [saleId, setSaleId] = useState(
+    () => new URLSearchParams(window.location.search).get("sale") || null
+  );
+  useEffect(() => onRouteChange(() => {
+    setSaleId(new URLSearchParams(window.location.search).get("sale") || null);
+  }), []);
+  // Just for the header chip's label — filtering itself only needs the id
+  // (matched against each product's own activeSaleId), so this fetch is
+  // display-only and never blocks the grid.
+  const [saleName, setSaleName] = useState(null);
+  useEffect(() => {
+    if (!saleId) { setSaleName(null); return; }
+    let alive = true;
+    listActiveSales().then((rows) => {
+      if (alive) setSaleName(rows.find((s) => s.id === saleId)?.name ?? null);
+    });
+    return () => { alive = false; };
+  }, [saleId]);
+
   // Re-sync on REAL navigation only — browser back/forward, or clicking another
   // concern card while already on Shop. In-page filter toggles use
   // history.replaceState (see syncUrl), which emits no route event, so they
@@ -190,7 +218,13 @@ export default function Shop() {
     )]);
     setActiveCategoryName(findBySlug(categoryTree, raw.split(",")[0].trim())?.name ?? null);
   }, [categoryTree]);
-  const [sort, setSort] = useState("featured");
+  // ?sort=best|newest|... — same "read once on mount" pattern as ?sale=
+  // above; an unrecognized/missing value falls back to "featured" rather
+  // than crashing queryProducts on a bad sort id.
+  const [sort, setSort] = useState(() => {
+    const raw = new URLSearchParams(window.location.search).get("sort");
+    return SORTS.some((s) => s.id === raw) ? raw : "featured";
+  });
   const [visible, setVisible] = useState(PAGE);
   const [loading, setLoading] = useState(true); // true until the initial fetch settles
   const [loadingMore, setLoadingMore] = useState(false);
@@ -213,7 +247,9 @@ export default function Shop() {
   useBodyScrollLock(sheetOpen);
 
   const results = useMemo(() => {
-    const list = queryProducts(products, { search, filters, sort });
+    let list = queryProducts(products, { search, filters, sort });
+
+    if (saleId) list = list.filter((p) => p.activeSaleId === saleId);
 
     // Menu-driven category selection, applied on top of the facet engine.
     // Held apart from queryProducts because that matches on category NAME and
@@ -235,7 +271,7 @@ export default function Shop() {
     if (!categoryNames.length) return list;
     const wantedNames = new Set(categoryNames);
     return list.filter((p) => wantedNames.has(p.category));
-  }, [products, search, filters, sort, categorySlugs, categoryNames, productCategory]);
+  }, [products, search, filters, sort, categorySlugs, categoryNames, productCategory, saleId]);
 
   // Fetch the live catalog. The skeleton (existing `loading` state — same UI
   // as before) now reflects a REAL fetch instead of a fixed timer. Extracted
@@ -329,6 +365,13 @@ export default function Shop() {
     Object.entries(nextFilters).forEach(([key, arr]) => {
       if (arr.length > 0) params.set(key, arr.join(","));
     });
+    // sort/sale aren't part of `filters` (they're their own state), but the
+    // URL should still reflect them — otherwise a shared/bookmarked
+    // /shop?sort=best link silently loses its query on the very next
+    // syncUrl call (e.g. PredictiveSearch reporting its empty query on
+    // mount), even though the sort itself is still applied correctly.
+    if (sort !== "featured") params.set("sort", sort);
+    if (saleId) params.set("sale", saleId);
     const qs = params.toString();
     // Use replaceState so filter clicks don't bloat the history stack,
     // but the URL remains shareable. Clean path — query in the search string.
@@ -490,6 +533,17 @@ export default function Shop() {
                 <div className="flex items-center gap-2">
                   <span className="inline-flex items-center gap-1.5 rounded-full bg-petal px-3 py-1 text-xs font-medium text-magenta">
                     {activeCategoryName}
+                  </span>
+                  <a href="/shop" className="text-xs text-ink-soft underline-offset-2 hover:text-magenta hover:underline">
+                    Clear
+                  </a>
+                </div>
+              )}
+
+              {saleId && !loading && !fetchError && (
+                <div className="flex items-center gap-2">
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-magenta px-3 py-1 text-xs font-medium text-white">
+                    {saleName ?? "Flash sale"}
                   </span>
                   <a href="/shop" className="text-xs text-ink-soft underline-offset-2 hover:text-magenta hover:underline">
                     Clear

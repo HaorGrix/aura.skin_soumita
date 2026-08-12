@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import { Leaf, Heart, Sparkles, Recycle } from "lucide-react";
+import { useStoreSettings } from "../../lib/api/settings.js";
 
 const PILLARS = [
   { icon: Leaf, title: "Organic", text: "Plant-derived actives, sourced from growers we can name." },
@@ -16,15 +17,16 @@ const STATS = [
 ];
 
 export default function WhyAura() {
+  const { storeName } = useStoreSettings();
   return (
     <section id="about" className="py-10 sm:py-14">
       <div className="mx-auto max-w-7xl px-5 sm:px-8">
         <div className="mx-auto max-w-2xl text-center">
           <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-magenta">
-            The skin script promise
+            The {storeName} promise
           </p>
           <h2 className="mt-2 font-serif text-[clamp(1.9rem,4.5vw,3.25rem)] leading-tight text-ink">
-            Why you’ll <span className="italic text-gradient-glow">love</span> skin.script
+            Why you’ll <span className="italic text-gradient-glow">love</span> {storeName}
           </h2>
         </div>
 

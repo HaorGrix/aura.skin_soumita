@@ -1,5 +1,5 @@
 /* =================================================================== *
- * skin.script — DESIGN SYSTEM (single source of truth)
+ * skin.theory — DESIGN SYSTEM (single source of truth)
  * -------------------------------------------------------------------
  * K/J-Beauty "glass skin" system.
  *

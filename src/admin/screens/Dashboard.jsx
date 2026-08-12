@@ -1,4 +1,4 @@
-/* skin.script admin — Dashboard. The first screen the client sees each day:
+/* skin.theory admin — Dashboard. The first screen the client sees each day:
  * what came in, what needs doing, what's about to run out. */
 import { AlertTriangle, PackageX, ShoppingBag } from "lucide-react";
 import { getStats, recentOrders, statusMeta } from "../../lib/api/admin/orders.js";

@@ -1,5 +1,5 @@
 /* =================================================================== *
- * skin.script admin — product editor
+ * skin.theory admin — product editor
  * -------------------------------------------------------------------
  * Tabbed, because a single 20-field form is where clients give up. The
  * form writes base facts only: price, compare-at, stock threshold, status.
@@ -15,21 +15,22 @@ import { useEffect, useMemo, useState } from "react";
 import { ArrowLeft, ExternalLink, History, Plus, Star, Trash2 } from "lucide-react";
 import {
   adjustStock, archiveProduct, createProduct, deleteVariant,
-  getProduct, listBrands, categoryOptions, listCategoryTree, listStockMovements,
-  listVariants, setStock, setVariantStock, slugify, updateProduct, upsertVariant,
+  getProduct, listBrandRows, categoryOptions, listCategoryTree, listStockMovements,
+  listVariants, setStock, setVariantStock, slugify, updateProduct, upsertBrand, upsertVariant,
 } from "../../lib/api/admin/catalog.js";
 import { useAdmin } from "../context.js";
 import { adminNavigate } from "../AdminApp.jsx";
+import { useStoreSettings } from "../../lib/api/settings.js";
 import ImageManager, { VideoField } from "../components/ImageManager.jsx";
 import {
   Btn, Card, ConfirmModal, Modal, MoneyField, MultiSelectField, PageHeader, Pill, SaveBar,
-  SelectField, Spinner, StockPill, TagsField, TextField, Toggle, money, useAsync,
+  SearchableCreatableSelect, SelectField, Spinner, StockPill, TagsField, TextField, Toggle, money, useAsync,
 } from "../components/kit.jsx";
 
 const TABS = ["Details", "Pricing", "Variants", "Inventory", "Attributes", "Images", "SEO"];
 
 const BLANK = {
-  name: "", brand: "", slug: "", subtitle: "", description: "", how_to_use: "",
+  name: "", brand: "", brand_id: null, slug: "", subtitle: "", description: "", how_to_use: "",
   category_id: "", price_minor: null, compare_at_minor: null, cost_minor: null,
   sku: "", low_stock_at: 5, max_per_order: 6, backorder_ok: false,
   status: "draft", is_new: false, popularity: 50, tone: "pink",
@@ -44,9 +45,18 @@ const SKIN_TYPES = ["Normal", "Dry", "Oily", "Combination", "Sensitive", "All Sk
 export default function ProductEdit({ id }) {
   const isNew = id === "new";
   const { can } = useAdmin();
+  const { storeName } = useStoreSettings();
   const readOnly = !can("admin");
 
-  const [tab, setTab] = useState("Details");
+  // Deep-link into a specific tab — used by the Products list's variant rows
+  // (?tab=variants) so clicking a size opens straight into the tab that
+  // actually edits sizes, instead of always landing on Details. Independent
+  // of AdminApp's route parsing (which only reads the pathname): the query
+  // string still rides along in the URL from adminNavigate(), this just
+  // reads it directly for the one-time initial tab.
+  const [tab, setTab] = useState(() =>
+    new URLSearchParams(window.location.search).get("tab") === "variants" ? "Variants" : "Details"
+  );
   const [form, setForm] = useState(isNew ? BLANK : null);
   const [original, setOriginal] = useState(isNew ? BLANK : null);
   const [images, setImages] = useState([]);
@@ -62,7 +72,17 @@ export default function ProductEdit({ id }) {
   // picked here lines up with the shop filters automatically — no SQL, and no
   // second list to keep in step.
   const categories = useAsync(() => listCategoryTree(), []);
-  const brands = useAsync(() => listBrands(), []);
+  const brands = useAsync(() => listBrandRows(), []);
+
+  /** Create a brand inline from the picker and refresh the option list so
+   *  it's there immediately — for THIS form (selecting it) and for anyone
+   *  who opens the Brands screen right after. */
+  async function handleCreateBrand(name) {
+    const { data, error } = await upsertBrand({ name });
+    if (error) return { error };
+    brands.reload();
+    return { id: data.id, name: data.name };
+  }
 
   // Whether this product has more than one size. Once it does, the price
   // and stock shown on the Pricing/Inventory tabs are only ONE of several —
@@ -200,10 +220,14 @@ export default function ProductEdit({ id }) {
         <Card>
           <div className="grid gap-4 sm:grid-cols-2">
             <TextField label="Product name" required value={form.name} onChange={setInput("name")} disabled={readOnly} className="sm:col-span-2" />
-            <div>
-              <TextField label="Brand" value={form.brand ?? ""} onChange={setInput("brand")} list="brand-options" disabled={readOnly} />
-              <datalist id="brand-options">{(brands.data ?? []).map((b) => <option key={b} value={b} />)}</datalist>
-            </div>
+            <SearchableCreatableSelect
+              label="Brand" required
+              value={form.brand_id ?? null}
+              options={brands.data ?? []}
+              onChange={set("brand_id")}
+              onCreate={handleCreateBrand}
+              disabled={readOnly}
+            />
             <SelectField
               label="Category" required
               hint="Grouped by section — pick the sub-category"
@@ -236,10 +260,18 @@ export default function ProductEdit({ id }) {
               instead. The fields below only ever reflect one size and would be misleading here.
             </p>
           )}
+          {/* pointer-events-none was previously the ONLY thing blocking edits
+              here for a multi-variant product — it stops mouse clicks but
+              not keyboard focus+typing or any programmatic value set, so an
+              admin could silently reprice the DEFAULT variant through a tab
+              whose whole point is "don't edit price here, it's ambiguous
+              which size you mean." Every field below now also carries a
+              real `disabled`, same as SKU already had; the wrapper class
+              stays for the uniform greyed-out look. */}
           <div className={`grid gap-4 sm:grid-cols-2 ${hasMultipleVariants ? "pointer-events-none opacity-50" : ""}`}>
-            <MoneyField label="Selling price" required valueMinor={form.price_minor} onChangeMinor={set("price_minor")} />
-            <MoneyField label="Compare at" hint="Optional — the “was” price" valueMinor={form.compare_at_minor} onChangeMinor={set("compare_at_minor")} />
-            <MoneyField label="Cost per item" hint="Private — never shown to shoppers" valueMinor={form.cost_minor} onChangeMinor={set("cost_minor")} />
+            <MoneyField label="Selling price" required valueMinor={form.price_minor} onChangeMinor={set("price_minor")} disabled={readOnly || hasMultipleVariants} />
+            <MoneyField label="Compare at" hint="Optional — the “was” price" valueMinor={form.compare_at_minor} onChangeMinor={set("compare_at_minor")} disabled={readOnly || hasMultipleVariants} />
+            <MoneyField label="Cost per item" hint="Private — never shown to shoppers" valueMinor={form.cost_minor} onChangeMinor={set("cost_minor")} disabled={readOnly || hasMultipleVariants} />
             <TextField label="SKU" value={form.sku ?? ""} onChange={setInput("sku")} disabled={readOnly || hasMultipleVariants} />
           </div>
 
@@ -365,7 +397,7 @@ export default function ProductEdit({ id }) {
           <div className="mt-5 rounded-xl bg-snow p-4">
             <p className="text-xs text-ink-soft">Preview</p>
             <p className="mt-1 truncate text-[15px] text-blue-800">{form.seo_title || form.name || "Product name"}</p>
-            <p className="text-xs text-emerald-700">skin.script › product › {form.slug || slugify(form.name)}</p>
+            <p className="text-xs text-emerald-700">{storeName} › product › {form.slug || slugify(form.name)}</p>
             <p className="mt-0.5 line-clamp-2 text-xs text-ink-soft">
               {form.seo_description || form.subtitle || form.description || "Add a search description."}
             </p>

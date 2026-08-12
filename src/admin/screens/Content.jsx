@@ -1,4 +1,4 @@
-/* skin.script admin — CMS slot index. Every editable region of the
+/* skin.theory admin — CMS slot index. Every editable region of the
  * storefront, grouped by where it appears. */
 import { ChevronRight, FileText } from "lucide-react";
 import { listBlocks } from "../../lib/api/admin/content.js";

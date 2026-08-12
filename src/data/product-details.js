@@ -1,5 +1,5 @@
 /* =================================================================== *
- * skin.script — PDP DETAIL BUILDER
+ * skin.theory — PDP DETAIL BUILDER
  * -------------------------------------------------------------------
  * Enriches ANY base catalog product into a full product-detail payload
  * (benefits, ingredient stories, how-to ritual, reviews, variants,
@@ -293,7 +293,10 @@ export function buildPdp(product) {
     ratingBreakdown: ratingBreakdown(product, rand),
     shipping: {
       ships: "Ships within 24 hours from our climate-controlled warehouse.",
-      delivery: "Free standard delivery on orders over ৳6000 (3–5 business days).",
+      // Delivery text (including the free-shipping threshold) is built live
+      // in ProductTabs.jsx from store_settings.free_shipping_threshold_minor —
+      // this module has no access to the live admin setting, so it's not
+      // baked in here.
       returns: "Loved-it-or-not 30-day returns. Empties welcome — we recycle. ♻️",
     },
   };

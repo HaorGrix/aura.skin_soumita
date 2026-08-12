@@ -1,5 +1,5 @@
 /* =================================================================== *
- * skin.script — storefront testimonial reader
+ * skin.theory — storefront testimonial reader
  * -------------------------------------------------------------------
  * THE STOREFRONT MUST NEVER BREAK BECAUSE OF THIS — same governing rule
  * as lib/api/content.js. A missing table, an un-run migration, an offline

@@ -1,4 +1,4 @@
-/* skin.script admin — order queue. */
+/* skin.theory admin — order queue. */
 import { useState } from "react";
 import { listOrders, ORDER_STATUSES, statusMeta } from "../../lib/api/admin/orders.js";
 import { adminNavigate } from "../AdminApp.jsx";

@@ -1,5 +1,5 @@
 /* =================================================================== *
- * skin.script admin — categories
+ * skin.theory admin — categories
  * -------------------------------------------------------------------
  * Categories drive the storefront's category filter and navigation, so the
  * order set here is the order shoppers see. Each row shows its product

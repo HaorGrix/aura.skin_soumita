@@ -1,5 +1,5 @@
 -- ===================================================================
--- skin.script — close a public-read hole on `coupons`
+-- skin.theory — close a public-read hole on `coupons`
 -- -------------------------------------------------------------------
 -- FOUND during a 2026-08-02 security audit, confirmed live with a fully
 -- anonymous (no session, no JWT) request:

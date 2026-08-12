@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /* =================================================================== *
- * skin.script — create a DISPOSABLE staff account for live e2e testing
+ * skin.theory — create a DISPOSABLE staff account for live e2e testing
  * -------------------------------------------------------------------
  * The one place a throwaway admin/editor account gets created, so it's
  * the one place that can guarantee `is_test_account = true` gets set.

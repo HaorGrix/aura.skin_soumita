@@ -1,5 +1,5 @@
 -- ===================================================================
--- skin.script — set_order_status(): restock the VARIANT, not the product
+-- skin.theory — set_order_status(): restock the VARIANT, not the product
 -- -------------------------------------------------------------------
 -- order_items now carries variant_id (0016), and place_order() now
 -- decrements product_variants.stock_quantity, not products.stock (0017).

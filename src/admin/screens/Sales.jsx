@@ -1,5 +1,5 @@
 /* =================================================================== *
- * skin.script admin — flash & seasonal sales
+ * skin.theory admin — flash & seasonal sales
  * -------------------------------------------------------------------
  * The important part of this screen is the scope preview: before a
  * campaign goes live it shows exactly which products it touches and what
@@ -7,21 +7,26 @@
  * including the six items I sell near cost" look identical until you can
  * see the list.
  * =================================================================== */
-import { useState } from "react";
-import { Plus } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Plus, Search, X } from "lucide-react";
 import { deactivateSale, listSales, previewSaleScope, saveSale } from "../../lib/api/admin/promos.js";
-import { listCategories, listBrands } from "../../lib/api/admin/catalog.js";
+import { listCategories, listBrands, listProducts as listCatalogProducts, listProductsByIds } from "../../lib/api/admin/catalog.js";
+import { SingleImageField } from "../components/ImageManager.jsx";
 import { useAdmin } from "../context.js";
 import {
   Btn, ConfirmModal, DataTable, Modal, PageHeader, Pill, SelectField, Spinner,
   TextField, Toggle, money, useAsync,
 } from "../components/kit.jsx";
 
+// "all" (whole catalog) and "specific" (products/categories/brands) are
+// mutually exclusive choices, not two independent toggles — a sale that's
+// somehow both is ambiguous about what it actually discounts.
 const BLANK = {
   name: "", kind: "percent", value_percent: 20,
   starts_at: "", ends_at: "",
   scope: { all: true, products: [], categories: [], brands: [] },
-  banner_text: "", show_countdown: true, priority: 0, is_active: true,
+  banner_text: "", badge_label: "", image_path: "",
+  show_countdown: true, priority: 0, is_active: true,
 };
 
 export default function Sales() {
@@ -154,6 +159,14 @@ function SaleModal({ sale, onClose, onSaved, onEnd }) {
           value={form.ends_at?.slice(0, 16) ?? ""} onChange={(e) => set("ends_at")(e.target.value)} />
         <TextField label="Banner text" hint="Shown on the storefront while the sale runs"
           value={form.banner_text ?? ""} onChange={(e) => set("banner_text")(e.target.value)} className="sm:col-span-2" />
+        <TextField label="Badge label" hint='Shown on the card, e.g. "SUMMER SALE", "CLEARANCE"'
+          value={form.badge_label ?? ""} onChange={(e) => set("badge_label")(e.target.value)} className="sm:col-span-2" />
+        <div className="sm:col-span-2">
+          <SingleImageField
+            label="Card banner image" value={form.image_path ?? ""} onChange={set("image_path")}
+            hint="Recommended 800 × 600px (4:3) — shown on the homepage deal card"
+          />
+        </div>
         <div className="sm:col-span-2">
           <Toggle label="Show a countdown timer" checked={form.show_countdown} onChange={set("show_countdown")} />
         </div>
@@ -161,32 +174,51 @@ function SaleModal({ sale, onClose, onSaved, onEnd }) {
 
       <div className="mt-6 rounded-xl bg-snow p-4">
         <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-ink-soft">What's included</p>
-        <Toggle label="The whole catalog" checked={form.scope?.all} onChange={setScope("all")} />
+        <div className="flex gap-2">
+          <button type="button" onClick={() => setScope("all")(true)}
+            className={`rounded-full px-3 py-1.5 text-xs font-medium ring-1 ${
+              form.scope?.all ? "bg-magenta text-white ring-magenta" : "bg-white text-ink-soft ring-line hover:ring-magenta"
+            }`}>
+            The whole catalog
+          </button>
+          <button type="button" onClick={() => setScope("all")(false)}
+            className={`rounded-full px-3 py-1.5 text-xs font-medium ring-1 ${
+              !form.scope?.all ? "bg-magenta text-white ring-magenta" : "bg-white text-ink-soft ring-line hover:ring-magenta"
+            }`}>
+            Specific products
+          </button>
+        </div>
 
         {!form.scope?.all && (
-          <div className="mt-4 grid gap-4 sm:grid-cols-2">
-            <div>
-              <p className="mb-1.5 text-xs font-medium text-ink">Categories</p>
-              <div className="flex flex-wrap gap-1.5">
-                {(categories.data ?? []).map((c) => (
-                  <button key={c.id} onClick={() => setScope("categories")(toggleIn(form.scope.categories ?? [], c.id))}
-                    className={`rounded-full px-2.5 py-1 text-xs ring-1 ${
-                      form.scope.categories?.includes(c.id)
-                        ? "bg-magenta text-white ring-magenta" : "bg-white text-ink-soft ring-line hover:ring-magenta"
-                    }`}>{c.name}</button>
-                ))}
+          <div className="mt-4 space-y-4">
+            <ProductPicker
+              selected={form.scope.products ?? []}
+              onChange={setScope("products")}
+            />
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <p className="mb-1.5 text-xs font-medium text-ink">Categories</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {(categories.data ?? []).map((c) => (
+                    <button key={c.id} onClick={() => setScope("categories")(toggleIn(form.scope.categories ?? [], c.id))}
+                      className={`rounded-full px-2.5 py-1 text-xs ring-1 ${
+                        form.scope.categories?.includes(c.id)
+                          ? "bg-magenta text-white ring-magenta" : "bg-white text-ink-soft ring-line hover:ring-magenta"
+                      }`}>{c.name}</button>
+                  ))}
+                </div>
               </div>
-            </div>
-            <div>
-              <p className="mb-1.5 text-xs font-medium text-ink">Brands</p>
-              <div className="flex flex-wrap gap-1.5">
-                {(brands.data ?? []).map((b) => (
-                  <button key={b} onClick={() => setScope("brands")(toggleIn(form.scope.brands ?? [], b))}
-                    className={`rounded-full px-2.5 py-1 text-xs ring-1 ${
-                      form.scope.brands?.includes(b)
-                        ? "bg-magenta text-white ring-magenta" : "bg-white text-ink-soft ring-line hover:ring-magenta"
-                    }`}>{b}</button>
-                ))}
+              <div>
+                <p className="mb-1.5 text-xs font-medium text-ink">Brands</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {(brands.data ?? []).map((b) => (
+                    <button key={b} onClick={() => setScope("brands")(toggleIn(form.scope.brands ?? [], b))}
+                      className={`rounded-full px-2.5 py-1 text-xs ring-1 ${
+                        form.scope.brands?.includes(b)
+                          ? "bg-magenta text-white ring-magenta" : "bg-white text-ink-soft ring-line hover:ring-magenta"
+                      }`}>{b}</button>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
@@ -223,5 +255,95 @@ function SaleModal({ sale, onClose, onSaved, onEnd }) {
         {previewing && <Spinner className="mt-3 h-4 w-4" />}
       </div>
     </Modal>
+  );
+}
+
+/** Search-as-you-type multi-select over the real catalog (paginated —
+ *  there's no "list all products" call here on purpose, matching the
+ *  admin Products grid's own server-side search). `selected` holds
+ *  product ids only; names for ids picked in an earlier session are
+ *  fetched once on mount so already-chosen products still show a label
+ *  instead of a bare id. */
+function ProductPicker({ selected, onChange }) {
+  const [query, setQuery] = useState("");
+  const [results, setResults] = useState([]);
+  const [searching, setSearching] = useState(false);
+  const [labels, setLabels] = useState({}); // id -> "Brand — Name"
+
+  useEffect(() => {
+    let alive = true;
+    listProductsByIds(selected).then(({ data }) => {
+      if (!alive || !data) return;
+      setLabels((prev) => {
+        const next = { ...prev };
+        for (const p of data) next[p.id] = `${p.brand} — ${p.name}`;
+        return next;
+      });
+    });
+    return () => { alive = false; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- only re-resolve for ids we don't have a label for yet
+  }, [selected.filter((id) => !labels[id]).join(",")]);
+
+  useEffect(() => {
+    if (!query.trim()) { setResults([]); return; }
+    let alive = true;
+    setSearching(true);
+    const t = setTimeout(() => {
+      listCatalogProducts({ search: query, pageSize: 15 }).then(({ data }) => {
+        if (!alive) return;
+        setResults(data ?? []);
+        setSearching(false);
+      });
+    }, 250);
+    return () => { alive = false; clearTimeout(t); };
+  }, [query]);
+
+  function add(p) {
+    if (selected.includes(p.id)) return;
+    setLabels((prev) => ({ ...prev, [p.id]: `${p.brand} — ${p.name}` }));
+    onChange([...selected, p.id]);
+  }
+  function remove(id) {
+    onChange(selected.filter((x) => x !== id));
+  }
+
+  return (
+    <div>
+      <p className="mb-1.5 text-xs font-medium text-ink">Products</p>
+      <div className="relative">
+        <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-ink-soft" />
+        <input
+          value={query} onChange={(e) => setQuery(e.target.value)}
+          placeholder="Search by name, brand, or SKU…"
+          className="w-full rounded-xl border border-line bg-white py-2 pl-8 pr-3 text-xs outline-none focus:border-magenta"
+        />
+      </div>
+
+      {(searching || results.length > 0) && (
+        <div className="mt-1.5 max-h-40 overflow-y-auto rounded-lg bg-white ring-1 ring-line">
+          {searching && <p className="px-3 py-2 text-xs text-ink-soft">Searching…</p>}
+          {!searching && results.map((p) => (
+            <button key={p.id} type="button" onClick={() => add(p)}
+              disabled={selected.includes(p.id)}
+              className="flex w-full items-center justify-between px-3 py-1.5 text-left text-xs hover:bg-snow disabled:opacity-40">
+              <span className="truncate">{p.brand} — {p.name}</span>
+              {selected.includes(p.id) && <span className="shrink-0 text-ink-soft">Added</span>}
+            </button>
+          ))}
+        </div>
+      )}
+
+      <div className="mt-2 flex flex-wrap gap-1.5">
+        {selected.length === 0 && (
+          <p className="text-xs text-ink-soft">No products selected yet — search above to add some.</p>
+        )}
+        {selected.map((id) => (
+          <span key={id} className="inline-flex items-center gap-1 rounded-full bg-magenta/10 px-2.5 py-1 text-xs text-magenta-deep ring-1 ring-magenta/20">
+            {labels[id] ?? id}
+            <button type="button" onClick={() => remove(id)} className="hover:text-red-600"><X className="h-3 w-3" /></button>
+          </span>
+        ))}
+      </div>
+    </div>
   );
 }

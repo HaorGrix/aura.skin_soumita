@@ -15,11 +15,13 @@ import Footer from "../components/Footer.jsx";
 import { useToast } from "../components/ui/Toast.jsx";
 import { Input } from "../components/ui/index.js";
 import PhoneInput from "../components/ui/PhoneInput.jsx";
+import { isValidEmail } from "../lib/email-validation.js";
+import { useStoreSettings } from "../lib/api/settings.js";
 
-const FAQS = [
+const buildFaqs = (storeName) => [
   {
     q: "Are your products authentic?",
-    a: "Yes. skin.script is positioned around authorized sourcing, verified channels, and clear product metadata so customers can buy with confidence.",
+    a: `Yes. ${storeName} is positioned around authorized sourcing, verified channels, and clear product metadata so customers can buy with confidence.`,
   },
   {
     q: "How fast do you dispatch orders?",
@@ -43,6 +45,8 @@ const CONTACT_CARDS = [
 
 export default function Contact() {
   const { toast } = useToast();
+  const { storeName } = useStoreSettings();
+  const FAQS = buildFaqs(storeName);
   const [openFaq, setOpenFaq] = useState(0);
   const [form, setForm] = useState({
     name: "",
@@ -62,7 +66,7 @@ export default function Contact() {
   function validate() {
     const next = {};
     if (!form.name.trim()) next.name = "Name is required";
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) next.email = "Enter a valid email";
+    if (!isValidEmail(form.email)) next.email = "Enter a valid email";
     if (form.message.trim().length < 12) next.message = "Tell us a little more";
     setErrors(next);
     return Object.keys(next).length === 0 && isPhoneValid;
@@ -93,7 +97,7 @@ export default function Contact() {
             transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
           >
             <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-magenta">
-              Contact skin.script
+              Contact {storeName}
             </p>
             <h1 className="mt-4 max-w-2xl font-serif text-[clamp(2.55rem,7vw,5.4rem)] leading-[0.96]">
               Need routine help, order care, or a brand question?
@@ -130,8 +134,14 @@ export default function Contact() {
             </div>
           </motion.div>
 
+          {/* noValidate: same reasoning as AuthModal — without it, the
+              browser's native email constraint runs first on submit and
+              silently blocks anything with no "@" before our onSubmit and
+              isValidEmail ever run, so that one malformed shape shows no
+              feedback at all instead of our message. */}
           <motion.form
             onSubmit={submit}
+            noValidate
             initial={{ opacity: 0, scale: 0.97 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.65, delay: 0.08, ease: [0.22, 1, 0.36, 1] }}

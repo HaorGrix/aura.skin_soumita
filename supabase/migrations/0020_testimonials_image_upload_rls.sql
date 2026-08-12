@@ -1,5 +1,5 @@
 -- ===================================================================
--- skin.script — fix: editor-role staff can't upload testimonial images
+-- skin.theory — fix: editor-role staff can't upload testimonial images
 -- -------------------------------------------------------------------
 -- FOUND during live end-to-end testing of the testimonials feature
 -- (2026-08), driving the real admin UI as a disposable editor-role

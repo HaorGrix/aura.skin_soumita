@@ -1,5 +1,5 @@
 -- ===================================================================
--- skin.script — wire is_staff_pick / is_limited_edition / the bestseller
+-- skin.theory — wire is_staff_pick / is_limited_edition / the bestseller
 -- override into products_public
 -- -------------------------------------------------------------------
 -- Companion to 0021_manual_badges.sql (adds the three base columns on

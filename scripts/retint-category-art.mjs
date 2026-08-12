@@ -1,5 +1,5 @@
 /* =================================================================== *
- * skin.script — category card re-tint + corner repair
+ * skin.theory — category card re-tint + corner repair
  * -------------------------------------------------------------------
  * The supplied category cards ship with two problems baked into the
  * pixels (neither is fixable in CSS — the PNGs are drawn with

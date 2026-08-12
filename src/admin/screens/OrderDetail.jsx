@@ -1,5 +1,5 @@
 /* =================================================================== *
- * skin.script admin — order detail
+ * skin.theory admin — order detail
  * -------------------------------------------------------------------
  * Status changes call set_order_status(), which writes the timeline event
  * and — on cancel or refund — puts every line item's units back into stock

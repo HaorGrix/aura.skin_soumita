@@ -1,5 +1,5 @@
 /* =================================================================== *
- * skin.script admin — authentication & role resolution
+ * skin.theory admin — authentication & role resolution
  * -------------------------------------------------------------------
  * The role shown in the UI comes from `profiles.role`, but it is NOT the
  * security boundary — every table is guarded by RLS policies that read the

@@ -37,31 +37,8 @@ export default function Journal() {
   return (
     <section id="journal" className="py-10 sm:py-14">
       <div className="mx-auto max-w-7xl px-5 sm:px-8">
-        {/* Community story */}
-        <motion.div
-          initial={{ opacity: 0, y: 24 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, amount: 0.3 }}
-          transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-          className="relative overflow-hidden rounded-[1.75rem] bg-gradient-to-br from-petal via-white to-cyan-soft/30 p-8 text-center ring-1 ring-line sm:p-14"
-        >
-          <span className="text-4xl">🌸</span>
-          <blockquote className="mx-auto mt-5 max-w-2xl font-serif text-[clamp(1.4rem,3vw,2.25rem)] leading-snug text-ink">
-            “skin.script didn’t just change my skin — it gave me ten minutes a day
-            that feel like self-love. My barrier healed, and so did my confidence.”
-          </blockquote>
-          <figcaption className="mt-5 text-sm font-medium text-ink-soft">
-            — Tasnia H., glowing for 8 months
-          </figcaption>
-          <div className="mt-4 flex items-center justify-center gap-1 text-gold">
-            {"★★★★★".split("").map((s, i) => (
-              <span key={i}>{s}</span>
-            ))}
-          </div>
-        </motion.div>
-
         {/* Journal teasers */}
-        <div className="mt-12 flex items-end justify-between">
+        <div className="flex items-end justify-between">
           <div>
             <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-magenta">
               The Journal

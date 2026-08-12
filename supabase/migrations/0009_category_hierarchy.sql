@@ -1,5 +1,5 @@
 -- ===================================================================
--- skin.script — unified category hierarchy (from the reference layout)
+-- skin.theory — unified category hierarchy (from the reference layout)
 -- -------------------------------------------------------------------
 -- One taxonomy, three consumers: the navbar mega menu, the shop filters
 -- and the admin product form all read `categories`. Adding, renaming or

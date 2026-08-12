@@ -6,6 +6,7 @@ import { useCart } from "../context/CartContext.jsx";
 import { useUser } from "../context/UserContext.jsx";
 import { PRODUCTS } from "../data/products.js";
 import { useStoreSettings } from "../lib/api/settings.js";
+import { useShippingMethods, cheapestZone } from "../lib/api/shipping.js";
 import { smartNavigate } from "../lib/nav-history.js";
 import LineItem from "../components/cart/LineItem.jsx";
 import FreeShippingBar from "../components/cart/FreeShippingBar.jsx";
@@ -14,25 +15,33 @@ import RelatedProducts from "../components/pdp/RelatedProducts.jsx";
 import QuickViewModal from "../components/shop/QuickViewModal.jsx";
 import EmptyState from "../components/ui/EmptyState.jsx";
 import Button from "../components/ui/Button.jsx";
+import PromoHint from "../components/ui/PromoHint.jsx";
 import { useToast } from "../components/ui/Toast.jsx";
 import { Input } from "../components/ui/index.js";
 
 export default function Cart() {
   const { items, subtotal, count, clear, discountAmount, appliedCoupon, applyPromo } = useCart();
-  const { authed, openAuth, points, orders, usedCoupons, coupons } = useUser();
+  const { authed, points, orders, usedCoupons, email: userEmail } = useUser();
   const { toast } = useToast();
   const [promoInput, setPromoInput] = useState("");
   const [quickView, setQuickView] = useState(null);
 
-  const { freeShippingThreshold, standardShipping } = useStoreSettings();
+  const { freeShippingThreshold } = useStoreSettings();
+  const { methods: shippingMethods } = useShippingMethods();
 
   const discounted = Math.max(0, subtotal - discountAmount);
+  // Pre-checkout estimate only — there's no address yet to resolve a real
+  // zone from, so this shows the cheapest zone on the default (first)
+  // method. Checkout re-resolves the actual zone from the typed city and
+  // is what's actually charged either way.
+  const defaultMethod = shippingMethods[0] ?? null;
+  const estimatedShippingPrice = cheapestZone(defaultMethod)?.price ?? 0;
   // Honour the coupon's free-shipping flag here too — Checkout does, and a bag
   // that quotes one total then charges another at checkout destroys trust.
   const shipping =
     discounted >= freeShippingThreshold || discounted === 0 || appliedCoupon?.freeShipping
       ? 0
-      : standardShipping;
+      : estimatedShippingPrice;
   const total = discounted + shipping;
 
   const recommended = useMemo(() => {
@@ -43,18 +52,18 @@ export default function Cart() {
       .slice(0, 8);
   }, [items]);
 
-  function handlePromo(e) {
-    e.preventDefault();
-    const res = applyPromo(promoInput, { authed, points, orders, usedCoupons, coupons });
+  async function handlePromo(e, codeOverride) {
+    e?.preventDefault?.();
+    const code = codeOverride ?? promoInput;
+    const res = await applyPromo(code, { authed, points, orders, usedCoupons, email: userEmail });
 
     // `applyPromo` returns a truthy result object on failure too — only a
     // `success` flag means the coupon actually applied.
     if (res?.success) {
       setPromoInput("");
       toast.success(res.label, "Promo applied");
-    } else if (res?.requiresAuth) {
-      toast.error("Sign in to use your welcome code — it's tied to your account.", "Login required");
-      openAuth("login");
+    } else if (res?.requiresEmail) {
+      toast.error("Add your email at checkout so we can check this welcome code for you.", "Email needed");
     } else if (res?.alreadyUsed) {
       toast.error("You've already used that code.", "Already redeemed");
     } else if (res?.firstOrderOnly) {
@@ -166,6 +175,13 @@ export default function Cart() {
                   Apply
                 </button>
               </form>
+              <PromoHint
+                subtotal={subtotal}
+                email={authed ? userEmail : null}
+                points={points}
+                appliedCoupon={appliedCoupon}
+                onApply={(code) => handlePromo(null, code)}
+              />
 
               <Button
                 variant="primary"

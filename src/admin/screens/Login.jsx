@@ -1,5 +1,5 @@
 /* =================================================================== *
- * skin.script admin — sign in
+ * skin.theory admin — sign in
  * -------------------------------------------------------------------
  * Two modes, both backed by real Supabase Auth:
  *   • password  — the normal path
@@ -22,6 +22,7 @@ import {
   friendlyAuthError, sendPasswordReset, signIn, signOut,
 } from "../../lib/api/admin/auth.js";
 import { Btn, Card, TextField } from "../components/kit.jsx";
+import { useStoreSettings } from "../../lib/api/settings.js";
 
 export default function Login({ session, onSignedIn, linkError }) {
   // An expired/already-used invite or recovery link always needs a fresh
@@ -142,11 +143,12 @@ function friendlyLinkError(linkError) {
 }
 
 function Shell({ children }) {
+  const { storeName } = useStoreSettings();
   return (
     <div className="grid min-h-screen place-items-center bg-snow px-4">
       <div className="w-full max-w-sm">
         <div className="mb-6 text-center">
-          <p className="font-serif text-3xl text-ink">skin.script</p>
+          <p className="font-serif text-3xl text-ink">{storeName}</p>
           <p className="text-[11px] uppercase tracking-widest text-ink-soft">Admin</p>
         </div>
         {children}

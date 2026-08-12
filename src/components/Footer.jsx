@@ -1,14 +1,16 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Check, ArrowRight, Instagram, Youtube, Twitter, Facebook } from "lucide-react";
+import { Check, ArrowRight, Instagram, Facebook } from "lucide-react";
+import { isValidEmail } from "../lib/email-validation.js";
+import { useStoreSettings } from "../lib/api/settings.js";
 
 const COLUMNS = [
   {
     title: "Shop",
     links: [
       { label: "All Products", href: "/shop" },
-      { label: "Best Sellers", href: "/shop" },
-      { label: "New Arrivals", href: "/shop" },
+      { label: "Best Sellers", href: "/shop?sort=best" },
+      { label: "New Arrivals", href: "/shop?sort=newest" },
     ],
   },
       {
@@ -17,27 +19,44 @@ const COLUMNS = [
       { label: "Our Story", href: "/about" },
       { label: "Offers", href: "/offers" },
       { label: "Journal", href: "/journal" },
-      { label: "Sustainability", href: "/about" },
     ],
   },
   {
     title: "Help",
     links: [
-      { label: "Shipping & Returns", href: "/about" },
-      { label: "Track Order", href: "/about" },
+      { label: "Shipping & Returns", href: "/shipping" },
+      { label: "Track Order", href: "/account?tab=orders" },
       { label: "FAQs", href: "/contact" },
       { label: "Contact", href: "/contact" },
     ],
   },
 ];
 
-const SOCIALS = [Instagram, Youtube, Twitter, Facebook];
+/* lucide-react ships no TikTok glyph — inline outline, sized/stroked to
+   match the Instagram/Facebook icons it sits next to. */
+function TikTokIcon({ className }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.7}
+      strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <path d="M16.5 3c.3 2.1 1.8 3.7 4 4v3c-1.5.1-2.9-.4-4-1.2V15a6 6 0 1 1-6-6c.3 0 .7 0 1 .1v3.1a3 3 0 1 0 2 2.8V3h3Z" />
+    </svg>
+  );
+}
+
+// Only real, live accounts — a placeholder handle would just be a new dead
+// link. Swap/extend this list once more accounts go live.
+const SOCIALS = [
+  { Icon: Facebook, label: "Facebook", href: "https://www.facebook.com/share/1BaNyk2kD1/" },
+  { Icon: Instagram, label: "Instagram", href: "https://www.instagram.com/skintheorybd?utm_source=qr&igsh=MXM1N2xtZnB6aWRwYg==" },
+  { Icon: TikTokIcon, label: "TikTok", href: "https://www.tiktok.com/@skin.theory1?_r=1&_t=ZS-98bLhjPjyHn" },
+];
 
 export default function Footer() {
+  const { storeName } = useStoreSettings();
   const [email, setEmail] = useState("");
   const [sent, setSent] = useState(false);
 
-  const ok = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  const ok = isValidEmail(email);
 
   function submit(e) {
     e.preventDefault();
@@ -115,18 +134,20 @@ export default function Footer() {
         <div className="grid gap-10 border-t border-line pt-12 sm:grid-cols-2 lg:grid-cols-5">
           <div className="lg:col-span-2">
             <a href="/" className="font-serif text-2xl text-ink">
-              skin<span className="text-magenta">.</span>script
+              {storeName}
             </a>
             <p className="mt-3 max-w-xs text-sm leading-relaxed text-ink-soft">
               K- and J-Beauty, sourced honestly and sold without the theatre.
               Bangladesh-based, shipping nationwide.
             </p>
             <div className="mt-5 flex gap-2">
-              {SOCIALS.map((Icon, i) => (
+              {SOCIALS.map(({ Icon, label, href }) => (
                 <a
-                  key={i}
-                  href="/about"
-                  aria-label="Social link"
+                  key={label}
+                  href={href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={label}
                   className="grid h-10 w-10 place-items-center rounded-full bg-white text-ink-soft ring-1 ring-line transition-colors hover:text-magenta hover:ring-magenta/40"
                 >
                   <Icon className="h-[18px] w-[18px]" strokeWidth={1.7} />
@@ -153,11 +174,11 @@ export default function Footer() {
 
         {/* Bottom bar */}
         <div className="mt-12 flex flex-col items-center justify-between gap-4 border-t border-line pt-6 text-xs text-ink-soft sm:flex-row">
-          <p>© {new Date().getFullYear()} skin.script — Glow within, bloom daily. 🌸</p>
+          <p>© {new Date().getFullYear()} {storeName} — Glow within, bloom daily. 🌸</p>
           <div className="flex gap-5">
-            <a href="/about" className="hover:text-magenta">Privacy</a>
-            <a href="/about" className="hover:text-magenta">Terms</a>
-            <a href="/about" className="hover:text-magenta">Cookies</a>
+            <a href="/privacy" className="hover:text-magenta">Privacy</a>
+            <a href="/terms" className="hover:text-magenta">Terms</a>
+            <a href="/cookies" className="hover:text-magenta">Cookies</a>
           </div>
         </div>
       </div>

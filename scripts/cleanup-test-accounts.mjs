@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /* =================================================================== *
- * skin.script — delete every disposable staff account, by DB flag
+ * skin.theory — delete every disposable staff account, by DB flag
  * -------------------------------------------------------------------
  * Filters on profiles.is_test_account = true (0024_profiles_test_account_flag.sql)
  * — an explicit column, not the zz-*@example.org naming convention. The

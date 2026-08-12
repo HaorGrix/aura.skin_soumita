@@ -1,5 +1,5 @@
 /* =================================================================== *
- * skin.script admin — product image manager
+ * skin.theory admin — product image manager
  * -------------------------------------------------------------------
  * Upload (drag-and-drop or click), drag-to-reorder, and delete a product's
  * gallery — 0 to MAX_IMAGES images, laid out on a fluid auto-fit grid so

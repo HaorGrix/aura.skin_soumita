@@ -1,5 +1,5 @@
 /* =================================================================== *
- * skin.script admin — testimonials
+ * skin.theory admin — testimonials
  * -------------------------------------------------------------------
  * Dual-mode entries: a structured text quote (customer name, quote, star
  * rating) or a single admin-uploaded image (e.g. a collage of review
@@ -47,6 +47,15 @@ export default function Testimonials() {
           </Btn>
         )}
       />
+
+      <div className="mb-6 rounded-xl bg-petal px-4 py-3 text-sm text-magenta-deep">
+        <strong>What this controls:</strong> the trust card on the homepage, shown
+        right before the Journal section — it's meant to reassure a shopper
+        that real customers have bought and loved these products before they
+        check out. Only one entry shows at a time; mark the ones you want in
+        rotation as <strong>Featured</strong> below and the homepage
+        automatically swaps to a different one each week.
+      </div>
 
       {list.loading ? (
         <div className="grid place-items-center py-24"><Spinner className="h-7 w-7" /></div>
@@ -172,6 +181,13 @@ function TestimonialModal({ testimonial, onClose, onSaved }) {
           <Btn size="sm" loading={busy} onClick={handleSave}>Save</Btn>
         </>
       }>
+      <p className="mb-4 rounded-xl bg-petal px-4 py-3 text-xs leading-relaxed text-magenta-deep">
+        This appears in the trust section on the homepage, shown to build
+        confidence before a purchase. Choose one featured entry — a text
+        quote or a photo collage of reviews — and it goes into the weekly
+        rotation shown to shoppers.
+      </p>
+
       {error && <p className="mb-4 rounded-xl bg-red-50 px-4 py-2.5 text-sm text-red-700">{error}</p>}
 
       <div className="grid gap-4">

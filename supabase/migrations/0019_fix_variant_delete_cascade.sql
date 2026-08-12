@@ -1,5 +1,5 @@
 -- ===================================================================
--- skin.script — fix: a product with variants could never be deleted
+-- skin.theory — fix: a product with variants could never be deleted
 -- -------------------------------------------------------------------
 -- FOUND during live end-to-end testing of the variants feature (2026-08).
 --

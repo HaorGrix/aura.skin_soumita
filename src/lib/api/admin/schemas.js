@@ -146,8 +146,9 @@ export const SLOTS = [
     help: "Controls the headline and hero paragraph at the top of the About page. The stats, pillars, and values sections further down are fixed layout, not editable here yet.",
     fields: [
       {
-        key: "title", label: "Page headline (H1) — the big heading at the top of the About page",
-        type: "text", max: 60, default: "Transparency in Every Drop.",
+        key: "title",
+        label: "Page headline (H1) — the big heading at the top of the About page. Add a | (pipe) to italicize everything after it, e.g. \"Transparency|in Every Drop.\" — the part after the pipe renders in italic magenta, matching the original design. No pipe = the whole headline renders plain.",
+        type: "text", max: 60, default: "Transparency|in Every Drop.",
       },
       {
         key: "intro",

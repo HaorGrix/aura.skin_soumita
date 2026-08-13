@@ -123,6 +123,11 @@ export default function About() {
   const { content } = useContent("page.about");
   const PILLARS = buildPillars(storeName);
   const heroIntro = (content.intro || "").replace(/\{storeName\}/g, storeName);
+  // "Transparency|in Every Drop." -> plain "Transparency" + italic "in Every
+  // Drop." — the pipe is the admin-editable equivalent of the two <span>s
+  // this heading used before it was wired to the CMS. No pipe = render the
+  // whole headline plain rather than guessing where to split it.
+  const [titlePlain, titleItalic] = (content.title || "").split("|");
   return (
     <div className="flex min-h-screen flex-col bg-snow text-ink">
 
@@ -149,7 +154,13 @@ export default function About() {
 
           <Reveal delay={1}>
             <h1 className="mt-6 font-serif text-[clamp(3rem,8vw,6.5rem)] leading-[0.95] tracking-tight text-ink">
-              {content.title}
+              {titlePlain}
+              {titleItalic && (
+                <>
+                  {" "}
+                  <span className="italic text-magenta">{titleItalic}</span>
+                </>
+              )}
             </h1>
           </Reveal>
 

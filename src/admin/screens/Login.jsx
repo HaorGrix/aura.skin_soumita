@@ -53,7 +53,11 @@ export default function Login({ session, onSignedIn, linkError }) {
     const { error } = await sendPasswordReset(email.trim());
     setBusy(false);
     if (error) return setError(friendlyAuthError(error));
-    setNotice(`Reset link sent to ${email.trim()}. Opening it brings you back here to choose a new password.`);
+    // Same message whether or not this email is actually staff (or exists
+    // at all) — sendPasswordReset() silently no-ops for a non-staff email
+    // instead of erroring, so this text can never be used to probe which
+    // emails have admin access.
+    setNotice("If this email is registered, a reset link has been sent.");
   }
 
   /* Signed in, but no staff role: a customer who typed /admin, or someone

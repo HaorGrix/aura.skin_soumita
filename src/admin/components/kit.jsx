@@ -18,6 +18,34 @@ import { CURRENCY } from "../../lib/format.js";
  * helpers are the ONLY conversion points, so a stray ×100 can't drift in.
  * ---------------------------------------------------------------- */
 export const minorToMajor = (m) => (m == null ? "" : (Number(m) / 100).toFixed(2).replace(/\.00$/, ""));
+
+/* ---------------------------------------------------------------- *
+ * datetime-local <-> UTC ISO bridge — a <input type="datetime-local">
+ * has NO timezone; its value ("2026-08-14T01:22") is just wall-clock
+ * digits. The admin typing into it means THEIR OWN local time (Bangladesh
+ * for this project), but every starts_at/ends_at column is a real UTC
+ * instant (timestamptz). Passing the raw string straight to Supabase lets
+ * Postgres read it as UTC, silently shifting the actual start/end by the
+ * admin's UTC offset — a sale meant to start "now" in Dhaka (UTC+6) was
+ * landing 6 hours in the future, still showing "Scheduled" long after the
+ * admin's intended start time had already passed. These two helpers are
+ * the ONLY conversion points a datetime-local field should ever need:
+ * toUtcIso() at save time, toLocalInputValue() when populating the field
+ * from a value already in the form (freshly typed OR loaded from the DB —
+ * both are full ISO instants by the time this runs).
+ * ---------------------------------------------------------------- */
+export function toUtcIso(localValue) {
+  if (!localValue) return null;
+  const d = new Date(localValue); // no offset in the string -> parsed as browser-local time
+  return Number.isNaN(d.getTime()) ? null : d.toISOString();
+}
+export function toLocalInputValue(isoValue) {
+  if (!isoValue) return "";
+  const d = new Date(isoValue);
+  if (Number.isNaN(d.getTime())) return "";
+  const pad = (n) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
 export const majorToMinor = (v) => (v === "" || v == null ? null : Math.round(Number(v) * 100));
 export const money = (minor) =>
   minor == null ? "—" : `${CURRENCY.symbol}${(Number(minor) / 100).toLocaleString("en-BD", { maximumFractionDigits: 0 })}`;

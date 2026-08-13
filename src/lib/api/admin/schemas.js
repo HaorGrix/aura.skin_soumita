@@ -205,12 +205,52 @@ export const SLOTS = [
     slot: "footer.columns",
     label: "Footer",
     group: "Global",
+    help: "Controls the footer's blurb, link columns, and social icons across the whole site. The store name and current year in the bottom copyright line are always live — the text below just fills in the rest of that line.",
     fields: [
-      { key: "blurb", label: "Footer blurb", type: "textarea", max: 200, default: "" },
-      { key: "instagram", label: "Instagram URL", type: "text", default: "" },
-      { key: "facebook", label: "Facebook URL", type: "text", default: "" },
-      { key: "tiktok", label: "TikTok URL", type: "text", default: "" },
-      { key: "copyright", label: "Copyright line", type: "text", max: 90, default: "" },
+      {
+        key: "blurb", label: "Footer blurb — short description under the store name",
+        type: "textarea", max: 200,
+        default: "K- and J-Beauty, sourced honestly and sold without the theatre. Bangladesh-based, shipping nationwide.",
+      },
+      {
+        key: "links", label: "Footer links", type: "list", max: 16,
+        itemFields: [
+          { key: "column", label: "Column heading (e.g. Shop, About, Help) — links with the same heading are grouped together", type: "text", max: 20 },
+          { key: "label", label: "Link text", type: "text", max: 30 },
+          { key: "href", label: "Links to", type: "route" },
+        ],
+        default: [
+          { column: "Shop", label: "All Products", href: "/shop" },
+          { column: "Shop", label: "Best Sellers", href: "/shop?sort=best" },
+          { column: "Shop", label: "New Arrivals", href: "/shop?sort=newest" },
+          { column: "About", label: "Our Story", href: "/about" },
+          { column: "About", label: "Offers", href: "/offers" },
+          { column: "About", label: "Journal", href: "/journal" },
+          { column: "Help", label: "Shipping & Returns", href: "/shipping" },
+          { column: "Help", label: "Track Order", href: "/account?tab=orders" },
+          { column: "Help", label: "FAQs", href: "/contact" },
+          { column: "Help", label: "Contact", href: "/contact" },
+        ],
+      },
+      {
+        key: "instagram", label: "Instagram URL", type: "text",
+        help: "Leave blank to hide the Instagram icon entirely.",
+        default: "https://www.instagram.com/skintheorybd?utm_source=qr&igsh=MXM1N2xtZnB6aWRwYg==",
+      },
+      {
+        key: "facebook", label: "Facebook URL", type: "text",
+        help: "Leave blank to hide the Facebook icon entirely.",
+        default: "https://www.facebook.com/share/1BaNyk2kD1/",
+      },
+      {
+        key: "tiktok", label: "TikTok URL", type: "text",
+        help: "Leave blank to hide the TikTok icon entirely.",
+        default: "https://www.tiktok.com/@skin.theory1?_r=1&_t=ZS-98bLhjPjyHn",
+      },
+      {
+        key: "copyright", label: "Copyright tagline — shown after \"© {year} {store name} —\" at the very bottom",
+        type: "text", max: 90, default: "Glow within, bloom daily. 🌸",
+      },
     ],
   },
   {

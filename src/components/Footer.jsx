@@ -1,36 +1,9 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Check, ArrowRight, Instagram, Facebook } from "lucide-react";
 import { isValidEmail } from "../lib/email-validation.js";
 import { useStoreSettings } from "../lib/api/settings.js";
-
-const COLUMNS = [
-  {
-    title: "Shop",
-    links: [
-      { label: "All Products", href: "/shop" },
-      { label: "Best Sellers", href: "/shop?sort=best" },
-      { label: "New Arrivals", href: "/shop?sort=newest" },
-    ],
-  },
-      {
-        title: "About",
-        links: [
-      { label: "Our Story", href: "/about" },
-      { label: "Offers", href: "/offers" },
-      { label: "Journal", href: "/journal" },
-    ],
-  },
-  {
-    title: "Help",
-    links: [
-      { label: "Shipping & Returns", href: "/shipping" },
-      { label: "Track Order", href: "/account?tab=orders" },
-      { label: "FAQs", href: "/contact" },
-      { label: "Contact", href: "/contact" },
-    ],
-  },
-];
+import { useContent } from "../lib/api/content.js";
 
 /* lucide-react ships no TikTok glyph — inline outline, sized/stroked to
    match the Instagram/Facebook icons it sits next to. */
@@ -43,18 +16,38 @@ function TikTokIcon({ className }) {
   );
 }
 
-// Only real, live accounts — a placeholder handle would just be a new dead
-// link. Swap/extend this list once more accounts go live.
-const SOCIALS = [
-  { Icon: Facebook, label: "Facebook", href: "https://www.facebook.com/share/1BaNyk2kD1/" },
-  { Icon: Instagram, label: "Instagram", href: "https://www.instagram.com/skintheorybd?utm_source=qr&igsh=MXM1N2xtZnB6aWRwYg==" },
-  { Icon: TikTokIcon, label: "TikTok", href: "https://www.tiktok.com/@skin.theory1?_r=1&_t=ZS-98bLhjPjyHn" },
-];
-
 export default function Footer() {
   const { storeName } = useStoreSettings();
+  const { content } = useContent("footer.columns");
   const [email, setEmail] = useState("");
   const [sent, setSent] = useState(false);
+
+  // Group the flat admin-editable link list back into columns, in the order
+  // each column heading first appears — so an admin adding a brand-new
+  // heading just works without any code change here.
+  const columns = useMemo(() => {
+    const groups = [];
+    const byTitle = new Map();
+    for (const link of content.links ?? []) {
+      if (!link.column || !link.label || !link.href) continue;
+      let group = byTitle.get(link.column);
+      if (!group) {
+        group = { title: link.column, links: [] };
+        byTitle.set(link.column, group);
+        groups.push(group);
+      }
+      group.links.push({ label: link.label, href: link.href });
+    }
+    return groups;
+  }, [content.links]);
+
+  // Only accounts with a real URL show an icon — leaving a field blank in
+  // admin hides that icon entirely rather than linking to a dead "#".
+  const socials = [
+    { Icon: Facebook, label: "Facebook", href: content.facebook },
+    { Icon: Instagram, label: "Instagram", href: content.instagram },
+    { Icon: TikTokIcon, label: "TikTok", href: content.tiktok },
+  ].filter((s) => s.href);
 
   const ok = isValidEmail(email);
 
@@ -137,11 +130,10 @@ export default function Footer() {
               {storeName}
             </a>
             <p className="mt-3 max-w-xs text-sm leading-relaxed text-ink-soft">
-              K- and J-Beauty, sourced honestly and sold without the theatre.
-              Bangladesh-based, shipping nationwide.
+              {content.blurb}
             </p>
             <div className="mt-5 flex gap-2">
-              {SOCIALS.map(({ Icon, label, href }) => (
+              {socials.map(({ Icon, label, href }) => (
                 <a
                   key={label}
                   href={href}
@@ -156,7 +148,7 @@ export default function Footer() {
             </div>
           </div>
 
-          {COLUMNS.map((col) => (
+          {columns.map((col) => (
             <div key={col.title}>
               <h3 className="text-sm font-semibold text-ink">{col.title}</h3>
               <ul className="mt-4 space-y-2.5">
@@ -174,7 +166,7 @@ export default function Footer() {
 
         {/* Bottom bar */}
         <div className="mt-12 flex flex-col items-center justify-between gap-4 border-t border-line pt-6 text-xs text-ink-soft sm:flex-row">
-          <p>© {new Date().getFullYear()} {storeName} — Glow within, bloom daily. 🌸</p>
+          <p>© {new Date().getFullYear()} {storeName} — {content.copyright}</p>
           <div className="flex gap-5">
             <a href="/privacy" className="hover:text-magenta">Privacy</a>
             <a href="/terms" className="hover:text-magenta">Terms</a>

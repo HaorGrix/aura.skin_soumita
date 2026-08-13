@@ -19,7 +19,9 @@ const SETTINGS_FIELDS = [
   "tax_rate", "currency_code", "currency_symbol",
   "points_per_taka", "points_per_review", "low_stock_threshold",
   "support_email", "support_phone", "socials", "announcement_enabled",
-  "announcement_text", "maintenance_mode", "meta_pixel_id", "meta_pixel_enabled",
+  "announcement_text", "announcement_link_label", "announcement_link_href",
+  "announcement_starts_at", "announcement_ends_at",
+  "maintenance_mode", "meta_pixel_id", "meta_pixel_enabled",
 ];
 
 export async function saveSettings(input) {

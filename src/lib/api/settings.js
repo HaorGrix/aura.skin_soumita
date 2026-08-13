@@ -33,6 +33,10 @@ export const DEFAULT_SETTINGS = {
   maintenanceMode: false,
   announcementEnabled: true,
   announcementText: "Script Your Skin. Reveal Your Confidence.",
+  announcementLinkLabel: null,
+  announcementLinkHref: null,
+  announcementStartsAt: null,
+  announcementEndsAt: null,
   metaPixelId: null,
   metaPixelEnabled: false,
 };
@@ -57,6 +61,13 @@ function mapRow(row) {
     // (e.g. migration 0009 not yet applied) or left blank in /admin.
     announcementEnabled: row.announcement_enabled ?? DEFAULT_SETTINGS.announcementEnabled,
     announcementText: row.announcement_text || DEFAULT_SETTINGS.announcementText,
+    // Both optional — falls back to "not configured" the same way the
+    // Meta Pixel fields below do (migration 0041 not yet applied, or an
+    // admin who just hasn't set a link/schedule).
+    announcementLinkLabel: row.announcement_link_label || null,
+    announcementLinkHref: row.announcement_link_href || null,
+    announcementStartsAt: row.announcement_starts_at || null,
+    announcementEndsAt: row.announcement_ends_at || null,
     // Falls back to "not configured" if the column is missing (migration
     // 0035 not yet applied) — never inject a broken/empty pixel script.
     metaPixelId: row.meta_pixel_id || null,

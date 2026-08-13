@@ -54,7 +54,19 @@ export default function Navbar({ onOpenSearch, hasHero = false }) {
   // Admin-editable (Store settings → Announcement bar); falls back to a
   // sensible default (same pattern as shipping/tax settings) if the row or
   // the migration adding these columns hasn't landed yet.
-  const { announcementEnabled, announcementText, storeName } = useStoreSettings();
+  const {
+    announcementEnabled, announcementText, announcementLinkLabel, announcementLinkHref,
+    announcementStartsAt, announcementEndsAt, storeName,
+  } = useStoreSettings();
+  // A blank start/end means "no schedule" — always show while enabled.
+  // Comparing raw ISO strings against `new Date().toISOString()` would sort
+  // wrong (lexical vs chronological) for some formats, so this always goes
+  // through real Date objects.
+  const now = Date.now();
+  const withinSchedule =
+    (!announcementStartsAt || new Date(announcementStartsAt).getTime() <= now) &&
+    (!announcementEndsAt || new Date(announcementEndsAt).getTime() >= now);
+  const showAnnouncement = announcementEnabled && withinSchedule;
   // `scrolled` doubles as "should the header be solid" — true either from
   // scroll depth (hero pages) or unconditionally (every other page, which
   // has no hero image to overlay and would otherwise show a transparent
@@ -128,13 +140,24 @@ export default function Navbar({ onOpenSearch, hasHero = false }) {
       >
         {/* Static announcement bar — a slim deep-navy strip of boutique
             signage, replacing the scrolling ticker. No animation, no loop:
-            one considered line, then the nav row sits below it. Text
-            and visibility are admin-editable (Settings → Announcement bar). */}
-        {announcementEnabled && (
+            one considered line, then the nav row sits below it. Text,
+            visibility, an optional link, and an optional scheduled window
+            are all admin-editable (Settings → Announcement bar). */}
+        {showAnnouncement && (
           <div className="relative z-50 bg-magenta-deep py-2.5 text-center">
-            <p className="px-4 text-[11px] font-medium uppercase tracking-[0.18em] text-white/90 sm:text-xs">
-              {announcementText}
-            </p>
+            {announcementLinkHref ? (
+              <a
+                href={announcementLinkHref}
+                className="px-4 text-[11px] font-medium uppercase tracking-[0.18em] text-white/90 underline decoration-white/40 underline-offset-2 transition-colors hover:text-white sm:text-xs"
+              >
+                {announcementText}
+                {announcementLinkLabel ? ` — ${announcementLinkLabel}` : ""}
+              </a>
+            ) : (
+              <p className="px-4 text-[11px] font-medium uppercase tracking-[0.18em] text-white/90 sm:text-xs">
+                {announcementText}
+              </p>
+            )}
           </div>
         )}
 

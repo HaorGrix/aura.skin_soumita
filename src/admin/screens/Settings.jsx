@@ -9,6 +9,7 @@ import { useEffect, useMemo, useState } from "react";
 import { getSettings, saveSettings } from "../../lib/api/admin/settings.js";
 import {
   Card, MoneyField, PageHeader, SaveBar, Spinner, TextField, Toggle,
+  toLocalInputValue, toUtcIso,
 } from "../components/kit.jsx";
 
 export default function Settings() {
@@ -118,6 +119,22 @@ export default function Settings() {
             <TextField label="Announcement text" value={form.announcement_text ?? ""}
               onChange={setInput("announcement_text")}
               hint="Keep it to one short line — it's shown centered in a slim strip." />
+            <div className="grid gap-4 sm:grid-cols-2">
+              <TextField label="Link label (optional)" value={form.announcement_link_label ?? ""}
+                onChange={setInput("announcement_link_label")}
+                hint="Shown after the text, e.g. Shop now. Leave both link fields blank for plain, unclickable text." />
+              <TextField label="Link target (optional)" value={form.announcement_link_href ?? ""}
+                onChange={setInput("announcement_link_href")}
+                hint="A page on this site (/shop) or a full https:// URL." />
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <TextField label="Show from (optional)" type="datetime-local" hint="Your local time. Leave blank to show as soon as it's on."
+                value={toLocalInputValue(form.announcement_starts_at)}
+                onChange={(e) => set("announcement_starts_at")(toUtcIso(e.target.value))} />
+              <TextField label="Hide after (optional)" type="datetime-local" hint="Your local time. Leave blank to show indefinitely."
+                value={toLocalInputValue(form.announcement_ends_at)}
+                onChange={(e) => set("announcement_ends_at")(toUtcIso(e.target.value))} />
+            </div>
           </div>
         </Card>
 

@@ -24,20 +24,13 @@
  * =================================================================== */
 
 export const SLOTS = [
-  {
-    slot: "global.announcement",
-    label: "Announcement Bar",
-    group: "Global",
-    help: "The thin strip above the header. Leave the text empty to hide it.",
-    fields: [
-      { key: "enabled", label: "Show the bar", type: "boolean", default: false },
-      { key: "text", label: "Message", type: "text", max: 90, default: "" },
-      { key: "linkLabel", label: "Link text", type: "text", max: 24, default: "" },
-      { key: "linkHref", label: "Link target", type: "route", default: "/shop" },
-      { key: "startsAt", label: "Show from", type: "date", default: "" },
-      { key: "endsAt", label: "Hide after", type: "date", default: "" },
-    ],
-  },
+  // NOTE: there is deliberately no "global.announcement" slot here. It
+  // existed once but was never wired to anything, while a SEPARATE,
+  // genuinely working announcement bar has lived in Settings -> Announcement
+  // bar (store_settings.announcement_*) all along, read by Navbar.jsx. That
+  // one now has the link + schedule fields this dead slot used to promise
+  // (0041_announcement_bar_link_schedule.sql) — edit the bar from Settings,
+  // not from here.
   {
     slot: "home.hero",
     label: "Homepage Hero",

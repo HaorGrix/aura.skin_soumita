@@ -143,24 +143,61 @@ export const SLOTS = [
     slot: "page.about",
     label: "About Page",
     group: "Pages",
+    help: "Controls the headline and hero paragraph at the top of the About page. The stats, pillars, and values sections further down are fixed layout, not editable here yet.",
     fields: [
-      { key: "title", label: "Page title", type: "text", max: 60, default: "About" },
-      { key: "intro", label: "Introduction", type: "textarea", max: 400, default: "" },
-      { key: "body", label: "Main text", type: "textarea", max: 2000, default: "" },
-      { key: "image", label: "Feature image", type: "image", default: "" },
+      {
+        key: "title", label: "Page headline (H1) — the big heading at the top of the About page",
+        type: "text", max: 60, default: "Transparency in Every Drop.",
+      },
+      {
+        key: "intro",
+        label: "Hero paragraph — shown under the headline. Use {storeName} anywhere you want the live store name inserted",
+        type: "textarea", max: 400,
+        default: "We believe skincare is not just a market — it's a trust contract between a brand and a person's skin. Every decision we make at {storeName} flows from one question: \"Would we use this ourselves?\"",
+      },
+      { key: "body", label: "Extra text (not currently shown on the page — reserved)", type: "textarea", max: 2000, default: "" },
+      { key: "image", label: "Feature image (not currently shown on the page — reserved)", type: "image", default: "" },
     ],
   },
   {
     slot: "page.contact",
     label: "Contact Page",
     group: "Pages",
+    help: "Controls the headline, intro, and the Email / Phone / Social / Hours / Address details shown on the Contact page.",
     fields: [
-      { key: "title", label: "Page title", type: "text", max: 60, default: "Contact" },
-      { key: "intro", label: "Introduction", type: "textarea", max: 400, default: "" },
-      { key: "email", label: "Support email", type: "text", default: "" },
-      { key: "phone", label: "Support phone", type: "text", default: "" },
-      { key: "address", label: "Address", type: "textarea", max: 200, default: "" },
-      { key: "hours", label: "Opening hours", type: "text", max: 80, default: "" },
+      {
+        key: "title", label: "Page headline (H1) — the big heading at the top of the Contact page",
+        type: "text", max: 60, default: "Need routine help, order care, or a brand question?",
+      },
+      {
+        key: "intro", label: "Intro paragraph — shown under the headline",
+        type: "textarea", max: 400,
+        default: "Send a note to the care desk. The form handles routine requests, order questions, collaboration notes, and ingredient guidance in one tidy place.",
+      },
+      {
+        key: "email", label: "Support email", type: "text", default: "care@skinscript.com",
+        help: "Shown in the Email card on the Contact page, and used as its mailto: link.",
+      },
+      {
+        key: "phone", label: "Support phone", type: "text", default: "+880 1700 000 000",
+        help: "Shown in the Phone card on the Contact page. Also used as its tel: link — include the country code (e.g. +8801XXXXXXXXX) so the link dials correctly.",
+      },
+      {
+        key: "socialHandle", label: "Social handle", type: "text", default: "@skin.theory1",
+        help: "Shown in the Social card on the Contact page (e.g. @yourhandle).",
+      },
+      {
+        key: "socialUrl", label: "Social link URL", type: "text", default: "https://www.instagram.com/skintheorybd",
+        help: "Where the Social card links to. Leave blank to show the handle without a clickable link.",
+      },
+      {
+        key: "hours", label: "Opening hours", type: "text", max: 80,
+        default: "Saturday to Thursday, 10:00 AM - 7:00 PM",
+      },
+      {
+        key: "address", label: "Address / location line", type: "textarea", max: 200,
+        default: "Dhaka care studio, online-first delivery across Bangladesh",
+      },
     ],
   },
   {

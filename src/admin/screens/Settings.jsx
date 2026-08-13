@@ -86,11 +86,11 @@ export default function Settings() {
           </div>
         </Card>
 
-        <Card title="Contact details" description="Shown on the Contact page and in the footer.">
+        <Card title="Contact details" description="Store name is used site-wide. Support email/phone here are used only as the fallback contact mention in the legal pages (Privacy, Terms, Cookies, Shipping & Returns) — the Contact page's own Email/Phone/Social/Hours/Address cards are edited separately under Content → Contact Page.">
           <div className="grid gap-4">
             <TextField label="Store name" value={form.store_name ?? ""} onChange={setInput("store_name")} />
-            <TextField label="Support email" type="email" value={form.support_email ?? ""} onChange={setInput("support_email")} />
-            <TextField label="Support phone" value={form.support_phone ?? ""} onChange={setInput("support_phone")} />
+            <TextField label="Support email" type="email" hint="Fallback contact mention on legal pages only — not the Contact page." value={form.support_email ?? ""} onChange={setInput("support_email")} />
+            <TextField label="Support phone" hint="Fallback contact mention on legal pages only — not the Contact page." value={form.support_phone ?? ""} onChange={setInput("support_phone")} />
           </div>
         </Card>
 

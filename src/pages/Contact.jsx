@@ -17,6 +17,7 @@ import { Input } from "../components/ui/index.js";
 import PhoneInput from "../components/ui/PhoneInput.jsx";
 import { isValidEmail } from "../lib/email-validation.js";
 import { useStoreSettings } from "../lib/api/settings.js";
+import { useContent } from "../lib/api/content.js";
 
 const buildFaqs = (storeName) => [
   {
@@ -37,16 +38,17 @@ const buildFaqs = (storeName) => [
   },
 ];
 
-const CONTACT_CARDS = [
-  { icon: Mail, title: "Email", text: "care@skinscript.com", href: "mailto:care@skinscript.com" },
-  { icon: Phone, title: "Phone", text: "+880 1700 000 000", href: "tel:+8801700000000" },
-  { icon: Instagram, title: "Social", text: "@skinscript", href: "#" },
-];
-
 export default function Contact() {
   const { toast } = useToast();
   const { storeName } = useStoreSettings();
+  const { content } = useContent("page.contact");
   const FAQS = buildFaqs(storeName);
+
+  const contactCards = [
+    { icon: Mail, title: "Email", text: content.email, href: `mailto:${content.email}` },
+    { icon: Phone, title: "Phone", text: content.phone, href: `tel:${content.phone.replace(/[^\d+]/g, "")}` },
+    { icon: Instagram, title: "Social", text: content.socialHandle, href: content.socialUrl || "#" },
+  ];
   const [openFaq, setOpenFaq] = useState(0);
   const [form, setForm] = useState({
     name: "",
@@ -100,16 +102,14 @@ export default function Contact() {
               Contact {storeName}
             </p>
             <h1 className="mt-4 max-w-2xl font-serif text-[clamp(2.55rem,7vw,5.4rem)] leading-[0.96]">
-              Need routine help, order care, or a brand question?
+              {content.title}
             </h1>
             <p className="mt-6 max-w-xl text-base leading-relaxed text-ink-soft sm:text-lg">
-              Send a note to the care desk. The form handles routine requests,
-              order questions, collaboration notes, and ingredient guidance in
-              one tidy place.
+              {content.intro}
             </p>
 
             <div className="mt-8 grid gap-3 sm:grid-cols-3 lg:grid-cols-1 xl:grid-cols-3">
-              {CONTACT_CARDS.map((card) => (
+              {contactCards.map((card) => (
                 <a
                   key={card.title}
                   href={card.href}
@@ -125,11 +125,11 @@ export default function Contact() {
             <div className="mt-6 grid gap-3 rounded-[1.25rem] bg-magenta p-5 text-white shadow-[var(--shadow-glow-pink)] ring-1 ring-magenta-deep/30">
               <p className="inline-flex items-center gap-2 text-sm">
                 <Clock className="h-4 w-4 text-white" strokeWidth={1.8} />
-                Saturday to Thursday, 10:00 AM - 7:00 PM
+                {content.hours}
               </p>
               <p className="inline-flex items-center gap-2 text-sm text-white/80">
                 <MapPin className="h-4 w-4 text-white" strokeWidth={1.8} />
-                Dhaka care studio, online-first delivery across Bangladesh
+                {content.address}
               </p>
             </div>
           </motion.div>

@@ -14,6 +14,7 @@ import {
 import Button from "../components/ui/Button.jsx";
 import Footer from "../components/Footer.jsx";
 import { useStoreSettings } from "../lib/api/settings.js";
+import { useContent } from "../lib/api/content.js";
 
 /* ─────────────────────────────────────────────
    Shared motion config — stays inside design
@@ -119,7 +120,9 @@ const ACCENT_BORDER = {
 ───────────────────────────────────────────── */
 export default function About() {
   const { storeName } = useStoreSettings();
+  const { content } = useContent("page.about");
   const PILLARS = buildPillars(storeName);
+  const heroIntro = (content.intro || "").replace(/\{storeName\}/g, storeName);
   return (
     <div className="flex min-h-screen flex-col bg-snow text-ink">
 
@@ -146,17 +149,13 @@ export default function About() {
 
           <Reveal delay={1}>
             <h1 className="mt-6 font-serif text-[clamp(3rem,8vw,6.5rem)] leading-[0.95] tracking-tight text-ink">
-              Transparency{" "}
-              <span className="italic text-magenta">in Every Drop.</span>
+              {content.title}
             </h1>
           </Reveal>
 
           <Reveal delay={2}>
             <p className="mx-auto mt-8 max-w-2xl text-[1.1rem] leading-relaxed text-ink-soft sm:text-xl">
-              We believe skincare is not just a market — it's a trust contract between
-              a brand and a person's skin. Every decision we make at {storeName} flows
-              from one question:{" "}
-              <em className="text-ink">"Would we use this ourselves?"</em>
+              {heroIntro}
             </p>
           </Reveal>
 

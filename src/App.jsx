@@ -32,6 +32,7 @@ const About = lazy(() => import("./pages/About.jsx"));
 const Rewards = lazy(() => import("./pages/Rewards.jsx"));
 const Offers = lazy(() => import("./pages/Offers.jsx"));
 const Journal = lazy(() => import("./pages/Articles.jsx"));
+const JournalArticle = lazy(() => import("./pages/JournalArticle.jsx"));
 const ShippingReturns = lazy(() => import("./pages/ShippingReturns.jsx"));
 const Privacy = lazy(() => import("./pages/Privacy.jsx"));
 const Terms = lazy(() => import("./pages/Terms.jsx"));
@@ -78,6 +79,11 @@ function useRoute() {
     if (p === "/rewards") return { name: "rewards" };
     if (p === "/offers") return { name: "offers" };
     if (p === "/journal") return { name: "journal" };
+    if (p.startsWith("/journal/")) {
+      let slug = p.slice("/journal/".length);
+      try { slug = decodeURIComponent(slug); } catch { /* keep raw slug */ }
+      return { name: "journal-article", slug };
+    }
     if (p === "/shipping") return { name: "shipping" };
     if (p === "/privacy") return { name: "privacy" };
     if (p === "/terms") return { name: "terms" };
@@ -250,6 +256,8 @@ export default function App() {
                 <ErrorBoundary><Offers /></ErrorBoundary>
               ) : route.name === "journal" ? (
                 <ErrorBoundary><Journal /></ErrorBoundary>
+              ) : route.name === "journal-article" ? (
+                <ErrorBoundary><JournalArticle slug={route.slug} /></ErrorBoundary>
               ) : route.name === "shipping" ? (
                 <ErrorBoundary><ShippingReturns /></ErrorBoundary>
               ) : route.name === "privacy" ? (

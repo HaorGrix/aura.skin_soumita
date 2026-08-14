@@ -9,13 +9,13 @@
  * =================================================================== */
 import { useEffect, useState } from "react";
 import { Plus, Search, X } from "lucide-react";
-import { deactivateSale, listSales, previewSaleScope, saveSale } from "../../lib/api/admin/promos.js";
+import { deactivateSale, deleteSale, listSales, previewSaleScope, saveSale } from "../../lib/api/admin/promos.js";
 import { listCategories, listBrands, listProducts as listCatalogProducts, listProductsByIds } from "../../lib/api/admin/catalog.js";
 import { SingleImageField } from "../components/ImageManager.jsx";
 import { useAdmin } from "../context.js";
 import {
   Btn, ConfirmModal, DataTable, Modal, PageHeader, Pill, SelectField, Spinner,
-  TextField, Toggle, money, useAsync,
+  TextField, Toggle, money, toLocalInputValue, toUtcIso, useAsync,
 } from "../components/kit.jsx";
 
 // "all" (whole catalog) and "specific" (products/categories/brands) are
@@ -33,6 +33,7 @@ export default function Sales() {
   const { can } = useAdmin();
   const [editing, setEditing] = useState(null);
   const [ending, setEnding] = useState(null);
+  const [deleting, setDeleting] = useState(null);
   const list = useAsync(() => listSales(), []);
 
   const state = (s) => {
@@ -85,20 +86,28 @@ export default function Sales() {
           sale={editing} onClose={() => setEditing(null)}
           onSaved={() => { setEditing(null); list.reload(); }}
           onEnd={() => setEnding(editing)}
+          onDelete={() => setDeleting(editing)}
         />
       )}
 
       <ConfirmModal
         open={!!ending} onClose={() => setEnding(null)} danger
         title="End this sale?" confirmLabel="End it"
-        body="Prices go back to normal and the campaign banner disappears from the storefront."
+        body="Prices go back to normal and the campaign banner disappears from the storefront. The campaign itself stays on record — this doesn't delete it."
         onConfirm={async () => { await deactivateSale(ending.id); setEditing(null); list.reload(); }}
+      />
+
+      <ConfirmModal
+        open={!!deleting} onClose={() => setDeleting(null)} danger
+        title={`Delete "${deleting?.name}"?`} confirmLabel="Delete"
+        body="This removes the campaign entirely — it can't be undone. Past orders keep whatever price they actually charged either way; this only removes the campaign record itself."
+        onConfirm={async () => { await deleteSale(deleting.id); setEditing(null); list.reload(); }}
       />
     </>
   );
 }
 
-function SaleModal({ sale, onClose, onSaved, onEnd }) {
+function SaleModal({ sale, onClose, onSaved, onEnd, onDelete }) {
   const [form, setForm] = useState(sale);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
@@ -138,7 +147,10 @@ function SaleModal({ sale, onClose, onSaved, onEnd }) {
       footer={
         <>
           {sale.id && (
-            <Btn variant="ghost" size="sm" className="mr-auto text-red-600" onClick={onEnd}>End sale</Btn>
+            <div className="mr-auto flex gap-2">
+              <Btn variant="ghost" size="sm" className="text-red-600" onClick={onEnd}>End sale</Btn>
+              <Btn variant="ghost" size="sm" className="text-red-600" onClick={onDelete}>Delete</Btn>
+            </div>
           )}
           <Btn variant="secondary" size="sm" onClick={onClose}>Cancel</Btn>
           <Btn size="sm" loading={busy} onClick={handleSave}>Save</Btn>
@@ -153,10 +165,10 @@ function SaleModal({ sale, onClose, onSaved, onEnd }) {
           value={form.value_percent ?? ""} onChange={(e) => set("value_percent")(Number(e.target.value))} />
         <TextField label="Priority" hint="Higher wins when sales overlap" type="number"
           value={form.priority ?? 0} onChange={(e) => set("priority")(Number(e.target.value))} />
-        <TextField label="Starts" type="datetime-local" required
-          value={form.starts_at?.slice(0, 16) ?? ""} onChange={(e) => set("starts_at")(e.target.value)} />
-        <TextField label="Ends" type="datetime-local" required
-          value={form.ends_at?.slice(0, 16) ?? ""} onChange={(e) => set("ends_at")(e.target.value)} />
+        <TextField label="Starts" type="datetime-local" required hint="Your local time"
+          value={toLocalInputValue(form.starts_at)} onChange={(e) => set("starts_at")(toUtcIso(e.target.value))} />
+        <TextField label="Ends" type="datetime-local" required hint="Your local time"
+          value={toLocalInputValue(form.ends_at)} onChange={(e) => set("ends_at")(toUtcIso(e.target.value))} />
         <TextField label="Banner text" hint="Shown on the storefront while the sale runs"
           value={form.banner_text ?? ""} onChange={(e) => set("banner_text")(e.target.value)} className="sm:col-span-2" />
         <TextField label="Badge label" hint='Shown on the card, e.g. "SUMMER SALE", "CLEARANCE"'
@@ -268,6 +280,7 @@ function ProductPicker({ selected, onChange }) {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState([]);
   const [searching, setSearching] = useState(false);
+  const [loadError, setLoadError] = useState(null);
   const [labels, setLabels] = useState({}); // id -> "Brand — Name"
 
   useEffect(() => {
@@ -284,17 +297,21 @@ function ProductPicker({ selected, onChange }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- only re-resolve for ids we don't have a label for yet
   }, [selected.filter((id) => !labels[id]).join(",")]);
 
+  // Browse the catalog by default (query "") so opening the picker shows
+  // real products to pick from immediately, not a blank box waiting for a
+  // search term — the admin asked to "see and select from my actual
+  // product catalog," not hunt for the right keyword first.
   useEffect(() => {
-    if (!query.trim()) { setResults([]); return; }
     let alive = true;
     setSearching(true);
     const t = setTimeout(() => {
-      listCatalogProducts({ search: query, pageSize: 15 }).then(({ data }) => {
+      listCatalogProducts({ search: query, pageSize: query.trim() ? 15 : 30 }).then(({ data, error }) => {
         if (!alive) return;
-        setResults(data ?? []);
+        if (error) setLoadError(error.message);
+        else { setLoadError(null); setResults(data ?? []); }
         setSearching(false);
       });
-    }, 250);
+    }, query.trim() ? 250 : 0);
     return () => { alive = false; clearTimeout(t); };
   }, [query]);
 
@@ -314,28 +331,37 @@ function ProductPicker({ selected, onChange }) {
         <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-ink-soft" />
         <input
           value={query} onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search by name, brand, or SKU…"
+          placeholder="Browse below, or search by name, brand, or SKU…"
           className="w-full rounded-xl border border-line bg-white py-2 pl-8 pr-3 text-xs outline-none focus:border-magenta"
         />
       </div>
 
-      {(searching || results.length > 0) && (
-        <div className="mt-1.5 max-h-40 overflow-y-auto rounded-lg bg-white ring-1 ring-line">
-          {searching && <p className="px-3 py-2 text-xs text-ink-soft">Searching…</p>}
-          {!searching && results.map((p) => (
-            <button key={p.id} type="button" onClick={() => add(p)}
-              disabled={selected.includes(p.id)}
-              className="flex w-full items-center justify-between px-3 py-1.5 text-left text-xs hover:bg-snow disabled:opacity-40">
-              <span className="truncate">{p.brand} — {p.name}</span>
-              {selected.includes(p.id) && <span className="shrink-0 text-ink-soft">Added</span>}
-            </button>
-          ))}
-        </div>
-      )}
+      <div className="mt-1.5 max-h-52 overflow-y-auto rounded-lg bg-white ring-1 ring-line">
+        {!query.trim() && !searching && (
+          <p className="border-b border-line px-3 py-1.5 text-[11px] text-ink-soft">
+            {results.length > 0 ? "Your catalog — search to narrow" : ""}
+          </p>
+        )}
+        {searching && <p className="px-3 py-2 text-xs text-ink-soft">Loading…</p>}
+        {loadError && <p className="px-3 py-2 text-xs text-red-600">Couldn't load products: {loadError}</p>}
+        {!searching && !loadError && results.length === 0 && (
+          <p className="px-3 py-2 text-xs text-ink-soft">
+            {query.trim() ? "No products match that search." : "No products in the catalog yet."}
+          </p>
+        )}
+        {!searching && results.map((p) => (
+          <button key={p.id} type="button" onClick={() => add(p)}
+            disabled={selected.includes(p.id)}
+            className="flex w-full items-center justify-between px-3 py-1.5 text-left text-xs hover:bg-snow disabled:opacity-40">
+            <span className="truncate">{p.brand} — {p.name}</span>
+            {selected.includes(p.id) && <span className="shrink-0 text-ink-soft">Added</span>}
+          </button>
+        ))}
+      </div>
 
       <div className="mt-2 flex flex-wrap gap-1.5">
         {selected.length === 0 && (
-          <p className="text-xs text-ink-soft">No products selected yet — search above to add some.</p>
+          <p className="text-xs text-ink-soft">No products selected yet — pick some from the list above.</p>
         )}
         {selected.map((id) => (
           <span key={id} className="inline-flex items-center gap-1 rounded-full bg-magenta/10 px-2.5 py-1 text-xs text-magenta-deep ring-1 ring-magenta/20">

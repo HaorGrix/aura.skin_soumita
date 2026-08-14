@@ -1,39 +1,20 @@
 import { motion } from "framer-motion";
 import { ArrowUpRight } from "lucide-react";
+import { useRecentArticles, journalImageUrl } from "../../lib/api/journal.js";
 
-// Journal cover art lives in /assests as jounal{1,2,3}.png. Each card maps to
-// its own file; missing files fall back to the gradient wash (see onError).
-const ARTICLES = [
-  {
-    tag: "Routine",
-    title: "The 10-Step Korean Skincare Routine, Explained",
-    excerpt: "Everything you need to know about the famous K-beauty philosophy, from oil cleansing to the final layer of SPF.",
-    read: "8 min read",
-    tone: "var(--color-petal)",
-    img: new URL("../../../assests/jounal1.png", import.meta.url).href,
-    link: "https://sokoglam.com/pages/the-korean-skin-care-routine"
-  },
-  {
-    tag: "Ingredients",
-    title: "Salicylic Acid & BHA: Your Guide to Clearer Skin",
-    excerpt: "How beta-hydroxy acids unclog pores, smooth texture, and calm breakouts — plus the gentle K-beauty toners that do it best.",
-    read: "5 min read",
-    tone: "var(--color-cyan-soft)",
-    img: new URL("../../../assests/journal2.webp", import.meta.url).href,
-    link: "https://kbeautyworld.com/blogs/skincare-101/salicylic-acid-bha-skincare"
-  },
-  {
-    tag: "Hydration",
-    title: "The Best Korean Moisturizers for Dry Skin",
-    excerpt: "From rich creams to barrier-loving balms, these K-beauty picks quench thirsty skin and seal in a dewy, lasting glow.",
-    read: "6 min read",
-    tone: "var(--color-gold-soft)",
-    img: new URL("../../../assests/joournal3.webp", import.meta.url).href,
-    link: "https://kbeautyworld.com/blogs/skincare-101/korean-moisturizers-for-dry-skin"
-  },
-];
+// Same gradient wash the admin's category pills rotate through — no per-
+// article "tone" field in the DB, so it's derived deterministically from
+// the article's position so cards still read as distinct, not because any
+// admin picks a colour when writing a post.
+const TONES = ["var(--color-petal)", "var(--color-cyan-soft)", "var(--color-gold-soft)"];
 
 export default function Journal() {
+  const { articles, ready } = useRecentArticles(3);
+
+  // Nothing published yet: render nothing, same as an unfilled CMS slot
+  // elsewhere in this project (testimonials, hero carousel).
+  if (ready && articles.length === 0) return null;
+
   return (
     <section id="journal" className="py-10 sm:py-14">
       <div className="mx-auto max-w-7xl px-5 sm:px-8">
@@ -53,34 +34,32 @@ export default function Journal() {
         </div>
 
         <div className="mt-6 grid gap-4 sm:grid-cols-2 md:gap-5 lg:grid-cols-3">
-          {ARTICLES.map((a, i) => (
+          {articles.map((a, i) => (
             <motion.a
-              key={a.title}
-              href={a.link}
-              target="_blank"
-              rel="noopener noreferrer"
+              key={a.id}
+              href={`/journal/${a.slug}`}
               initial={{ opacity: 0, y: 24 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, amount: 0.2 }}
               transition={{ duration: 0.5, delay: i * 0.1, ease: [0.22, 1, 0.36, 1] }}
               whileHover={{ y: -6 }}
-              className="group flex flex-col overflow-hidden rounded-[1.5rem] bg-white ring-1 ring-line transition-shadow duration-500 hover:shadow-lift"
+              className="group flex flex-col overflow-hidden rounded-none bg-white ring-1 ring-line transition-shadow duration-500 hover:shadow-lift"
             >
               <div
                 className="relative aspect-[16/10] overflow-hidden"
-                style={{ background: `radial-gradient(120% 100% at 30% 0%, #fff, ${a.tone})` }}
+                style={{ background: `radial-gradient(120% 100% at 30% 0%, #fff, ${TONES[i % TONES.length]})` }}
               >
-                {/* Cover image — sits over the gradient; if the file isn't
-                    present yet it hides itself, revealing the gradient wash. */}
-                <img
-                  src={a.img}
-                  alt={a.title}
-                  loading="lazy"
-                  onError={(e) => { e.currentTarget.style.display = "none"; }}
-                  className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
-                />
+                {a.cover_image && (
+                  <img
+                    src={journalImageUrl(a.cover_image)}
+                    alt={a.title}
+                    loading="lazy"
+                    onError={(e) => { e.currentTarget.style.display = "none"; }}
+                    className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+                  />
+                )}
                 <span className="absolute left-4 top-4 rounded-full bg-white/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-magenta backdrop-blur">
-                  {a.tag}
+                  {a.category}
                 </span>
                 <span className="absolute right-4 top-4 grid h-9 w-9 place-items-center rounded-full bg-white/80 text-ink backdrop-blur transition-transform duration-300 group-hover:rotate-45">
                   <ArrowUpRight className="h-4 w-4" strokeWidth={1.8} />
@@ -94,7 +73,7 @@ export default function Journal() {
                   {a.excerpt}
                 </p>
                 <div className="mt-auto flex items-center justify-between pt-4 text-xs">
-                  <span className="text-ink-soft">{a.read}</span>
+                  <span className="text-ink-soft">{a.read_minutes ?? 5} min read</span>
                   <span className="inline-flex items-center gap-1 font-semibold text-magenta">
                     Read more
                     <ArrowUpRight className="h-3.5 w-3.5 transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" strokeWidth={2} />

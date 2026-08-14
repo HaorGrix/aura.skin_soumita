@@ -40,7 +40,7 @@ export default function Testimonials() {
     <>
       <PageHeader
         title="Testimonials"
-        subtitle="Featured entries rotate on the homepage, one per week — text quotes ranked by star rating, images by priority then recency."
+        subtitle="Featured entries show together as a grid on the homepage — feature as many as you want. Above 9 at once, they rotate weekly (text quotes ranked by star rating, images by priority then recency)."
         actions={!readOnly && (
           <Btn onClick={() => setEditing({ type: "text", is_featured: true, priority: 0 })}>
             <Plus className="h-4 w-4" /> Add testimonial
@@ -49,12 +49,12 @@ export default function Testimonials() {
       />
 
       <div className="mb-6 rounded-xl bg-petal px-4 py-3 text-sm text-magenta-deep">
-        <strong>What this controls:</strong> the trust card on the homepage, shown
+        <strong>What this controls:</strong> the trust wall on the homepage, shown
         right before the Journal section — it's meant to reassure a shopper
         that real customers have bought and loved these products before they
-        check out. Only one entry shows at a time; mark the ones you want in
-        rotation as <strong>Featured</strong> below and the homepage
-        automatically swaps to a different one each week.
+        check out. Mark as many entries as you want as <strong>Featured</strong>{" "}
+        below and every one of them shows together, up to 9 at once; feature
+        more than that and the homepage rotates which 9 show, weekly.
       </div>
 
       {list.loading ? (
@@ -182,10 +182,10 @@ function TestimonialModal({ testimonial, onClose, onSaved }) {
         </>
       }>
       <p className="mb-4 rounded-xl bg-petal px-4 py-3 text-xs leading-relaxed text-magenta-deep">
-        This appears in the trust section on the homepage, shown to build
-        confidence before a purchase. Choose one featured entry — a text
-        quote or a photo collage of reviews — and it goes into the weekly
-        rotation shown to shoppers.
+        This appears in the trust wall on the homepage, shown to build
+        confidence before a purchase. A text quote or a photo collage of
+        reviews — mark it Featured below and it joins every other featured
+        entry on the homepage grid.
       </p>
 
       {error && <p className="mb-4 rounded-xl bg-red-50 px-4 py-2.5 text-sm text-red-700">{error}</p>}

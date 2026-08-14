@@ -81,7 +81,7 @@ export default function Rituals() {
                 initial={{ opacity: 0, y: 18 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.4, delay: i * 0.08 }}
-                className="group relative flex flex-col overflow-hidden rounded-[1.5rem] bg-white p-6 ring-1 ring-line transition-shadow duration-500 hover:shadow-lift"
+                className="group relative flex flex-col overflow-hidden rounded-none bg-white p-6 ring-1 ring-line transition-shadow duration-500 hover:shadow-lift"
               >
                 <span
                   aria-hidden

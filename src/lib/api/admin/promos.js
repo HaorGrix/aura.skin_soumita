@@ -139,6 +139,16 @@ export async function deactivateSale(id) {
   return { data, error };
 }
 
+/** Hard delete — unlike coupons, a sale has no redemption/usage table that
+ *  references it (order_items records the actual charged unit_price_minor
+ *  directly, never a sale_id), so there's no history to orphan. Always
+ *  available; End sale is still the right first move for anything
+ *  currently running. */
+export async function deleteSale(id) {
+  const { error } = await supabase.from("sales").delete().eq("id", id);
+  return { error };
+}
+
 /**
  * Which products would this sale actually touch, and at what price?
  * Shown as a preview before the client activates a campaign — the difference

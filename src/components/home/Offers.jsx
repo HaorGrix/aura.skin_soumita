@@ -28,9 +28,13 @@ function OfferCard({ offer, index }) {
       viewport={{ once: true, amount: 0.3 }}
       transition={{ duration: 0.55, delay: index * 0.1, ease: EASE }}
       whileHover={{ y: -8 }}
-      className="group relative flex flex-col overflow-hidden rounded-[1.75rem] bg-white shadow-soft ring-1 ring-line transition-shadow duration-500 hover:shadow-[var(--shadow-glow-pink)]"
+      className="group relative flex flex-col overflow-hidden rounded-none bg-white shadow-soft ring-1 ring-line transition-shadow duration-500 hover:shadow-[var(--shadow-glow-pink)]"
     >
-      {/* Banner — object-contain on a branded glow so nothing is ever cropped */}
+      {/* Banner — object-contain on a branded glow so a wrongly-sized upload
+          is never cropped, but NO padding: the container is exactly
+          aspect-[4/3] (matching the upload guidance), so a correctly-sized
+          800×600 image fills it edge to edge with zero gradient showing.
+          Padding here would reintroduce a gutter even for a perfect upload. */}
       <div
         className="relative aspect-[4/3] overflow-hidden"
         style={{ background: `radial-gradient(120% 120% at 30% 0%, #fff 0%, ${offer.tone} 90%)` }}
@@ -40,11 +44,18 @@ function OfferCard({ offer, index }) {
           alt={`${offer.badge} — ${offer.title}`}
           loading="lazy"
           decoding="async"
-          className="absolute inset-0 h-full w-full object-contain p-3 transition-transform duration-[900ms] ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform group-hover:scale-[1.04]"
+          className="absolute inset-0 h-full w-full object-contain transition-transform duration-[900ms] ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform group-hover:scale-[1.04]"
         />
 
+        {/* Scrim behind the badge — an admin-uploaded banner is often a
+            designed graphic with its own busy top corner (ribbons, text),
+            not a plain product photo. The badge is app chrome, not part of
+            that image, so it needs guaranteed contrast regardless of what's
+            underneath rather than just sitting directly on the pixels. */}
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-20 bg-gradient-to-b from-ink/45 to-transparent" />
+
         {/* Limited-offer badge with a live pinging dot */}
-        <span className="absolute left-4 top-4 inline-flex items-center gap-1.5 rounded-full bg-magenta px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wide text-white shadow-glow-pink">
+        <span className="absolute left-4 top-4 inline-flex items-center gap-1.5 rounded-full bg-magenta px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wide text-white shadow-lift ring-1 ring-white/40">
           <span className="relative flex h-2 w-2">
             <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white/80" />
             <span className="relative inline-flex h-2 w-2 rounded-full bg-white" />
@@ -121,7 +132,7 @@ export default function Offers() {
         <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {loading
             ? Array.from({ length: 3 }).map((_, i) => (
-                <div key={i} className="aspect-[4/3] animate-pulse rounded-[1.75rem] bg-white/60 ring-1 ring-line" />
+                <div key={i} className="aspect-[4/3] animate-pulse rounded-none bg-white/60 ring-1 ring-line" />
               ))
             : offers.map((offer, i) => (
                 <OfferCard key={sales[i].id} offer={offer} index={i} />

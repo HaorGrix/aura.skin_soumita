@@ -38,7 +38,7 @@ export default function WhyAura() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, amount: 0.3 }}
               transition={{ duration: 0.5, delay: i * 0.08, ease: [0.22, 1, 0.36, 1] }}
-              className="rounded-[1.5rem] bg-white p-7 text-center ring-1 ring-line transition-shadow duration-500 hover:shadow-soft"
+              className="rounded-none bg-white p-7 text-center ring-1 ring-line transition-shadow duration-500 hover:shadow-soft"
             >
               <span className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-petal text-magenta">
                 <p.icon className="h-6 w-6" strokeWidth={1.7} />

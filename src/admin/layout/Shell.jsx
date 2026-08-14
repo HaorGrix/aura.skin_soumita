@@ -8,7 +8,7 @@
  * =================================================================== */
 import { useEffect, useState } from "react";
 import {
-  Award, BarChart3, Boxes, ClipboardList, FileText, FolderTree, LayoutDashboard, LogOut,
+  Award, BarChart3, BookOpen, Boxes, ClipboardList, FileText, FolderTree, LayoutDashboard, LogOut,
   Menu, MessageSquareQuote, Package, Percent, Settings as SettingsIcon, ShieldCheck, Tag, Truck, Users, X,
 } from "lucide-react";
 import { signOut } from "../../lib/api/admin/auth.js";
@@ -37,6 +37,7 @@ const NAV = [
   { group: "Storefront", items: [
     { id: "content",       label: "Content & banners", icon: FileText,          min: "editor" },
     { id: "testimonials",  label: "Testimonials",      icon: MessageSquareQuote, min: "editor" },
+    { id: "journal",       label: "Journal",           icon: BookOpen,          min: "editor" },
   ]},
   { group: "System", items: [
     { id: "settings",  label: "Store settings", icon: SettingsIcon, min: "admin" },

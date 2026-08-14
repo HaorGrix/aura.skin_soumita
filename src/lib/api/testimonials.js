@@ -6,15 +6,26 @@
  * Supabase, zero featured rows: every one of those means the homepage
  * testimonial section just doesn't render, never a crash or a blank card.
  *
- * Weekly rotation, no cron job required: featured entries are ranked once
- * (text by rating desc, image by priority desc then created_at desc,
- * merged into one list), and the current ISO week number indexes into that
- * list, wrapping around. Every visitor in the same week sees the same
- * entry; it changes at the week boundary because the index itself is
- * derived from the calendar, not from stored state.
+ * The homepage shows the WHOLE featured set as a grid, not one card — the
+ * admin decides how many are in rotation (1, 3, 9, whatever), and every one
+ * of them shows at once as long as it fits within MAX_VISIBLE. Only past
+ * that ceiling does the weekly rotation kick in: featured entries are
+ * ranked once (text by rating desc, image by priority desc then created_at
+ * desc, merged into one list), and the current ISO week number picks a
+ * MAX_VISIBLE-sized WINDOW into that list, wrapping around — so the same
+ * subset holds for everyone within a week, then quietly slides to the next
+ * window at the week boundary, no cron job required, same "derived from
+ * the calendar, not from stored state" trick the old single-pick version
+ * used.
  * =================================================================== */
 import { useEffect, useState } from "react";
 import { publicUrl } from "./storage-url.js";
+
+// How many cards the homepage grid ever shows in one go. Featuring at or
+// under this many means the rotation below never engages — everything the
+// admin featured just shows, always. Raise or lower freely; nothing else
+// needs to change.
+export const MAX_VISIBLE_TESTIMONIALS = 9;
 
 let cache = null; // the ranked featured list, fetched once per page view
 
@@ -57,23 +68,33 @@ async function fetchFeatured() {
   return cache;
 }
 
-/** This week's testimonial, or null (never featured any, offline, etc.) —
- *  callers render nothing when null, exactly like a never-edited CMS slot. */
-export function useWeeklyTestimonial() {
-  const [testimonial, setTestimonial] = useState(null);
+/** This week's visible SET of testimonials — every featured entry when
+ *  there are MAX_VISIBLE_TESTIMONIALS or fewer, else a rotating window of
+ *  that size. Empty array (never null) when there's nothing featured, so
+ *  callers can test `.length` directly; render nothing at length 0, exactly
+ *  like a never-edited CMS slot. */
+export function useFeaturedTestimonials() {
+  const [testimonials, setTestimonials] = useState([]);
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
     let alive = true;
     fetchFeatured().then((list) => {
       if (!alive) return;
-      if (list.length) setTestimonial(list[isoWeekNumber(new Date()) % list.length]);
+      if (list.length <= MAX_VISIBLE_TESTIMONIALS) {
+        setTestimonials(list);
+      } else {
+        const start = isoWeekNumber(new Date()) % list.length;
+        setTestimonials(
+          Array.from({ length: MAX_VISIBLE_TESTIMONIALS }, (_, i) => list[(start + i) % list.length])
+        );
+      }
       setReady(true);
     });
     return () => { alive = false; };
   }, []);
 
-  return { testimonial, ready };
+  return { testimonials, ready };
 }
 
 export function testimonialImageUrl(path) {

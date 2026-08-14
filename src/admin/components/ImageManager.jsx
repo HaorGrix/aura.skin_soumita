@@ -322,15 +322,23 @@ export function SingleImageField({ label, value, onChange, hint }) {
     if (file.size > MAX_BYTES) return setError("Image must be under 5 MB.");
     setBusy(true); setError(null);
 
-    const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
-    const path = `content/${crypto.randomUUID()}.${ext}`;
-    const { error } = await supabase.storage
-      .from("product-images")
-      .upload(path, file, { cacheControl: "31536000", upsert: false });
+    try {
+      const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
+      const path = `content/${crypto.randomUUID()}.${ext}`;
+      const { error } = await supabase.storage
+        .from("product-images")
+        .upload(path, file, { cacheControl: "31536000", upsert: false });
 
-    setBusy(false);
-    if (error) setError(error.message);
-    else onChange(path);
+      if (error) setError(error.message);
+      else onChange(path);
+    } catch (e) {
+      // A thrown (not returned) error — network drop, storage misconfig —
+      // must still clear `busy`, or the button is stuck disabled-looking
+      // ("not clickable") for the rest of the session with no explanation.
+      setError(e.message || "Upload failed. Please try again.");
+    } finally {
+      setBusy(false);
+    }
   }
 
   return (

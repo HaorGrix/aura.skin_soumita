@@ -75,12 +75,20 @@ function mapProduct(row) {
   // this view already avoids for is_on_sale/discount_percent.
   const hasFlashSale = row.sale_price_minor != null && row.sale_price_minor < row.price_minor;
   const effectivePriceMinor = hasFlashSale ? row.sale_price_minor : row.price_minor;
-  // Whichever "before" price is actually higher wins the strike-through —
-  // a manual markdown's compare_at_minor if it's still above the flash-sale
-  // price, else the pre-flash-sale price itself.
-  const compareAtMinor = row.compare_at_minor != null && row.compare_at_minor > effectivePriceMinor
-    ? row.compare_at_minor
-    : hasFlashSale ? row.price_minor : null;
+  // While a flash sale is running, the badge/strike-through must show THAT
+  // sale's own discount off the product's current price — never compounded
+  // against an unrelated pre-existing compare_at_minor markdown. Compounding
+  // is what let a 15% flash sale show a "-49%" badge on a product that
+  // already had its own separate 40%-ish markdown: mathematically the true
+  // total-off-original-list, but wrong for a page whose entire point is
+  // "here's what THIS sale does" — every card there must match the sale's
+  // own stated percentage, not a stale/different number. Without an active
+  // flash sale, the product's own manual compare_at_minor still applies.
+  const compareAtMinor = hasFlashSale
+    ? row.price_minor
+    : row.compare_at_minor != null && row.compare_at_minor > row.price_minor
+      ? row.compare_at_minor
+      : null;
   const compareAt = compareAtMinor != null ? compareAtMinor / LEGACY_PRICE_SCALE : undefined;
   const discountPercent = compareAtMinor != null
     ? Math.round((1 - effectivePriceMinor / compareAtMinor) * 100)

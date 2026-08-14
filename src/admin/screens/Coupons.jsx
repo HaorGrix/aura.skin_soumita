@@ -14,7 +14,7 @@ import {
 import { useAdmin } from "../context.js";
 import {
   Btn, Card, ConfirmModal, DataTable, Modal, MoneyField, PageHeader, Pill,
-  SearchInput, SelectField, TextField, Toggle, money, useAsync,
+  SearchInput, SelectField, TextField, Toggle, money, toLocalInputValue, toUtcIso, useAsync,
 } from "../components/kit.jsx";
 
 const BLANK = {
@@ -207,11 +207,11 @@ function CouponModal({ coupon, onClose, onSaved, onDeactivate, onDelete, readOnl
             valueMinor={form.max_discount_minor} onChangeMinor={set("max_discount_minor")} />
         )}
 
-        <TextField label="Starts" type="datetime-local" value={form.starts_at?.slice(0, 16) ?? ""}
-          disabled={readOnly} onChange={(e) => set("starts_at")(e.target.value || null)} />
-        <TextField label="Expires" type="datetime-local" hint="Leave empty for no expiry"
-          value={form.ends_at?.slice(0, 16) ?? ""} disabled={readOnly}
-          onChange={(e) => set("ends_at")(e.target.value || null)} />
+        <TextField label="Starts" type="datetime-local" value={toLocalInputValue(form.starts_at)}
+          disabled={readOnly} onChange={(e) => set("starts_at")(toUtcIso(e.target.value))} />
+        <TextField label="Expires" type="datetime-local" hint="Leave empty for no expiry — your local time"
+          value={toLocalInputValue(form.ends_at)} disabled={readOnly}
+          onChange={(e) => set("ends_at")(toUtcIso(e.target.value))} />
 
         <TextField label="Total uses allowed" type="number" min="1" hint="Leave empty for unlimited"
           value={form.usage_limit ?? ""} disabled={readOnly}

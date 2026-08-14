@@ -60,7 +60,7 @@ function ConcernCard({ tile }) {
       href={`/shop?concern=${encodeURIComponent(tile.label)}`}
       whileHover={{ y: -6 }}
       transition={{ type: "spring", stiffness: 300, damping: 24 }}
-      className="group relative w-[15.5rem] shrink-0 snap-start overflow-hidden rounded-[1.75rem] shadow-soft ring-1 ring-line transition-shadow duration-500 hover:shadow-lift sm:w-[17.5rem]"
+      className="group relative w-[15.5rem] shrink-0 snap-start overflow-hidden rounded-none shadow-soft ring-1 ring-line transition-shadow duration-500 hover:shadow-lift sm:w-[17.5rem]"
     >
       <div className="relative aspect-[3/4] overflow-hidden">
         {/* Branded gradient — always painted (fallback + soft glow base) */}

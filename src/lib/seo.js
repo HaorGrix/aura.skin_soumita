@@ -40,6 +40,17 @@ function routeMeta(brand) {
 /* Resolve title/description for a route. Product pages pull the real product
  * name from the catalog so each PDP gets a unique, descriptive title. */
 function metaFor(route, brand) {
+  if (route.name === "journal-article") {
+    // Article content loads async client-side, so there's no catalog to
+    // pull a real title from synchronously (unlike PRODUCTS below) — a
+    // generic Journal-branded title/description here still beats falling
+    // through to the 404 meta, and applySeo re-runs on every route change
+    // so a follow-up pass (once fetched) could refine this later if needed.
+    return {
+      title: `The Journal — ${brand}`,
+      description: `Routines, ingredient explainers and glass-skin guides from the ${brand} Journal.`,
+    };
+  }
   if (route.name === "product") {
     const p = PRODUCTS.find((x) => x.id === route.id);
     if (p) {

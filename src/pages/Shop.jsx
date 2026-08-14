@@ -510,7 +510,8 @@ export default function Shop() {
                overflow and inflate the document height. */
             className="relative hidden lg:flex lg:h-full lg:min-h-0 lg:flex-col lg:overflow-y-auto lg:overscroll-contain lg:rounded-2xl lg:bg-snow lg:p-4 lg:ring-1 lg:ring-line scrollbar-thin"
           >
-            <FilterPanel filters={filters} onToggle={toggleFilter} onClear={clearFilters} />
+            <FilterPanel filters={filters} onToggle={toggleFilter} onClear={clearFilters}
+              hiddenGroups={saleId ? ["discount"] : []} />
           </aside>
 
           {/* RIGHT PANE — products. Own scroll on desktop; rides page scroll on mobile. */}
@@ -677,6 +678,7 @@ export default function Shop() {
                   onClear={clearFilters}
                   sort={sort}
                   onSortChange={setSort}
+                  hiddenGroups={saleId ? ["discount"] : []}
                 />
               </div>
 

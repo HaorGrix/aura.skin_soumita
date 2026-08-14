@@ -190,8 +190,9 @@ function SortFacet({ value, onChange }) {
  * picker at the top (used by the mobile drawer; desktop has its own toolbar
  * SortMenu and omits these props).
  */
-export function FilterPanel({ filters, onToggle, onClear, sort, onSortChange }) {
+export function FilterPanel({ filters, onToggle, onClear, sort, onSortChange, hiddenGroups = [] }) {
   const active = countActive(filters);
+  const groups = GROUPS.filter((g) => !hiddenGroups.includes(g.key));
   return (
     <div>
       <div className="flex items-center justify-between pb-2">
@@ -206,7 +207,7 @@ export function FilterPanel({ filters, onToggle, onClear, sort, onSortChange }) 
         )}
       </div>
       {onSortChange && <SortFacet value={sort} onChange={onSortChange} />}
-      {GROUPS.map((g, i) => (
+      {groups.map((g, i) => (
         <FacetGroup
           key={g.key}
           group={g}

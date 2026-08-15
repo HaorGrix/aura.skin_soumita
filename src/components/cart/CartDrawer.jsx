@@ -95,7 +95,7 @@ export default function CartDrawer() {
                 <div className="border-t border-line px-5 py-4">
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-ink-soft">Subtotal</span>
-                    <span className="font-serif text-xl text-ink">
+                    <span className="font-sans font-semibold text-xl text-ink">
                       {formatPrice(subtotal)}
                     </span>
                   </div>
@@ -155,7 +155,7 @@ function EmptyBag({ onClose }) {
       >
         🛍️
       </motion.div>
-      <h3 className="mt-6 font-serif text-2xl text-ink">Your bag is empty</h3>
+      <h3 className="mt-6 font-display text-2xl text-ink">Your bag is empty</h3>
       <p className="mt-2 text-sm text-ink-soft">
         Let’s find your next glass-skin staple. Your glow awaits. ✨
       </p>

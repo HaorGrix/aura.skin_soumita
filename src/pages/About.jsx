@@ -239,7 +239,7 @@ export default function About() {
                 <span className={`mb-5 inline-grid h-12 w-12 place-items-center rounded-2xl ${ACCENT_ICON[p.accent]}`}>
                   <p.icon className="h-5 w-5" strokeWidth={1.7} />
                 </span>
-                <h3 className="font-serif text-xl leading-snug text-ink">
+                <h3 className="font-display text-xl leading-snug text-ink">
                   {p.title}
                 </h3>
                 <p className="mt-3 flex-1 text-sm leading-relaxed text-ink-soft">
@@ -308,7 +308,7 @@ export default function About() {
               <span className="inline-grid h-14 w-14 place-items-center rounded-2xl bg-magenta text-white shadow-[var(--shadow-glow-pink)]">
                 <RotateCcw className="h-6 w-6" strokeWidth={1.7} />
               </span>
-              <h3 className="mt-5 font-serif text-2xl leading-snug text-white">
+              <h3 className="mt-5 font-display text-2xl leading-snug text-white">
                 30-Day Money-Back Promise
               </h3>
               <p className="mt-3 text-sm leading-relaxed text-white/60">

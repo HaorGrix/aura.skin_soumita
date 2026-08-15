@@ -76,13 +76,16 @@
      (desaturated from #d4af37 so it reads as jewellery, not neon) */
   --color-gold-soft: #ddc99a;
 
-  /* — Typography — */
-  --font-serif: "Instrument Serif", ui-serif, Georgia, serif;
+  /* — Typography (client spec) — */
+  /* H1/H2 — page titles, section headings. */
+  --font-serif: "Cormorant Garamond", ui-serif, Georgia, serif;
+  /* Body text (400) AND price (600) — both live on Inter, weight is what
+     tells them apart at each call site. */
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
-  /* Condensed all-caps display face — category tiles and similar labels.
-     Bebas Neue has no lowercase and only one weight, so it is a LABEL font
-     only; body copy stays on --font-sans. */
-  --font-display: "Bebas Neue", "Inter Tight", ui-sans-serif, sans-serif;
+  /* H3 / product titles, buttons, nav & menu items — weight varies per
+     call site (600 for headings/buttons, 500 for nav), same family.
+     Replaces the earlier Bebas Neue treatment on product name/price. */
+  --font-display: "Montserrat", "Inter Tight", ui-sans-serif, sans-serif;
 
   /* — Fluid type scale — */
   --text-display: clamp(2.85rem, 8.5vw, 7.5rem);
@@ -177,12 +180,17 @@
   }
 
   h1,
-  h2,
+  h2 {
+    font-family: var(--font-serif);
+    font-weight: 600;
+    letter-spacing: -0.015em;
+  }
+
   h3,
   h4 {
-    font-family: var(--font-serif);
-    font-weight: 400;
-    letter-spacing: -0.015em;
+    font-family: var(--font-display);
+    font-weight: 600;
+    letter-spacing: -0.01em;
   }
 
   /* When Lenis is active it adds .lenis to <html> */

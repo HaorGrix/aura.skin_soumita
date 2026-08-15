@@ -77,8 +77,8 @@ export default function Shell({ route, onNavigate, children }) {
                   <button
                     key={item.id}
                     onClick={() => onNavigate(`/admin/${item.id === "dashboard" ? "" : item.id}`)}
-                    className={`mb-0.5 flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-sm transition-colors ${
-                      active ? "bg-petal font-medium text-magenta-deep" : "text-ink-soft hover:bg-snow hover:text-ink"
+                    className={`mb-0.5 flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 font-display text-sm font-medium transition-colors ${
+                      active ? "bg-petal text-magenta-deep" : "text-ink-soft hover:bg-snow hover:text-ink"
                     }`}
                   >
                     <Icon className="h-4 w-4 shrink-0" strokeWidth={1.75} />

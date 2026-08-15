@@ -43,7 +43,7 @@ export default function WhyAura() {
               <span className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-petal text-magenta">
                 <p.icon className="h-6 w-6" strokeWidth={1.7} />
               </span>
-              <h3 className="mt-4 font-serif text-xl text-ink">{p.title}</h3>
+              <h3 className="mt-4 font-display text-xl text-ink">{p.title}</h3>
               <p className="mt-1.5 text-sm leading-relaxed text-ink-soft">{p.text}</p>
             </motion.div>
           ))}

@@ -18,7 +18,7 @@ import { PRODUCTS } from "../data/products.js";
  * private/utility pages that should never appear in search results. */
 function routeMeta(brand) {
   return {
-    home:     { title: `${brand} — Glow within. Bloom daily.`, description: "Real K- & J-Beauty skincare from authorised distributors. Barrier-first formulas for glass skin — plus honest advice on what to skip." },
+    home:     { title: `${brand} — The Theory Behind Timeless Skin`, description: "Real K- & J-Beauty skincare from authorised distributors. Barrier-first formulas for glass skin — plus honest advice on what to skip." },
     shop:     { title: `Shop all skincare — ${brand}`, description: "Browse authentic K- & J-Beauty cleansers, toners, serums, moisturisers and SPF. Filter by skin type, concern, brand and price." },
     cart:     { title: `Your bag — ${brand}`, description: "Review the items in your shopping bag.", noindex: true },
     checkout: { title: `Checkout — ${brand}`, description: "Complete your order securely.", noindex: true },

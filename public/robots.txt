@@ -1,5 +1,5 @@
-# skin.script — robots policy
-# NOTE: replace skinscript.example.com below with your real production domain.
+# skin.theory — robots policy
+# Production domain: skintheorybd.shop
 
 User-agent: *
 Allow: /
@@ -10,4 +10,4 @@ Disallow: /checkout
 Disallow: /account
 Disallow: /wishlist
 
-Sitemap: https://skinscript.example.com/sitemap.xml
+Sitemap: https://skintheorybd.shop/sitemap.xml

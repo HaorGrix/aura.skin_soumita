@@ -86,7 +86,7 @@ export function Card({ title, description, children, className = "", actions }) 
 
 export function Btn({ variant = "primary", size = "md", className = "", loading, children, ...props }) {
   const base =
-    "inline-flex items-center justify-center gap-2 rounded-xl font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50";
+    "inline-flex items-center justify-center gap-2 rounded-xl font-display font-semibold tracking-wider transition-colors disabled:cursor-not-allowed disabled:opacity-50";
   const sizes = { sm: "px-3 py-1.5 text-xs", md: "px-4 py-2.5 text-sm", lg: "px-5 py-3 text-sm" };
   const variants = {
     primary: "bg-magenta text-white hover:bg-magenta-deep",

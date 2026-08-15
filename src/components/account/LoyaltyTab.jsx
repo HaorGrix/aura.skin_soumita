@@ -87,7 +87,7 @@ export default function LoyaltyTab() {
 
       {coupons.length > 0 && (
         <section>
-          <h3 className="mb-4 text-sm font-semibold text-ink">Your Unlocked Rewards</h3>
+          <h3 className="mb-4 font-display text-sm text-ink">Your Unlocked Rewards</h3>
           <div className="grid gap-4 sm:grid-cols-2">
             {coupons.map((c) => (
               <div

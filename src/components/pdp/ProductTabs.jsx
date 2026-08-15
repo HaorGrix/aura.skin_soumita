@@ -68,15 +68,15 @@ function Description({ product }) {
   return (
     <div className="grid gap-8 lg:grid-cols-[1.4fr_1fr]">
       <div className="max-w-2xl">
-        <h3 className="font-serif text-2xl text-ink">The story</h3>
+        <h3 className="font-display text-2xl text-ink">The story</h3>
         <p className="mt-3 leading-relaxed text-ink-soft">
           {product.longDescription}
         </p>
-        <h4 className="mt-6 font-serif text-xl text-ink">Our philosophy 🌸</h4>
+        <h4 className="mt-6 font-display text-xl text-ink">Our philosophy 🌸</h4>
         <p className="mt-2 leading-relaxed text-ink-soft">{product.philosophy}</p>
       </div>
       <div className="rounded-[1.25rem] bg-snow p-6 ring-1 ring-line">
-        <h4 className="text-sm font-semibold text-ink">At a glance</h4>
+        <h4 className="font-display text-sm text-ink">At a glance</h4>
         <dl className="mt-4 space-y-3 text-sm">
           <Row k="Category" v={product.category} />
           <Row k="Best for" v={product.skinType.join(", ")} />
@@ -100,7 +100,7 @@ function Row({ k, v }) {
 function Ingredients({ product }) {
   return (
     <div>
-      <h3 className="font-serif text-2xl text-ink">Key ingredients</h3>
+      <h3 className="font-display text-2xl text-ink">Key ingredients</h3>
       <p className="mt-2 max-w-xl text-ink-soft">
         Clean, effective actives — nothing harsh, everything purposeful.
       </p>
@@ -131,7 +131,7 @@ function Ingredients({ product }) {
 function HowToUse({ product }) {
   return (
     <div>
-      <h3 className="font-serif text-2xl text-ink">Your ritual, step by step</h3>
+      <h3 className="font-display text-2xl text-ink">Your ritual, step by step</h3>
       <div className="mt-6 grid gap-5 sm:grid-cols-3">
         {product.howTo.map((step, i) => (
           <motion.div

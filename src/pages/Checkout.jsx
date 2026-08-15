@@ -397,7 +397,7 @@ export default function Checkout() {
               <ChevronDown className={`h-4 w-4 transition-transform ${summaryOpen ? "rotate-180" : ""}`} strokeWidth={1.8} />
               {summaryOpen ? "Hide" : "Show"} order summary
             </span>
-            <span className="font-serif text-lg text-ink">{formatPrice(total)}</span>
+            <span className="font-sans font-semibold text-lg text-ink">{formatPrice(total)}</span>
           </button>
           <AnimatePresence>
             {summaryOpen && (
@@ -506,7 +506,7 @@ export default function Checkout() {
               <button
                 onClick={next}
                 disabled={(step === 0 && !isPhoneValid) || processing}
-                className={`inline-flex items-center justify-center gap-2 rounded-full px-8 py-3.5 text-sm font-semibold text-white transition-all ${
+                className={`inline-flex items-center justify-center gap-2 rounded-full px-8 py-3.5 font-display text-sm font-semibold tracking-wider text-white transition-all ${
                   processing
                     ? "cursor-not-allowed bg-ink/20"
                     : "bg-magenta hover:shadow-[var(--shadow-glow-pink)]"
@@ -671,7 +671,7 @@ function DeliveryStep({
               tampered with.
             </p>
             <p className="mt-3 text-sm font-medium text-ink-soft">
-              Amount due on delivery: <span className="font-serif text-lg text-magenta">{formatPrice(total)}</span>
+              Amount due on delivery: <span className="font-sans font-semibold text-lg text-magenta">{formatPrice(total)}</span>
             </p>
           </div>
         </div>

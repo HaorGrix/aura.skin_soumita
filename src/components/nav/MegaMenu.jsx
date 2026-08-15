@@ -217,7 +217,7 @@ export default function MegaMenu({ label = "Shop", href = "/shop" }) {
 /* Matched to the other desktop nav links so the trigger is visually
    indistinguishable from them apart from the chevron. */
 const TRIGGER_CLS =
-  "group relative rounded-full px-4 py-2 text-sm font-medium text-ink/70 transition-colors hover:text-ink";
+  "group relative rounded-full px-4 py-2 font-display text-sm font-medium text-ink/70 transition-colors hover:text-ink";
 const UNDERLINE_CLS =
   "absolute inset-x-4 -bottom-0.5 h-0.5 origin-left scale-x-0 rounded-full bg-magenta transition-transform duration-300 group-hover:scale-x-100";
 

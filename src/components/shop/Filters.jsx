@@ -196,7 +196,7 @@ export function FilterPanel({ filters, onToggle, onClear, sort, onSortChange, hi
   return (
     <div>
       <div className="flex items-center justify-between pb-2">
-        <h3 className="font-serif text-xl text-ink">Filters</h3>
+        <h3 className="font-display text-xl text-ink">Filters</h3>
         {active > 0 && (
           <button
             onClick={onClear}

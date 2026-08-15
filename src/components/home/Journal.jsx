@@ -66,7 +66,7 @@ export default function Journal() {
                 </span>
               </div>
               <div className="flex flex-1 flex-col p-5">
-                <h3 className="line-clamp-2 font-serif text-lg leading-snug text-ink transition-colors group-hover:text-magenta">
+                <h3 className="line-clamp-2 font-display text-lg leading-snug text-ink transition-colors group-hover:text-magenta">
                   {a.title}
                 </h3>
                 <p className="mt-2 line-clamp-3 text-sm leading-relaxed text-ink-soft">

@@ -92,7 +92,7 @@ export default function Rituals() {
                   <span className="text-4xl">{step.emoji}</span>
                   <span className="font-serif text-2xl text-magenta/30">0{i + 1}</span>
                 </div>
-                <h3 className="relative mt-4 font-serif text-xl text-ink">
+                <h3 className="relative mt-4 font-display text-xl text-ink">
                   {step.title}
                 </h3>
                 <p className="relative mt-1.5 text-sm leading-relaxed text-ink-soft">

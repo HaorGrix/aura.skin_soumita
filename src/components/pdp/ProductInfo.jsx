@@ -144,7 +144,7 @@ export default function ProductInfo({ product, onWriteReview }) {
       <p className="text-xs font-semibold uppercase tracking-[0.18em] text-magenta">
         {product.brand}
       </p>
-      <h1 className="mt-2 font-display uppercase text-[clamp(1.9rem,4vw,2.75rem)] leading-tight text-ink">
+      <h1 className="mt-2 font-display text-[clamp(1.9rem,4vw,2.75rem)] leading-tight text-ink">
         {product.name}
       </h1>
 
@@ -183,7 +183,7 @@ export default function ProductInfo({ product, onWriteReview }) {
       {/* Price — reflects whichever size is selected below */}
       <div className="mt-5 flex items-center gap-3">
         <span
-          className={`font-display uppercase text-3xl ${
+          className={`font-sans font-semibold text-3xl ${
             unitIsOnSale ? "text-magenta" : "text-ink"
           }`}
         >
@@ -191,7 +191,7 @@ export default function ProductInfo({ product, onWriteReview }) {
         </span>
         {unitIsOnSale && unitCompareAt > unitPrice && (
           <>
-            <span className="font-display uppercase text-lg text-ink-soft line-through">
+            <span className="font-sans text-lg text-ink-soft line-through">
               {formatPrice(unitCompareAt)}
             </span>
             <span className="rounded-full bg-magenta px-2.5 py-1 text-xs font-bold text-white">
@@ -420,7 +420,7 @@ function MobileAddBar({ product, inStock, price, adding, added, onAdd, onNotify 
       <div className="flex items-center gap-3">
         <div className="min-w-0">
           <p className="truncate text-xs text-ink-soft">{product.brand}</p>
-          <p className="font-display uppercase text-lg leading-none text-ink">
+          <p className="font-sans font-semibold text-lg leading-none text-ink">
             {formatPrice(price)}
           </p>
         </div>

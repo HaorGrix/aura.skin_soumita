@@ -195,7 +195,7 @@ export default function Navbar({ onOpenSearch, hasHero = false }) {
                 <a
                   key={link.label}
                   href={link.href}
-                  className="group relative rounded-full px-4 py-2 text-sm font-medium text-ink/70 transition-colors hover:text-ink"
+                  className="group relative rounded-full px-4 py-2 font-display text-sm font-medium text-ink/70 transition-colors hover:text-ink"
                 >
                   {link.label}
                   <span className="absolute inset-x-4 -bottom-0.5 h-0.5 origin-left scale-x-0 rounded-full bg-magenta transition-transform duration-300 group-hover:scale-x-100" />
@@ -364,7 +364,7 @@ export default function Navbar({ onOpenSearch, hasHero = false }) {
                     <a
                       href={link.href}
                       onClick={() => setOpen(false)}
-                      className="group flex items-center justify-between py-4 font-serif text-[1.7rem] leading-none text-ink transition-all hover:pl-2 hover:text-magenta"
+                      className="group flex items-center justify-between py-4 font-display text-[1.7rem] font-medium leading-none text-ink transition-all hover:pl-2 hover:text-magenta"
                     >
                       {link.label}
                       <ChevronRight

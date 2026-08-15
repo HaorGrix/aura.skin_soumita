@@ -221,7 +221,7 @@ export default function TrackingModal({ isOpen, onClose, orderData }) {
               animate={{ opacity: 1 }}
               transition={{ delay: 0.5 }}
             >
-              <h3 className="font-semibold text-ink mb-4">
+              <h3 className="font-display text-ink mb-4">
                 Order Summary
               </h3>
               <div className="space-y-2 text-sm">

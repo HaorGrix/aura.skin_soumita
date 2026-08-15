@@ -47,8 +47,8 @@ export default function OrderSummary({
       </dl>
 
       <div className="mt-4 flex items-center justify-between border-t border-line pt-4">
-        <span className="font-serif text-lg text-ink">Total</span>
-        <span className="font-serif text-2xl text-ink">{formatPrice(total)}</span>
+        <span className="font-sans font-semibold text-lg text-ink">Total</span>
+        <span className="font-sans font-semibold text-2xl text-ink">{formatPrice(total)}</span>
       </div>
 
       {children && <div className="mt-5">{children}</div>}

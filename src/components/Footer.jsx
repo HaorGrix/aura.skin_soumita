@@ -150,7 +150,7 @@ export default function Footer() {
 
           {columns.map((col) => (
             <div key={col.title}>
-              <h3 className="text-sm font-semibold text-ink">{col.title}</h3>
+              <h3 className="font-display text-sm text-ink">{col.title}</h3>
               <ul className="mt-4 space-y-2.5">
                 {col.links.map((l) => (
                   <li key={l.label}>

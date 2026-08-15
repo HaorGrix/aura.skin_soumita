@@ -105,8 +105,8 @@ export const type = {
   display: "font-serif text-[clamp(2.85rem,8.5vw,7.5rem)] leading-[0.92] tracking-[-0.015em]",
   h1: "font-serif text-[clamp(2.25rem,6vw,4.5rem)] leading-[1.02] tracking-[-0.015em]",
   h2: "font-serif text-[clamp(1.75rem,4vw,3rem)] leading-[1.08] tracking-[-0.01em]",
-  h3: "font-serif text-2xl sm:text-3xl leading-snug",
-  h4: "font-serif text-xl sm:text-2xl leading-snug",
+  h3: "font-display text-2xl sm:text-3xl leading-snug",
+  h4: "font-display text-xl sm:text-2xl leading-snug",
   lead: "font-sans text-lg sm:text-xl leading-relaxed text-ink-soft",
   body: "font-sans text-base leading-relaxed",
   small: "font-sans text-sm leading-relaxed",
@@ -124,7 +124,7 @@ export const type = {
  * ------------------------------------------------------------------ */
 export const btn = {
   base:
-    "group relative inline-flex items-center justify-center gap-2 font-semibold tracking-wide " +
+    "group relative inline-flex items-center justify-center gap-2 font-display font-semibold tracking-wider " +
     "rounded-full will-change-transform select-none transition-[box-shadow,background-color,color,border-color] " +
     "duration-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-magenta " +
     "focus-visible:ring-offset-2 focus-visible:ring-offset-transparent disabled:opacity-50 disabled:pointer-events-none",

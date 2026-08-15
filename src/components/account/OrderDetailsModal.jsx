@@ -46,7 +46,7 @@ export default function OrderDetailsModal({ order, onClose }) {
 
           {/* Body */}
           <div className="overflow-y-auto px-6 py-5 scrollbar-thin">
-            <h3 className="mb-4 text-sm font-semibold text-ink">Items in your order</h3>
+            <h3 className="mb-4 font-display text-sm text-ink">Items in your order</h3>
             <ul className="space-y-4">
               {order.items.map((id, index) => {
                 const p = productById[id];

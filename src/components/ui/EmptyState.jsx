@@ -26,7 +26,7 @@ export default function EmptyState({
       >
         {emoji}
       </motion.div>
-      <h3 className="mt-6 font-serif text-2xl text-ink">{title}</h3>
+      <h3 className="mt-6 font-display text-2xl text-ink">{title}</h3>
       <p className="mt-2 text-sm text-ink-soft">{message}</p>
       {actionLabel && (
         <Button variant="primary" size="md" className="mt-7" onClick={onAction}>

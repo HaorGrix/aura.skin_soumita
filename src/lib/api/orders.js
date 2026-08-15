@@ -76,6 +76,12 @@ export function checkoutErrorMessage(error, { productName } = {}) {
       return "Your bag is empty.";
     case "EMAIL_REQUIRED":
       return "We need an email address to send your confirmation.";
+    case "EMAIL_INVALID":
+      return "Please enter a valid email address.";
+    case "PHONE_INVALID":
+      return "Please enter a valid phone number.";
+    case "ADDRESS_INVALID":
+      return "Please shorten one of your shipping details — it's longer than we can store.";
     case "PRODUCT_NOT_FOUND":
     case "VARIANT_NOT_FOUND":
       return "Something in your bag is no longer available. Please remove it and try again.";

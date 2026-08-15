@@ -24,7 +24,9 @@ export function reviewErrorMessage(error) {
     case "INVALID_RATING":
       return "Please choose a star rating.";
     case "INVALID_BODY":
-      return "Please write a few more words.";
+      return "Please write a few more words (or trim it down a little).";
+    case "INVALID_TITLE":
+      return "That title's a bit long — please shorten it.";
     default:
       return "Couldn't publish your review. Please try again.";
   }

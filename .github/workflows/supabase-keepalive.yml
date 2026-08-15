@@ -1,0 +1,43 @@
+name: Supabase keep-alive
+
+# Supabase's free tier auto-pauses a project after 7 days with no API
+# activity — a paused project stops serving requests entirely until
+# someone manually unpauses it from the dashboard. Before the store has
+# real traffic (and as a safety net even after), this pings a public,
+# always-existing row once a day so the project never goes quiet long
+# enough to trip that timer.
+#
+# store_settings is a singleton row (id = true) with `for select using
+# (true)` RLS (0002_admin_foundation.sql) — readable with just the anon
+# key, so no service-role secret is needed here. A GET through
+# PostgREST is a real API request against the live database, not a
+# dashboard-only "visit", which is what Supabase's inactivity check
+# actually tracks.
+#
+# Needs two repo secrets (Settings -> Secrets and variables -> Actions):
+#   SUPABASE_URL       = same value as VITE_SUPABASE_URL in .env.local
+#   SUPABASE_ANON_KEY  = same value as VITE_SUPABASE_ANON_KEY in .env.local
+# Both are already public (shipped in the browser bundle), so there's no
+# new secret being introduced here.
+on:
+  schedule:
+    - cron: "17 4 * * *" # once daily, 04:17 UTC — arbitrary off-peak minute
+  workflow_dispatch: {} # lets you trigger a manual run from the Actions tab to verify it works
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Supabase REST API
+        run: |
+          status=$(curl -s -o /tmp/response.json -w "%{http_code}" \
+            "${{ secrets.SUPABASE_URL }}/rest/v1/store_settings?select=id&limit=1" \
+            -H "apikey: ${{ secrets.SUPABASE_ANON_KEY }}" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}")
+          echo "HTTP status: $status"
+          cat /tmp/response.json
+          echo
+          if [ "$status" != "200" ]; then
+            echo "::error::Keep-alive ping failed with HTTP $status — Supabase project may be paused or secrets are misconfigured."
+            exit 1
+          fi

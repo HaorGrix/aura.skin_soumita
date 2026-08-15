@@ -33,9 +33,14 @@ export function statusMeta(id) {
  * every time it was used. Reinstating a cancelled order is rare; getting
  * inventory quietly wrong is not an acceptable price for it. The correct
  * action is to place a new order, which deducts stock properly.
+ *
+ * `delivered`'s only legal next status is `refunded` (0044) — a return
+ * after delivery is a normal flow, and set_order_status() now allows
+ * exactly this one transition out of an otherwise terminal state.
  */
 export function nextStatuses(current) {
-  if (current === "delivered" || current === "refunded" || current === "cancelled") return [];
+  if (current === "delivered") return ["refunded"];
+  if (current === "refunded" || current === "cancelled") return [];
   return ORDER_STATUSES.map((s) => s.id).filter((s) => s !== current);
 }
 

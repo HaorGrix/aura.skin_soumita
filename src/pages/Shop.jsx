@@ -151,6 +151,15 @@ export default function Shop() {
   const [categorySlugs, setCategorySlugs] = useState([]);
   const [categoryNames, setCategoryNames] = useState([]); // fallback, see results memo
   const [activeCategoryName, setActiveCategoryName] = useState(null);
+  // True only when the URL carries a ?category= that doesn't resolve to any
+  // node in the tree (a dead/misspelled slug, or a nav link — CategoryTiles,
+  // the mega menu — pointing at a category that was never created). Kept
+  // apart from `categorySlugs` because an empty categorySlugs array means
+  // BOTH "no category was ever specified" and "one was specified but
+  // doesn't exist" — the results memo needs to tell those apart, or a
+  // dead category link silently shows the whole unfiltered catalog instead
+  // of the empty result a nonexistent category actually has.
+  const [categoryUnresolved, setCategoryUnresolved] = useState(false);
   const productCategory = useProductCategoryMap();
 
   // ?sale=<id> — a homepage "Glow deals" card link, filtering to exactly
@@ -198,6 +207,7 @@ export default function Shop() {
     if (!raw) {
       pendingCategoryRef.current = false;
       setCategorySlugs([]); setCategoryNames([]); setActiveCategoryName(null);
+      setCategoryUnresolved(false);
       return;
     }
 
@@ -212,6 +222,7 @@ export default function Shop() {
     // and holding the guard forever would freeze the URL for the whole visit.
     pendingCategoryRef.current = false;
     setCategorySlugs(slugs);
+    setCategoryUnresolved(slugs.length === 0);
     setCategoryNames([...new Set(
       raw.split(",").map((t) => t.trim()).filter(Boolean)
         .flatMap((token) => categoryNamesFor(categoryTree, token))
@@ -256,6 +267,11 @@ export default function Shop() {
     // names are no longer unique across the tree — this narrows by the
     // product's actual category slug instead.
     //
+    // A ?category= that didn't resolve to any real node (dead nav link, or
+    // stale ?category=<old-slug>) is NOT the same as no category being
+    // requested at all — it must show empty, not fall through to the whole
+    // catalog, or a broken category link silently looks like it worked.
+    if (categoryUnresolved) return [];
     if (!categorySlugs.length) return list;
 
     if (productCategory.size > 0) {
@@ -271,7 +287,7 @@ export default function Shop() {
     if (!categoryNames.length) return list;
     const wantedNames = new Set(categoryNames);
     return list.filter((p) => wantedNames.has(p.category));
-  }, [products, search, filters, sort, categorySlugs, categoryNames, productCategory, saleId]);
+  }, [products, search, filters, sort, categorySlugs, categoryNames, productCategory, saleId, categoryUnresolved]);
 
   // Fetch the live catalog. The skeleton (existing `loading` state — same UI
   // as before) now reflects a REAL fetch instead of a fixed timer. Extracted

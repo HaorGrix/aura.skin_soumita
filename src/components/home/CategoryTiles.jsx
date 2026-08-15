@@ -26,9 +26,10 @@ import COMBO from "../../../assests/cate/combo.png";
  * uses, so both entry points filter identically. Unchanged from the previous
  * icon set — only the visuals were swapped.
  *
- * NOTE: `hair-care` still has no matching row in the categories table, so it
- * lands on an empty Shop result until the category is created in
- * /admin/categories and products are assigned to it. */
+ * NOTE: `hair-care` and `body-care` are real rows in the categories table,
+ * but the catalog has zero products assigned to either yet — both tiles
+ * correctly land on an empty (not unfiltered) Shop result until the client
+ * adds real inventory in those categories via /admin/products. */
 const TILES = [
   { label: "Skin Care", href: "/shop?category=skin-care",       img: SKIN_CARE },
   { label: "Hair Care", href: "/shop?category=hair-care",       img: HAIR_CARE },

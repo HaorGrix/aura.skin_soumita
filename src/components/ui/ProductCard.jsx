@@ -180,8 +180,13 @@ export default function ProductCard({ product, onQuickView }) {
         </div>
 
         {/* Price + Add — locked to the bottom via mt-auto so it aligns across
-            every card regardless of title length or rating presence. */}
-        <div className="mt-auto flex items-end justify-between gap-3 pt-4">
+            every card regardless of title length or rating presence.
+            flex-wrap: the "Notify Me" pill (icon + text) is wider than the
+            in-stock quick-add circle, and on a narrow 2-col mobile card
+            there isn't always room for it beside the price on one line —
+            without wrap that overflowed the card's right edge instead of
+            dropping to its own line underneath. */}
+        <div className="mt-auto flex flex-wrap items-end justify-between gap-x-3 gap-y-2 pt-4">
           <div className="flex items-baseline gap-2">
             <span
               className={`font-display uppercase text-base tabular-nums ${

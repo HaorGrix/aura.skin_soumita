@@ -96,8 +96,13 @@ export function UserProvider({ children }) {
   useEffect(() => {
     let cancelled = false;
     refreshVerifiedPoints();
-    const unsubscribe = onVerifiedEmailChange(() => {
-      if (!cancelled) refreshVerifiedPoints();
+    const unsubscribe = onVerifiedEmailChange((_email, event) => {
+      // TOKEN_REFRESHED fires on every tab refocus for the SAME identity
+      // (autoRefreshToken) — refetching points then is just two wasted
+      // network calls, never a correctness issue (the balance is a
+      // primitive, so an unchanged refetch doesn't cause a re-render
+      // either way). Skipping it here is hygiene, not a fix for a bug.
+      if (!cancelled && event !== "TOKEN_REFRESHED") refreshVerifiedPoints();
     });
     return () => {
       cancelled = true;

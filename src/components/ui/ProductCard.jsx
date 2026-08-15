@@ -166,7 +166,7 @@ export default function ProductCard({ product, onQuickView }) {
         <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-magenta">
           {brand}
         </p>
-        <h3 className="mt-1 line-clamp-2 font-serif text-lg leading-snug text-ink">
+        <h3 className="mt-1 line-clamp-2 font-display uppercase text-lg leading-snug text-ink">
           <a href={`/product/${product.id}`} className="transition-colors hover:text-magenta">
             {name}
           </a>
@@ -184,14 +184,14 @@ export default function ProductCard({ product, onQuickView }) {
         <div className="mt-auto flex items-end justify-between gap-3 pt-4">
           <div className="flex items-baseline gap-2">
             <span
-              className={`text-base font-semibold tabular-nums ${
+              className={`font-display uppercase text-base tabular-nums ${
                 onSale ? "text-magenta" : "text-ink"
               }`}
             >
               {formatPrice(price)}
             </span>
             {onSale && wasPrice && (
-              <span className="text-xs text-ink-soft line-through">
+              <span className="font-display uppercase text-xs text-ink-soft line-through">
                 {formatPrice(wasPrice)}
               </span>
             )}

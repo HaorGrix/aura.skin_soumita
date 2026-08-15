@@ -123,11 +123,11 @@ export default function Wishlist() {
                   </p>
                   <a
                     href={`/product/${p.id}`}
-                    className="mt-1 line-clamp-2 font-serif text-base leading-snug text-ink transition-colors hover:text-magenta"
+                    className="mt-1 line-clamp-2 font-display uppercase text-base leading-snug text-ink transition-colors hover:text-magenta"
                   >
                     {p.name}
                   </a>
-                  <p className="mt-2 text-sm font-semibold text-ink">
+                  <p className="mt-2 font-display uppercase text-sm text-ink">
                     {formatPrice(p.price)}
                   </p>
 

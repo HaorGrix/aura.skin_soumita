@@ -42,7 +42,7 @@ export default function LineItem({ item, compact = false, readOnly = false }) {
             </p>
             <a
               href={`/product/${item.id}`}
-              className={`block truncate font-serif text-ink hover:text-magenta ${
+              className={`block truncate font-display uppercase text-ink hover:text-magenta ${
                 compact ? "text-sm" : "text-base sm:text-lg"
               }`}
             >
@@ -94,7 +94,7 @@ export default function LineItem({ item, compact = false, readOnly = false }) {
             </div>
           )}
 
-          <span className="font-semibold tabular-nums text-ink">
+          <span className="font-display uppercase tabular-nums text-ink">
             {formatPrice(item.price * item.qty)}
           </span>
         </div>

@@ -159,8 +159,19 @@ function SlideMedia({ slide, active }) {
 
   // Square corners by design — the banners read as full-bleed editorial
   // panels, not as cards floating on a surface.
+  //
+  // aspect-[2/1] at EVERY breakpoint, not just sm: and up — this used to be
+  // aspect-[16/9] below sm, which doesn't match the 2:1 (2400×1200) ratio
+  // MediaField actually recommends admins upload at. object-contain can't
+  // crop, so that mismatch was the whole bug: an exactly-recommended-ratio
+  // upload still showed the blurred backdrop as visible top/bottom bars on
+  // mobile, because the container itself was a different shape than the
+  // image it was told to expect. One ratio, matching the guidance, fixes it
+  // for every screen size at once — same class of bug as the Offers.jsx
+  // deal-card fix (stated ratio vs. actual render mismatch), just a
+  // responsive-breakpoint mismatch here instead of a padding gutter.
   return (
-    <div className="relative aspect-[16/9] w-full overflow-hidden bg-snow sm:aspect-[2/1]">
+    <div className="relative aspect-[2/1] w-full overflow-hidden bg-snow">
       {/* Blurred backdrop. Source banners (and anything an admin uploads)
           don't share one aspect ratio and carry baked-in marketing text, so
           object-cover would crop that copy at unpredictable ratios. contain

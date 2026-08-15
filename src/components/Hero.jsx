@@ -17,11 +17,18 @@ import HeroCarousel from "./hero/HeroCarousel.jsx";
  *    Home's full-page wash show straight through is what makes the banners sit
  *    ON the page instead of inside a card.
  *
- * The padding stays: pt-40/lg:pt-44 is the fixed-header clearance. */
+ * The padding stays: pt-40/lg:pt-44 is the fixed-header clearance.
+ *
+ * Mobile-only tightening: pt-36/pb-6 apply below the sm breakpoint only —
+ * sm:/md:/lg: explicitly restore the original pt-40/pb-14/pb-16 values, so
+ * tablet and desktop spacing is untouched. The unscrolled header is ~123px
+ * tall at 390px wide, so pt-36 (144px) still clears it with ~21px to
+ * spare; it just isn't overshooting by another 16px on top of that like
+ * pt-40 (160px) did. */
 
 export default function Hero() {
   return (
-    <section id="top" className="relative overflow-hidden pb-14 pt-40 sm:pt-40 md:pt-40 lg:pb-16 lg:pt-44">
+    <section id="top" className="relative overflow-hidden pb-6 pt-36 sm:pb-14 sm:pt-40 md:pt-40 lg:pb-16 lg:pt-44">
       <HeroCarousel />
     </section>
   );

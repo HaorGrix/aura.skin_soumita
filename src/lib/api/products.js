@@ -235,6 +235,58 @@ export async function getProductBySlug(slug) {
   return { data: product, error: null };
 }
 
+/**
+ * Live re-check of whether each cart line is still purchasable, called
+ * right before checkout submits. A cart line only ever carries what was
+ * true at add-time (price, stock) — see CartContext.jsx's header — so it
+ * can silently go stale while the bag sits idle.
+ *
+ * This is a courtesy UX check only, same as CartContext's own maxQtyFor
+ * fix: place_order() is what actually enforces stock, under a row lock,
+ * server-side. It used to be src/data/products.js's stockFor()/maxQtyFor(),
+ * which looked a cart item's id up in the bundled MOCK catalog array —
+ * real (Supabase-backed) products almost never share an id with that
+ * array, so stockFor() silently returned 0 for nearly every real product,
+ * and Checkout.jsx's pre-flight then wrongly stripped it from the bag as
+ * "sold out" right before submitting. Live here instead, same pattern as
+ * every other real-catalog read in this file.
+ *
+ * `product_variants_public`/`products_public` deliberately expose only the
+ * `in_stock` boolean, never the raw count (see getVariantsForProduct's
+ * header) — that's all a pre-flight check needs anyway.
+ *
+ * Returns the SAME item objects passed in (not copies), filtered to just
+ * the ones now out of stock, so callers can removeItem()/toast directly
+ * off the result without a second lookup.
+ */
+export async function findSoldOutItems(items) {
+  if (!items?.length) return { data: [], error: null };
+
+  const slugs = [...new Set(items.map((i) => i.id))];
+  const variantIds = [...new Set(items.filter((i) => i.variantId).map((i) => i.variantId))];
+
+  const [productsRes, variantsRes] = await Promise.all([
+    supabase.from("products_public").select("slug, in_stock").in("slug", slugs),
+    variantIds.length
+      ? supabase.from("product_variants_public").select("id, in_stock").in("id", variantIds)
+      : Promise.resolve({ data: [], error: null }),
+  ]);
+
+  if (productsRes.error) return { data: null, error: productsRes.error };
+  if (variantsRes.error) return { data: null, error: variantsRes.error };
+
+  const productInStock = new Map(productsRes.data.map((r) => [r.slug, r.in_stock]));
+  // A variant id that no longer resolves (deleted/renamed since add-time)
+  // reads as sold out too — `!== true` catches both "false" and "missing".
+  const variantInStock = new Map((variantsRes.data ?? []).map((r) => [r.id, r.in_stock]));
+
+  const soldOut = items.filter((i) =>
+    i.variantId ? variantInStock.get(i.variantId) !== true : productInStock.get(i.id) !== true
+  );
+
+  return { data: soldOut, error: null };
+}
+
 /** Fetch active categories, sorted for display (facet lists, nav, etc). */
 export async function listCategories() {
   const { data, error } = await supabase

@@ -12,7 +12,7 @@ import {
   Tag,
   Truck as TrackIcon,
 } from "lucide-react";
-import { stockFor, maxQtyFor } from "../data/products.js";
+import { findSoldOutItems } from "../lib/api/products.js";
 import { isValidEmail } from "../lib/email-validation.js";
 import { useCart } from "../context/CartContext.jsx";
 import { useUser } from "../context/UserContext.jsx";
@@ -246,13 +246,18 @@ export default function Checkout() {
     else placeOrder();
   }
 
-  function placeOrder() {
+  async function placeOrder() {
     // Re-validate inventory at the moment of purchase — units can drop while
-    // the bag sits idle (the cart snapshot doesn't carry stock).
-    const soldOut = items.filter((i) => stockFor(i.id) === 0);
-    const overQty = items.filter((i) => stockFor(i.id) > 0 && i.qty > maxQtyFor(i.id));
+    // the bag sits idle (the cart snapshot doesn't carry stock). Live check
+    // against Supabase, not a bundled catalog — see findSoldOutItems()'s
+    // header for why that distinction matters.
+    setProcessing(true);
 
-    if (soldOut.length > 0) {
+    const { data: soldOut, error: stockError } = await findSoldOutItems(items);
+    // A failed live check shouldn't block checkout — place_order() is the
+    // real backstop and re-validates stock server-side regardless.
+    if (!stockError && soldOut.length > 0) {
+      setProcessing(false);
       soldOut.forEach((i) => removeItem(i.id, i.variantId));
       toast.error(
         `${soldOut.map((i) => i.name).join(", ")} just sold out and ${soldOut.length > 1 ? "were" : "was"} removed from your bag.`,
@@ -260,8 +265,13 @@ export default function Checkout() {
       );
       return;
     }
+
+    // maxPerOrder is captured on the line itself at add-time from live data
+    // (see CartContext.jsx's slim()) — no separate lookup needed here.
+    const overQty = items.filter((i) => i.qty > i.maxPerOrder);
     if (overQty.length > 0) {
-      overQty.forEach((i) => setQty(i.id, maxQtyFor(i.id), i.variantId));
+      setProcessing(false);
+      overQty.forEach((i) => setQty(i.id, i.maxPerOrder, i.variantId));
       toast.error(
         `We only have enough of ${overQty.map((i) => i.name).join(", ")} left — quantities updated.`,
         "Limited stock"
@@ -269,7 +279,7 @@ export default function Checkout() {
       return;
     }
 
-    submitOrder();
+    await submitOrder();
   }
 
   /**

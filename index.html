@@ -27,11 +27,20 @@
            Inter 400/600         — body text (400) + price (600)
          Instrument Serif is no longer referenced but stays loaded — it's
          still the font baked into the header/footer wordmark artwork and
-         a couple of legacy CMS defaults; safe to drop once those are gone. -->
+         a couple of legacy CMS defaults; safe to drop once those are gone.
+
+         Noto Sans Bengali covers admin-entered Bangla content (product
+         name/subtitle/description/philosophy/how-to-use, etc.) — none of
+         the Latin fonts above have Bengali glyphs, so without this the
+         browser falls back to whatever Bengali font happens to be
+         installed locally (or renders tofu boxes on systems with none).
+         Listed as a fallback in every --font-* stack in index.css, so
+         Bangla text picks it up automatically wherever it's typed,
+         mixed in with Latin text or on its own. -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600&family=Montserrat:wght@500;600&family=Instrument+Serif:ital@0;1&family=Inter:wght@300;400;500;600;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600&family=Montserrat:wght@500;600&family=Instrument+Serif:ital@0;1&family=Inter:wght@300;400;500;600;700&family=Noto+Sans+Bengali:wght@400;500;600;700&display=swap"
       rel="stylesheet"
     />
   </head>

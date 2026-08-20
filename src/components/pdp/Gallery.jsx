@@ -85,11 +85,15 @@ export default function Gallery({ product }) {
         )}
       </div>
 
-      {/* Stage — aspect-square on desktop; capped on portrait mobile so the
-          image never swallows the fold (key polish for small phones). The
-          `mx-auto + max-w` keeps it centered if the cap shrinks the width. */}
+      {/* Stage — aspect-[4/5] at every width, matching the same crop
+          ProductCard's shop-grid tile and ImageManager's admin preview
+          use (see ImageManager.jsx's own comment on this). This used to
+          switch to aspect-square from `sm` up, a leftover from before
+          4:5 was established as the site-wide standard — an admin
+          framing a photo for this ratio was getting a different crop
+          here than everywhere else it's shown. */}
       <div className="order-1 flex-1 lg:order-2">
-        <div className="relative mx-auto aspect-[4/5] w-full max-w-[28rem] overflow-hidden rounded-2xl ring-1 ring-line sm:aspect-square sm:max-w-md lg:max-w-none lg:rounded-[1.5rem]">
+        <div className="relative mx-auto aspect-[4/5] w-full max-w-[28rem] overflow-hidden rounded-2xl ring-1 ring-line sm:max-w-md lg:max-w-none lg:rounded-[1.5rem]">
           {/* Tab pills */}
           <div className="absolute left-3 top-3 z-20 flex gap-1.5">
             <button
@@ -253,7 +257,7 @@ export default function Gallery({ product }) {
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
               transition={{ type: "spring", stiffness: 260, damping: 28 }}
-              className="relative aspect-square w-full max-w-2xl overflow-hidden rounded-[1.5rem]"
+              className="relative aspect-[4/5] w-full max-w-lg overflow-hidden rounded-[1.5rem]"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="absolute inset-0" style={{ background: tile(current) }} />

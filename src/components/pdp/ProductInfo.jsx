@@ -139,7 +139,9 @@ export default function ProductInfo({ product, onWriteReview }) {
   }
 
   return (
-    <div className="lg:sticky lg:top-32 lg:self-start">
+    // min-w-0: same grid-item shrink fix as Gallery.jsx's root — belt and
+    // braces here, since this is the other direct child of the same grid row.
+    <div className="min-w-0 lg:sticky lg:top-32 lg:self-start">
       {/* Brand + name */}
       <p className="text-xs font-semibold uppercase tracking-[0.18em] text-magenta">
         {product.brand}

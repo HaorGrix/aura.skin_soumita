@@ -39,7 +39,14 @@ export default function Gallery({ product }) {
   const current = gallery[active];
 
   return (
-    <div className="lg:flex lg:gap-4">
+    // min-w-0: CSS Grid items default to min-width:auto, which refuses to
+    // shrink below their content's intrinsic width — the stage below has a
+    // max-w-[28rem] (448px) sizing hint that Grid treated as a hard floor,
+    // so on any viewport narrower than that this whole column rendered at
+    // ~448px regardless of the actual column width and got silently
+    // clipped by the page's overflow-x:hidden (no scrollbar, so it read as
+    // "the image is cut off" rather than an obviously-scrollable overflow).
+    <div className="min-w-0 lg:flex lg:gap-4">
       {/* Thumbnails (left on desktop, below on mobile) */}
       <div className="order-2 mt-3 flex gap-3 lg:order-1 lg:mt-0 lg:flex-col">
         {gallery.map((g, i) => (

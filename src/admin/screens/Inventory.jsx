@@ -39,7 +39,16 @@ export default function Inventory() {
     setSaving((s) => ({ ...s, [row.id]: true }));
     await setVariantStock(row.id, row.stock, next, "counted in inventory screen");
     setSaving((s) => ({ ...s, [row.id]: false }));
-    setEdits((e) => ({ ...e, [row.id]: undefined }));
+    // Deliberately NOT clearing edits[row.id] here. useAsync's reload() isn't
+    // awaitable (it just bumps a nonce and re-fetches on the next effect
+    // pass), so clearing the typed value immediately blanked the input and
+    // fell back to its placeholder — which still showed the OLD row.stock,
+    // since list.data hadn't refetched yet. That produced exactly "I enter
+    // one number, a different (stale) one appears" for the full round-trip.
+    // Leaving the just-saved value in place means the input keeps showing
+    // what was actually saved throughout; once the reload lands, r.stock
+    // catches up to match it, `changed` naturally goes false, and the Save
+    // button disappears on its own — no flash to a wrong number either way.
     list.reload();
   }
 

@@ -149,6 +149,11 @@ export default function ProductInfo({ product, onWriteReview }) {
       <h1 className="mt-2 font-display text-[clamp(1.9rem,4vw,2.75rem)] leading-tight text-ink">
         {product.name}
       </h1>
+      {/* Admin's "Short subtitle" — saved and fetched correctly all
+          along, but had no place in the UI that rendered it at all. */}
+      {product.subtitle && (
+        <p className="mt-1.5 text-sm text-ink-soft">{product.subtitle}</p>
+      )}
 
       {/* Badges — the same set ProductCard shows on the Shop grid (New,
           Bestseller, Staff Pick, Limited Edition). Sale isn't repeated here:

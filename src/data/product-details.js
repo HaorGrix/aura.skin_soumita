@@ -257,13 +257,22 @@ export function buildPdp(product) {
     ...(INGREDIENT[name] ?? INGREDIENT_DEFAULT(name)),
   }));
 
+  // Both prefer the real, admin-saved value (products.description /
+  // products.philosophy) when one exists — the generated copy below is
+  // only ever a fallback for a product nobody has written real copy for
+  // yet, same "storefront never breaks" contract every other CMS-backed
+  // field in this project honours. Previously these were unconditional,
+  // so an admin's real, saved description/philosophy was silently
+  // discarded and this generated text shown instead, every time.
   const longDescription =
+    product.description?.trim() ||
     `Meet your new glass-skin essential. ${product.brand}'s ${product.name} is a ${product.category.toLowerCase()} ` +
     `crafted for ${product.concern.join(", ").toLowerCase()} — powered by ${product.ingredients.join(", ")}. ` +
     `Lightweight, fast-absorbing and endlessly layerable, it delivers that lit-from-within K-beauty glow while ` +
     `caring for your barrier. Suitable for ${product.skinType.join(", ").toLowerCase()} skin.`;
 
   const philosophy =
+    product.philosophy?.trim() ||
     "Rooted in the K & J-beauty philosophy of gentle, consistent care — fewer harsh actives, more nourishment, " +
     "and rituals that feel like self-love. Clean, cruelty-free, and dermatologist-tested.";
 

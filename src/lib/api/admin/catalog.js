@@ -159,7 +159,7 @@ export async function getProduct(id) {
 // reviews table for the DB to aggregate yet. When one exists these two become
 // derived columns and must come OUT of this list.
 const WRITABLE = [
-  "slug", "name", "brand", "brand_id", "category_id", "subtitle", "description", "how_to_use",
+  "slug", "name", "brand", "brand_id", "category_id", "subtitle", "description", "philosophy", "how_to_use",
   "price_minor", "compare_at_minor", "cost_minor", "sku", "low_stock_at",
   "max_per_order", "backorder_ok", "status", "is_new", "popularity", "tone",
   "concern", "skin_type", "ingredients", "seo_title", "seo_description",

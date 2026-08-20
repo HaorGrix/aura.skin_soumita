@@ -102,6 +102,7 @@ function mapProduct(row) {
     name: row.name,
     subtitle: row.subtitle,
     description: row.description,
+    philosophy: row.philosophy,
     howToUse: row.how_to_use,
     category: row.category, // already the category NAME (view joins it)
     tone: TONE[row.tone] ?? TONE.pink,

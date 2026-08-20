@@ -69,9 +69,18 @@ const FIELDS = [
   "read_minutes", "status", "published_at", "author_name",
 ];
 
+// Every optional field reads an empty string as "not set" and stores null —
+// EXCEPT body_html, which has a `not null default ''` constraint (0042):
+// an empty draft body is a valid, real state for the column, not a missing
+// value. Coercing it to null the same way as the others violated that
+// constraint and surfaced as a raw Postgres error the moment an admin
+// tried to save a title-only draft with no body content yet.
 function pick(input) {
   const out = {};
-  for (const k of FIELDS) if (input[k] !== undefined) out[k] = input[k] === "" ? null : input[k];
+  for (const k of FIELDS) {
+    if (input[k] === undefined) continue;
+    out[k] = input[k] === "" && k !== "body_html" ? null : input[k];
+  }
   return out;
 }
 

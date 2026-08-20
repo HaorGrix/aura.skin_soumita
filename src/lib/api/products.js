@@ -160,23 +160,65 @@ export async function listProducts({ limit } = {}) {
 }
 
 /**
+ * Fetch a specific set of products by slug (== `id` in this file's
+ * shape) — for resolving a saved id list (wishlist) into real product
+ * cards without pulling the whole catalog. Missing ids (a slug that no
+ * longer exists) are just absent from the result, same "callers filter
+ * what came back" contract as everywhere else here.
+ */
+export async function getProductsByIds(slugs) {
+  if (!slugs?.length) return { data: [], error: null };
+  const { data, error } = await supabase
+    .from("products_public")
+    .select("*")
+    .in("slug", slugs);
+  if (error) return { data: null, error };
+  return { data: data.map(mapProduct), error: null };
+}
+
+/**
  * Map one `product_variants_public` row into the storefront's variant
  * shape. Price fields go through the same LEGACY_PRICE_SCALE bridge as
  * mapProduct(), for the same reason: formatPrice()/cart math still run on
  * the old "USD-ish" float scale, not raw paisa.
+ *
+ * Flash-sale folding mirrors mapProduct() exactly (see its comment for the
+ * full reasoning) — 0052_variant_flash_sale_price.sql added `sale_price_
+ * minor`/`active_sale_id` to product_variants_public so a running flash
+ * sale is priced into `price`/`compareAt`/`isOnSale` here the same way a
+ * manual compare_at_price_minor markdown already was. Before that
+ * migration, this was the actual live bug: place_order() applied the sale
+ * price server-side, but every variant the PDP/cart/checkout displayed
+ * still showed the full undiscounted price right up until the order was
+ * placed.
  */
 function mapVariant(row) {
-  const compareAt = row.compare_at_price_minor != null ? row.compare_at_price_minor / LEGACY_PRICE_SCALE : undefined;
+  const hasFlashSale = row.sale_price_minor != null && row.sale_price_minor < row.price_minor;
+  const effectivePriceMinor = hasFlashSale ? row.sale_price_minor : row.price_minor;
+  // Same "never compound a flash sale against a separate manual markdown"
+  // rule as mapProduct() — the strike-through must match THIS sale's own
+  // stated discount, not a stale/different pre-existing compare-at.
+  const compareAtMinor = hasFlashSale
+    ? row.price_minor
+    : row.compare_at_price_minor != null && row.compare_at_price_minor > row.price_minor
+      ? row.compare_at_price_minor
+      : null;
+  const compareAt = compareAtMinor != null ? compareAtMinor / LEGACY_PRICE_SCALE : undefined;
+  const discountPercent = compareAtMinor != null
+    ? Math.round((1 - effectivePriceMinor / compareAtMinor) * 100)
+    : row.discount_percent;
+
   return {
     id: row.id,
     productId: row.product_id,
     sizeLabel: row.size_label,
     sortOrder: row.sort_order,
     isDefault: row.is_default,
-    price: row.price_minor / LEGACY_PRICE_SCALE,
+    price: effectivePriceMinor / LEGACY_PRICE_SCALE,
     compareAt,
-    isOnSale: row.is_on_sale,
-    discountPercent: row.discount_percent,
+    isOnSale: row.is_on_sale || hasFlashSale,
+    discountPercent,
+    activeSaleId: row.active_sale_id ?? null,
     inStock: row.in_stock,
     isLowStock: row.is_low_stock,
   };

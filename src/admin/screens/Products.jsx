@@ -17,9 +17,9 @@
  * later size-rows are display + quick-edit only.
  * =================================================================== */
 import { useState } from "react";
-import { Check, Plus } from "lucide-react";
+import { Check, Plus, Trash2 } from "lucide-react";
 import {
-  bulkPrice, categoryOptions, listCategoryTree, listProductsWithVariants,
+  bulkPrice, categoryOptions, deleteProducts, listCategoryTree, listProductsWithVariants,
   setProductStatus, updateVariantPrice,
 } from "../../lib/api/admin/catalog.js";
 import { useAdmin } from "../context.js";
@@ -46,6 +46,9 @@ export default function Products() {
   const [priceEdits, setPriceEdits] = useState({});
   const [savingPrice, setSavingPrice] = useState({});
   const [priceError, setPriceError] = useState({});
+  const [deleteModal, setDeleteModal] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState(null);
 
   const categories = useAsync(() => listCategoryTree(), []);
   const list = useAsync(
@@ -111,20 +114,32 @@ export default function Products() {
           options={[{ id: "low", label: "Running low" }, { id: "out", label: "Out of stock" }]} />
       </div>
 
-      {selected.length > 0 && can("admin") && (
+      {/* Explicit client decision: delete (single + bulk) is open to Editor
+          and up — not gated above the other bulk actions, which stay
+          admin-only as before. Selection itself has to open to editor too,
+          or an editor could never reach the Delete button in the first
+          place. */}
+      {selected.length > 0 && can("editor") && (
         <div className="mb-3 flex flex-wrap items-center gap-2 rounded-xl bg-ink px-4 py-2.5 text-sm text-white">
           <span className="mr-auto">{selected.length} selected</span>
-          <Btn size="sm" variant="secondary" onClick={() => applyStatus("active")}>Publish</Btn>
-          <Btn size="sm" variant="secondary" onClick={() => applyStatus("draft")}>Unpublish</Btn>
-          <Btn size="sm" variant="secondary" onClick={() => setPriceModal(true)}>Change price</Btn>
-          <Btn size="sm" variant="danger" onClick={() => applyStatus("archived")}>Archive</Btn>
+          {can("admin") && (
+            <>
+              <Btn size="sm" variant="secondary" onClick={() => applyStatus("active")}>Publish</Btn>
+              <Btn size="sm" variant="secondary" onClick={() => applyStatus("draft")}>Unpublish</Btn>
+              <Btn size="sm" variant="secondary" onClick={() => setPriceModal(true)}>Change price</Btn>
+              <Btn size="sm" variant="danger" onClick={() => applyStatus("archived")}>Archive</Btn>
+            </>
+          )}
+          <Btn size="sm" variant="danger" onClick={() => setDeleteModal(true)}>
+            <Trash2 className="h-3.5 w-3.5" /> Delete
+          </Btn>
         </div>
       )}
 
       <DataTable
         loading={list.loading} error={list.error} rows={list.data} total={list.count}
         page={page} onPage={setPage}
-        selectable={can("admin")} selected={selected} onSelect={setSelected}
+        selectable={can("editor")} selected={selected} onSelect={setSelected}
         rowKey={(r) => r.rowId}
         // A size row (kind "variant") isn't individually bulk-selectable —
         // status/archive/bulk-price all operate on the PRODUCT, and the
@@ -222,7 +237,62 @@ export default function Products() {
           setSelected([]); setPriceModal(false); list.reload();
         }}
       />
+
+      {deleteModal && (
+        <BulkDeleteModal
+          count={selected.length}
+          deleting={deleting}
+          error={deleteError}
+          onClose={() => { if (!deleting) { setDeleteModal(false); setDeleteError(null); } }}
+          onConfirm={async () => {
+            setDeleting(true);
+            setDeleteError(null);
+            const { error } = await deleteProducts(selected);
+            setDeleting(false);
+            if (error) { setDeleteError(error.message ?? "Delete failed. Try again."); return; }
+            setSelected([]); setDeleteModal(false); list.reload();
+          }}
+        />
+      )}
     </>
+  );
+}
+
+/** Bulk permanent-delete confirmation. There's no single product name to
+ *  type for a multi-select, so the gate is typing the literal word DELETE —
+ *  same "can't fat-finger this" intent as ProductEdit's per-product modal,
+ *  scaled to a batch. */
+function BulkDeleteModal({ count, deleting, error, onClose, onConfirm }) {
+  const [typed, setTyped] = useState("");
+  const canConfirm = typed.trim().toUpperCase() === "DELETE";
+
+  return (
+    <Modal open onClose={onClose} title={`Permanently delete ${count} product${count === 1 ? "" : "s"}?`}
+      footer={
+        <>
+          <Btn variant="secondary" size="sm" onClick={onClose} disabled={deleting}>Cancel</Btn>
+          <Btn variant="danger" size="sm" loading={deleting} disabled={!canConfirm} onClick={onConfirm}>
+            <Trash2 className="h-3.5 w-3.5" /> Delete permanently
+          </Btn>
+        </>
+      }>
+      <p className="text-sm text-ink-soft">
+        This permanently deletes all {count} selected product{count === 1 ? "" : "s"} — variants, photos, video,
+        stock history and reviews go with them. <strong className="text-ink">This cannot be undone.</strong>
+      </p>
+      <p className="mt-3 text-sm text-ink-soft">
+        Past orders that included any of them are not affected: their line items keep the product's name, price
+        and image exactly as they were at the time of purchase — only the link back to the product page is removed.
+      </p>
+      <TextField
+        className="mt-4"
+        label={<>Type <strong>DELETE</strong> to confirm</>}
+        value={typed}
+        onChange={(e) => setTyped(e.target.value)}
+        disabled={deleting}
+      />
+      {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
+    </Modal>
   );
 }
 

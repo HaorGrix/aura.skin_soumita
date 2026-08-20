@@ -51,9 +51,28 @@ function parseAdminRoute() {
   return { screen, id };
 }
 
-export function adminNavigate(to) {
-  if (window.location.pathname === to) return;
-  window.history.pushState({}, "", to);
+/** `replace` swaps the current history entry instead of pushing a new one —
+ *  same contract as the storefront's own navigate() (lib/navigate.js), for
+ *  the same reason: a freshly-created product replacing "/admin/products/new"
+ *  so Back doesn't land on the empty form again.
+ *
+ *  The early return below used to run unconditionally, which broke exactly
+ *  that "just created it, now go straight to its real id" call: a caller
+ *  that had ALREADY done `history.replaceState(..., to)` itself right
+ *  before calling this (to avoid a double history entry) meant
+ *  `location.pathname === to` was true by the time this ran, so the guard
+ *  returned before ever dispatching popstate — the URL bar changed but
+ *  nothing re-rendered, leaving the admin on a stale, blank screen until a
+ *  manual refresh. `replace: true` now does that pathname update itself
+ *  (still exactly once) and always dispatches, so there's no window where
+ *  the two can race. */
+export function adminNavigate(to, { replace = false } = {}) {
+  if (replace) {
+    window.history.replaceState({}, "", to);
+  } else {
+    if (window.location.pathname === to) return;
+    window.history.pushState({}, "", to);
+  }
   window.dispatchEvent(new PopStateEvent("popstate"));
 }
 

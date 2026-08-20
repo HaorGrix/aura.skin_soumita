@@ -214,8 +214,9 @@ export async function listProductsByIds(ids) {
   return { data, error };
 }
 
-/** Archive, never hard-delete. The client WILL do this by accident, and an
- *  archived product keeps past orders and their images intact. */
+/** Archive — the default, reversible way to retire a product. The client
+ *  WILL do this by accident, and an archived product keeps past orders and
+ *  their images intact. Prefer this over deleteProduct() below. */
 export async function archiveProduct(id) {
   const { data, error } = await supabase
     .from("products").update({ status: "archived" }).eq("id", id).select().single();
@@ -226,6 +227,56 @@ export async function setProductStatus(ids, status) {
   const { data, error } = await supabase
     .from("products").update({ status }).in("id", ids).select("id");
   return { data, error };
+}
+
+/** Permanent, irreversible delete — the client explicitly asked for a real
+ *  delete alongside archive. Variants, images, the inventory ledger, sale
+ *  snapshots and reviews all cascade-delete with the product (they only
+ *  exist to describe it). Past order_items are NOT affected: their
+ *  product_id FK is ON DELETE SET NULL (0049_product_hard_delete_safety.sql)
+ *  because order_items already snapshots its own product_name/slug/price/
+ *  image at order time — a deleted product just becomes an unlinked line
+ *  on an otherwise-intact historical order.
+ *
+ *  Storage files (photos + video) aren't covered by any DB cascade, so
+ *  they're read BEFORE the delete and removed after — best-effort; a
+ *  storage failure here doesn't block or undo the already-committed
+ *  product delete. */
+export async function deleteProduct(id) {
+  const [{ data: images }, { data: productRow }] = await Promise.all([
+    supabase.from("product_images").select("storage_path").eq("product_id", id),
+    supabase.from("products").select("video_url").eq("id", id).single(),
+  ]);
+
+  const { error } = await supabase.from("products").delete().eq("id", id);
+  if (error) return { error };
+
+  const imagePaths = (images ?? []).map((i) => i.storage_path).filter(Boolean);
+  if (imagePaths.length) await supabase.storage.from("product-images").remove(imagePaths);
+  if (productRow?.video_url) await supabase.storage.from("site-media").remove([productRow.video_url]);
+
+  return { error: null };
+}
+
+/** Bulk permanent delete — same contract as deleteProduct(), applied to a
+ *  set of ids from the list screen's multi-select. */
+export async function deleteProducts(ids) {
+  if (!ids?.length) return { error: null };
+
+  const [{ data: images }, { data: rows }] = await Promise.all([
+    supabase.from("product_images").select("storage_path").in("product_id", ids),
+    supabase.from("products").select("video_url").in("id", ids),
+  ]);
+
+  const { error } = await supabase.from("products").delete().in("id", ids);
+  if (error) return { error };
+
+  const imagePaths = (images ?? []).map((i) => i.storage_path).filter(Boolean);
+  if (imagePaths.length) await supabase.storage.from("product-images").remove(imagePaths);
+  const videoPaths = (rows ?? []).map((r) => r.video_url).filter(Boolean);
+  if (videoPaths.length) await supabase.storage.from("site-media").remove(videoPaths);
+
+  return { error: null };
 }
 
 /** Bulk price change. mode: 'percent' | 'fixed' | 'set' */

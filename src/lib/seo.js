@@ -10,7 +10,6 @@
  * index.html — closing that gap fully needs prerendering/SSG, tracked
  * as a separate follow-up.
  * =================================================================== */
-import { PRODUCTS } from "../data/products.js";
 
 /* Static routes → title + description, parameterised by the live store
  * name (store_settings.store_name) so a rebrand from /admin/settings
@@ -18,7 +17,7 @@ import { PRODUCTS } from "../data/products.js";
  * private/utility pages that should never appear in search results. */
 function routeMeta(brand) {
   return {
-    home:     { title: `${brand} — The Theory Behind Timeless Skin`, description: "Real K- & J-Beauty skincare from authorised distributors. Barrier-first formulas for glass skin — plus honest advice on what to skip." },
+    home:     { title: "The Theory Behind Timeless Skin", description: "Real K- & J-Beauty skincare from authorised distributors. Barrier-first formulas for glass skin — plus honest advice on what to skip." },
     shop:     { title: `Shop all skincare — ${brand}`, description: "Browse authentic K- & J-Beauty cleansers, toners, serums, moisturisers and SPF. Filter by skin type, concern, brand and price." },
     cart:     { title: `Your bag — ${brand}`, description: "Review the items in your shopping bag.", noindex: true },
     checkout: { title: `Checkout — ${brand}`, description: "Complete your order securely.", noindex: true },
@@ -52,16 +51,16 @@ function metaFor(route, brand) {
     };
   }
   if (route.name === "product") {
-    const p = PRODUCTS.find((x) => x.id === route.id);
-    if (p) {
-      const concerns = (p.concern || []).join(", ") || "Skincare";
-      const skin = (p.skinType || []).join(", ").toLowerCase() || "all";
-      return {
-        title: `${p.brand} ${p.name} — ${brand}`,
-        description: `Shop ${p.brand} ${p.name} at ${brand}. ${concerns} for ${skin} skin — authentic, authorised stock.`.slice(0, 300),
-      };
-    }
-    // Unknown slug → treat like a 404 for indexing purposes.
+    // The real per-product title/description is set separately by
+    // applyProductSeo() below, called from Product.jsx once it has
+    // actually fetched the product from the live catalog — this used to
+    // look the slug up in the static data/products.js sample, which was
+    // trimmed to a handful of stale slugs (0008_trim_catalog_to_sample.sql)
+    // and so silently missed almost every real product, sending EVERY PDP
+    // to the noindexed "unknown slug" branch below. This route-level
+    // fallback now only covers the brief window before that live fetch
+    // resolves (or a genuinely nonexistent slug) — noindexed either way,
+    // since neither case has a real product to describe yet.
     return { title: `Product — ${brand}`, description: "Shop authentic K- & J-Beauty skincare.", noindex: true };
   }
   const routes = routeMeta(brand);
@@ -97,15 +96,12 @@ function setRobots(noindex) {
   }
 }
 
-/** Apply per-route SEO. Called from App.jsx whenever the route OR the live
- *  store name changes, so a rebrand from /admin/settings retitles the
- *  current page immediately, with no reload.
- *  Canonical + og:url use origin + pathname only (query/hash stripped) so
- *  filtered views like /shop?concern=X consolidate to /shop and never spawn
- *  duplicate indexable URLs. */
-export function applySeo(route, brand) {
+/* Shared tag-writing step — both applySeo() and applyProductSeo() end here.
+ * Canonical + og:url use origin + pathname only (query/hash stripped) so
+ * filtered views like /shop?concern=X consolidate to /shop and never spawn
+ * duplicate indexable URLs. */
+function writeSeoTags(m) {
   if (typeof document === "undefined") return;
-  const m = metaFor(route, brand);
   const url = window.location.origin + window.location.pathname;
 
   document.title = m.title;
@@ -115,4 +111,28 @@ export function applySeo(route, brand) {
   upsertMeta("property", "og:description", m.description);
   upsertMeta("property", "og:url", url);
   setRobots(!!m.noindex);
+}
+
+/** Apply per-route SEO. Called from App.jsx whenever the route OR the live
+ *  store name changes, so a rebrand from /admin/settings retitles the
+ *  current page immediately, with no reload. */
+export function applySeo(route, brand) {
+  writeSeoTags(metaFor(route, brand));
+}
+
+/** Apply the REAL per-product title/description, once Product.jsx has
+ *  actually fetched it from the live catalog (getProductBySlug/buildPdp) —
+ *  see the "product" branch of metaFor() above for why this can't be done
+ *  synchronously from the route alone. `product` is the buildPdp() shape
+ *  (brand/name/concern/skinType). Call this right after the fetch resolves;
+ *  a null/undefined product is a no-op (the route-level fallback already
+ *  covers "still loading" and "genuinely not found" correctly on its own). */
+export function applyProductSeo(product, brand) {
+  if (!product) return;
+  const concerns = (product.concern || []).join(", ") || "Skincare";
+  const skin = (product.skinType || []).join(", ").toLowerCase() || "all";
+  writeSeoTags({
+    title: `${product.brand} ${product.name} — ${brand}`,
+    description: `Shop ${product.brand} ${product.name} at ${brand}. ${concerns} for ${skin} skin — authentic, authorised stock.`.slice(0, 300),
+  });
 }

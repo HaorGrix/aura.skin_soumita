@@ -1,9 +1,13 @@
 /* =================================================================== *
  * skin.theory admin — product image manager
  * -------------------------------------------------------------------
- * Upload (drag-and-drop or click), drag-to-reorder, and delete a product's
- * gallery — 0 to MAX_IMAGES images, laid out on a fluid auto-fit grid so
- * the tile count drives the layout instead of a fixed column count.
+ * Upload (drag-and-drop or click), drag-to-reorder, replace, and delete a
+ * product's gallery — 0 to MAX_IMAGES images, laid out on a fluid auto-fit
+ * grid so the tile count drives the layout instead of a fixed column count.
+ * Replace swaps the file behind one existing slot in place (same position,
+ * alt text and spot in the order) — the gap plain delete-then-add left,
+ * since Add always appends at the end rather than refilling the slot that
+ * was just emptied.
  * Position 0 is the front shot — the one ProductCard and every listing
  * uses — labelled explicitly ("Main") rather than left as an invisible
  * convention.
@@ -16,11 +20,11 @@
  * adjacent-only reorder.
  * =================================================================== */
 import { useCallback, useRef, useState } from "react";
-import { ImagePlus, Play, Star, X } from "lucide-react";
+import { ImagePlus, Play, RefreshCw, Star, X } from "lucide-react";
 import { supabase } from "../../lib/api/client.js";
 import {
   deleteProductImage, deleteProductVideo, publicImageUrl, publicVideoUrl,
-  reorderProductImages, uploadProductImage, uploadProductVideo,
+  replaceProductImage, reorderProductImages, uploadProductImage, uploadProductVideo,
 } from "../../lib/api/media.js";
 import { Btn, ConfirmModal, Spinner } from "./kit.jsx";
 
@@ -54,13 +58,41 @@ async function convertIfHeic(file) {
   return new File([blob], file.name.replace(/\.(heic|heif)$/i, ".jpg"), { type: "image/jpeg" });
 }
 
+/** Shared HEIC-convert + type/size validation, factored out so a single
+ *  replace (one file, immediate) and the multi-file add flow (per-file,
+ *  staged progress) don't drift out of sync on what counts as a valid
+ *  photo. Returns the (possibly HEIC->JPEG converted) file, or an error
+ *  string — never both. */
+async function validateImage(original) {
+  let file;
+  try {
+    file = await convertIfHeic(original);
+  } catch {
+    return { file: null, error: "Couldn't convert this HEIC photo. Try exporting it as JPEG first." };
+  }
+  if (!IMAGE_TYPES.has(file.type)) {
+    return { file: null, error: "Not a supported image type (JPEG, PNG, WebP, AVIF, or HEIC)." };
+  }
+  if (file.size > MAX_BYTES) {
+    return { file: null, error: "Larger than 5 MB — please compress it first." };
+  }
+  return { file, error: null };
+}
+
 export default function ImageManager({ productId, images = [], onChange, disabled }) {
   const inputRef = useRef(null);
+  const replaceInputRef = useRef(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
   // { [tempKey]: { name, stage: "converting"|"uploading"|"saving", error } }
   const [inFlight, setInFlight] = useState({});
   const [removing, setRemoving] = useState(null);
+  // The exact image row a Replace click targets — set right before opening
+  // the (shared, hidden) file picker, read back once a file is chosen. One
+  // input serves every tile rather than one-per-tile, same reasoning as the
+  // single `inputRef` above for Add.
+  const [replaceTarget, setReplaceTarget] = useState(null);
+  const [replacingId, setReplacingId] = useState(null);
   const [dragIndex, setDragIndex] = useState(null);
   const [overIndex, setOverIndex] = useState(null);
   const [order, setOrder] = useState(null); // local optimistic order while dragging
@@ -107,22 +139,9 @@ export default function ImageManager({ productId, images = [], onChange, disable
       const key = `${original.name}-${Date.now()}-${Math.random()}`;
       setStage(key, { name: original.name, stage: "converting", error: null });
 
-      let file;
-      try {
-        file = await convertIfHeic(original);
-      } catch {
-        setStage(key, { stage: "error", error: "Couldn't convert this HEIC photo. Try exporting it as JPEG first." });
-        setTimeout(() => clearStage(key), 4000);
-        continue;
-      }
-
-      if (!IMAGE_TYPES.has(file.type)) {
-        setStage(key, { stage: "error", error: "Not a supported image type (JPEG, PNG, WebP, AVIF, or HEIC)." });
-        setTimeout(() => clearStage(key), 4000);
-        continue;
-      }
-      if (file.size > MAX_BYTES) {
-        setStage(key, { stage: "error", error: "Larger than 5 MB — please compress it first." });
+      const { file, error: validationError } = await validateImage(original);
+      if (validationError) {
+        setStage(key, { stage: "error", error: validationError });
         setTimeout(() => clearStage(key), 4000);
         continue;
       }
@@ -153,6 +172,32 @@ export default function ImageManager({ productId, images = [], onChange, disable
     const { error } = await deleteProductImage(removing);
     setBusy(false);
     setRemoving(null);
+    if (error) setError(error.message);
+    else onChange();
+  }
+
+  /** Swap the file behind one existing gallery slot in place — the target
+   *  row's id/position/alt/label are untouched; only which file it points
+   *  at changes. No confirmation modal, matching SingleImageField's
+   *  immediate-on-pick Replace elsewhere in this file: a wrong pick here is
+   *  a second click away from being un-done, same as swapping a CMS banner. */
+  async function handleReplace(picked) {
+    const target = replaceTarget;
+    setReplaceTarget(null);
+    if (!picked || !target) return;
+
+    setError(null);
+    setReplacingId(target.id);
+
+    const { file, error: validationError } = await validateImage(picked);
+    if (validationError) {
+      setReplacingId(null);
+      setError(validationError);
+      return;
+    }
+
+    const { error } = await replaceProductImage(productId, target, file);
+    setReplacingId(null);
     if (error) setError(error.message);
     else onChange();
   }
@@ -199,7 +244,14 @@ export default function ImageManager({ productId, images = [], onChange, disable
       {/* Auto-fit: the browser decides how many tiles fit per row at the
           viewport's actual width, so 1, 3, or 6 images all lay out cleanly
           with no leftover empty cells and no JS breakpoint logic to keep in
-          sync with the design. */}
+          sync with the design.
+
+          aspect-[4/5] on every tile below (grid, in-flight, add-button) is
+          deliberately the SAME crop the storefront uses for this image —
+          ProductCard's shop-grid tile and Gallery's PDP stage are both
+          aspect-[4/5]. It used to be 3/4, a ratio nothing on the storefront
+          actually renders at, so an admin framing a photo by eye here was
+          previewing a crop shoppers would never see. */}
       <div
         className="grid gap-3"
         style={{ gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))" }}
@@ -218,7 +270,7 @@ export default function ImageManager({ productId, images = [], onChange, disable
           >
             <img
               src={publicImageUrl(img.storage_path)} alt={img.alt || ""}
-              className="aspect-[3/4] w-full select-none object-cover"
+              className="aspect-[4/5] w-full select-none object-cover"
               loading="lazy" draggable={false}
             />
             {i === 0 && (
@@ -226,14 +278,30 @@ export default function ImageManager({ productId, images = [], onChange, disable
                 <Star className="h-2.5 w-2.5 fill-current" /> Main
               </span>
             )}
-            {!disabled && (
-              <button
-                onClick={() => setRemoving(img)}
-                className="absolute right-1.5 top-1.5 rounded-full bg-ink/70 p-1 text-white opacity-0 transition-opacity hover:bg-red-600 group-hover:opacity-100 focus-visible:opacity-100"
-                aria-label="Delete image"
-              >
-                <X className="h-3.5 w-3.5" />
-              </button>
+            {replacingId === img.id && (
+              <div className="absolute inset-0 grid place-items-center bg-ink/50">
+                <Spinner className="h-5 w-5 text-white" />
+              </div>
+            )}
+            {!disabled && replacingId !== img.id && (
+              <div className="absolute right-1.5 top-1.5 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100">
+                <button
+                  onClick={() => { setReplaceTarget(img); replaceInputRef.current?.click(); }}
+                  className="rounded-full bg-ink/70 p-1 text-white hover:bg-ink"
+                  aria-label="Replace image"
+                  title="Replace this photo"
+                >
+                  <RefreshCw className="h-3.5 w-3.5" />
+                </button>
+                <button
+                  onClick={() => setRemoving(img)}
+                  className="rounded-full bg-ink/70 p-1 text-white hover:bg-red-600"
+                  aria-label="Delete image"
+                  title="Delete this photo"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </div>
             )}
             <input
               defaultValue={img.alt ?? ""} placeholder="Label (e.g. Texture, Ingredients)" disabled={disabled}
@@ -244,7 +312,7 @@ export default function ImageManager({ productId, images = [], onChange, disable
         ))}
 
         {Object.entries(inFlight).map(([key, f]) => (
-          <div key={key} className="relative flex aspect-[3/4] flex-col items-center justify-center gap-2 rounded-xl bg-snow p-3 text-center ring-1 ring-line">
+          <div key={key} className="relative flex aspect-[4/5] flex-col items-center justify-center gap-2 rounded-xl bg-snow p-3 text-center ring-1 ring-line">
             {f.stage === "error" ? (
               <>
                 <X className="h-5 w-5 text-red-500" />
@@ -269,7 +337,7 @@ export default function ImageManager({ productId, images = [], onChange, disable
             type="button" onClick={() => inputRef.current?.click()} disabled={disabled || busy}
             onDragOver={(e) => e.preventDefault()}
             onDrop={(e) => { e.preventDefault(); handleFiles(e.dataTransfer.files); }}
-            className="flex aspect-[3/4] flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-line text-ink-soft transition-colors hover:border-magenta hover:text-magenta disabled:opacity-50"
+            className="flex aspect-[4/5] flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-line text-ink-soft transition-colors hover:border-magenta hover:text-magenta disabled:opacity-50"
           >
             <ImagePlus className="h-6 w-6" strokeWidth={1.5} />
             <span className="px-3 text-center text-[11px]">
@@ -282,6 +350,10 @@ export default function ImageManager({ productId, images = [], onChange, disable
       <input
         ref={inputRef} type="file" accept={ACCEPT} multiple disabled={disabled || busy} className="hidden"
         onChange={(e) => { handleFiles(e.target.files); e.target.value = ""; }}
+      />
+      <input
+        ref={replaceInputRef} type="file" accept={ACCEPT} disabled={disabled} className="hidden"
+        onChange={(e) => { handleReplace(e.target.files?.[0]); e.target.value = ""; }}
       />
 
       {error && <p className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-xs text-red-700">{error}</p>}

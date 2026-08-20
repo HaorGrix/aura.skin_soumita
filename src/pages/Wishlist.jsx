@@ -1,10 +1,11 @@
 import { navigate } from "../lib/navigate.js";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Heart, ShoppingBag, X, Trash2 } from "lucide-react";
 import { useWishlist } from "../context/WishlistContext.jsx";
 import { useCart } from "../context/CartContext.jsx";
 import { useToast } from "../components/ui/Toast.jsx";
-import { PRODUCTS } from "../data/products.js";
+import { getProductsByIds } from "../lib/api/products.js";
 import { formatPrice } from "../lib/format.js";
 import EmptyState from "../components/ui/EmptyState.jsx";
 import Button from "../components/ui/Button.jsx";
@@ -14,9 +15,17 @@ export default function Wishlist() {
   const { addItem, openCart } = useCart();
   const { toast } = useToast();
 
-  const savedProducts = wishlistIds
-    .map((id) => PRODUCTS.find((p) => p.id === id))
-    .filter(Boolean);
+  // Live catalog lookup, not the static data/products.js sample — a saved
+  // id is a real product slug (see ProductInfo.jsx's addItem/wishToggle
+  // calls), and that stale file no longer contains most real slugs, so
+  // resolving against it silently dropped genuinely-saved items from view.
+  const [savedProducts, setSavedProducts] = useState([]);
+  useEffect(() => {
+    let alive = true;
+    if (!wishlistIds.length) { setSavedProducts([]); return; }
+    getProductsByIds(wishlistIds).then(({ data }) => { if (alive && data) setSavedProducts(data); });
+    return () => { alive = false; };
+  }, [wishlistIds]);
 
   const handleMoveToCart = (product) => {
     // The cart refuses sold-out items, so removing it from the wishlist here

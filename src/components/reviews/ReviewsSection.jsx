@@ -63,19 +63,28 @@ export default function ReviewsSection({ product }) {
     }
   };
 
-  // Merge the shopper's own local (mock-login) reviews, real verified
-  // reviews from Postgres, and the seeded demo ones — deduped by id so a
-  // review just submitted through the verified flow (which also lands in
-  // dbReviews on the next fetch) never doubles up.
+  // Merge the shopper's own local (mock-login) reviews with real verified
+  // reviews from Postgres — deduped by id so a review just submitted
+  // through the verified flow (which also lands in dbReviews on the next
+  // fetch) never doubles up.
+  //
+  // `product.reviews` (product-details.js's buildPdp()) is deliberately
+  // NOT merged in here — it's synthetic filler content (reviewsForProduct()
+  // always pads every product up to ~6 fake reviews), a holdover from
+  // before the real verified-purchase reviews system existed. Live audit
+  // caught this presenting fabricated reviews as genuine: a product with
+  // review_count=0 and zero real rows in `reviews` still displayed "6
+  // reviews" with named reviewers and a 4.8 rating. A product with no real
+  // reviews must show that honestly, not synthesize the appearance of some.
   const all = useMemo(() => {
     const mine = myReviewsFor(product.id).map((r) => ({ ...r, tone: product.tone }));
     const seen = new Set();
-    return [...mine, ...dbReviews, ...product.reviews].filter((r) => {
+    return [...mine, ...dbReviews].filter((r) => {
       if (seen.has(r.id)) return false;
       seen.add(r.id);
       return true;
     });
-  }, [myReviewsFor, product.id, product.reviews, product.tone, dbReviews]);
+  }, [myReviewsFor, product.id, product.tone, dbReviews]);
 
   const visible = useMemo(() => {
     const q = query.trim().toLowerCase();

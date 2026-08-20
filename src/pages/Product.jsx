@@ -5,6 +5,8 @@ import { ChevronLeft, Home } from "lucide-react";
 import { buildPdp, pickRelated } from "../data/product-details.js";
 import { getProductBySlug, listProducts } from "../lib/api/products.js";
 import { useUser } from "../context/UserContext.jsx";
+import { useStoreSettings } from "../lib/api/settings.js";
+import { applyProductSeo } from "../lib/seo.js";
 import { smartNavigate } from "../lib/nav-history.js";
 import Gallery from "../components/pdp/Gallery.jsx";
 import ProductInfo from "../components/pdp/ProductInfo.jsx";
@@ -18,6 +20,7 @@ import { CONVERSION_RATE, CURRENCY } from "../lib/format.js";
 
 export default function Product({ id }) {
   const { authed, openAuth } = useUser();
+  const { storeName } = useStoreSettings();
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState("description");
   const [quickView, setQuickView] = useState(null);
@@ -66,6 +69,7 @@ export default function Product({ id }) {
       const pdp = buildPdp(data);
       setProduct(pdp);
       setLoading(false);
+      applyProductSeo(pdp, storeName);
 
       trackEvent("ViewContent", {
         content_ids: [pdp.id],

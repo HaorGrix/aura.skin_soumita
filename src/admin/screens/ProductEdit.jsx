@@ -14,7 +14,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { ArrowLeft, ExternalLink, History, Plus, Star, Trash2 } from "lucide-react";
 import {
-  adjustStock, archiveProduct, createProduct, deleteVariant,
+  adjustStock, archiveProduct, createProduct, deleteProduct, deleteVariant,
   getProduct, listBrandRows, categoryOptions, listCategoryTree, listStockMovements,
   listVariants, setStock, setVariantStock, slugify, updateProduct, upsertBrand, upsertVariant,
 } from "../../lib/api/admin/catalog.js";
@@ -47,6 +47,11 @@ export default function ProductEdit({ id }) {
   const { can } = useAdmin();
   const { storeName } = useStoreSettings();
   const readOnly = !can("admin");
+  // Explicit client decision: delete is open to Editor and up, same as
+  // every other staff-facing admin action here — not gated above the
+  // normal edit boundary. The type-the-exact-name confirmation below is
+  // what actually protects against an accidental delete, not the role.
+  const canDelete = can("editor");
 
   // Deep-link into a specific tab — used by the Products list's variant rows
   // (?tab=variants) so clicking a size opens straight into the tab that
@@ -63,9 +68,19 @@ export default function ProductEdit({ id }) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
   const [archiveOpen, setArchiveOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState(null);
   const [stockModal, setStockModal] = useState(false);
   const [productId, setProductId] = useState(isNew ? null : id);
   const [stock, setStockValue] = useState(0);
+  // Starting stock for a NEW product only — never part of `form`/WRITABLE,
+  // since stock is ledger-backed everywhere else (adjust_stock(), never a
+  // raw column write). Applied as one "restock" movement right after
+  // createProduct() succeeds, in handleSave() below. Empty string, not 0,
+  // so an admin who leaves it blank doesn't read as "explicitly set to
+  // zero" in the stock history.
+  const [initialStock, setInitialStock] = useState("");
   const [variants, setVariants] = useState([]);
 
   // The same tree the storefront's mega menu renders from, so whatever is
@@ -140,17 +155,43 @@ export default function ProductEdit({ id }) {
       ? await createProduct(payload)
       : await updateProduct(productId, payload, { previousSlug: original.slug });
 
-    setSaving(false);
-    if (error) return setError(error.message);
+    if (error) { setSaving(false); return setError(error.message); }
 
+    // Starting stock, applied as a real ledger movement right after the
+    // product exists — same adjust_stock() path the Inventory tab's "Adjust
+    // stock" uses, just triggered automatically instead of requiring a
+    // separate trip back into this same product. A failure here shouldn't
+    // hide that the PRODUCT itself saved fine (it did) — surfaced as its
+    // own message, product left open on the (now-unlocked) Inventory tab
+    // rather than blocking navigation.
+    const startingStock = isNew && initialStock !== "" ? Number(initialStock) : 0;
+    let stockError = null;
+    if (startingStock > 0) {
+      const { error: stockErr } = await adjustStock(data.id, startingStock, "restock", "Starting stock at creation");
+      stockError = stockErr;
+    }
+
+    setSaving(false);
     setOriginal(data);
     setForm(data);
     if (isNew) {
       setProductId(data.id);
+      setStockValue(stockError ? 0 : startingStock);
       // Replace rather than push: going Back from a freshly created product
       // should not land on the "new product" form again.
-      window.history.replaceState({}, "", `/admin/products/${data.id}`);
-      adminNavigate(`/admin/products/${data.id}`);
+      adminNavigate(`/admin/products/${data.id}`, { replace: true });
+      if (stockError) {
+        setTab("Inventory");
+        setError(`Product saved, but starting stock couldn't be set: ${stockError.message}. Set it from the Inventory tab.`);
+      } else {
+        // Everything fillable pre-save (Details, Pricing, Attributes, SEO,
+        // stock) is done — Images is genuinely the only thing that COULDN'T
+        // happen until this product had a real id, so it's the natural next
+        // stop rather than leaving the admin on Pricing wondering what's
+        // left. Landing here (not back on the product list) is what actually
+        // saves the "reopen the product to add photos" round trip.
+        setTab("Images");
+      }
     }
   }
 
@@ -184,6 +225,11 @@ export default function ProductEdit({ id }) {
             )}
             {!isNew && !readOnly && form.status !== "archived" && (
               <Btn variant="secondary" size="sm" onClick={() => setArchiveOpen(true)}>Archive</Btn>
+            )}
+            {!isNew && canDelete && (
+              <Btn variant="danger" size="sm" onClick={() => setDeleteOpen(true)}>
+                <Trash2 className="h-3.5 w-3.5" /> Delete
+              </Btn>
             )}
           </>
         }
@@ -273,6 +319,21 @@ export default function ProductEdit({ id }) {
             <MoneyField label="Compare at" hint="Optional — the “was” price" valueMinor={form.compare_at_minor} onChangeMinor={set("compare_at_minor")} disabled={readOnly || hasMultipleVariants} />
             <MoneyField label="Cost per item" hint="Private — never shown to shoppers" valueMinor={form.cost_minor} onChangeMinor={set("cost_minor")} disabled={readOnly || hasMultipleVariants} />
             <TextField label="SKU" value={form.sku ?? ""} onChange={setInput("sku")} disabled={readOnly || hasMultipleVariants} />
+            {/* New product only — stock is ledger-backed everywhere else
+                (never a plain column write), so this doesn't set
+                form.stock; Save applies it as one real "restock" movement
+                right after the product row exists. An existing product
+                keeps using the Inventory tab's "Adjust stock", which
+                shows the full history this single number can't. */}
+            {isNew && (
+              <TextField
+                label="Starting stock" type="number" min="0" step="1"
+                hint="Optional — leave blank to start at 0 and stock it later"
+                value={initialStock}
+                onChange={(e) => setInitialStock(e.target.value)}
+                disabled={readOnly}
+              />
+            )}
           </div>
 
           {!hasMultipleVariants && discountPct > 0 && (
@@ -292,6 +353,30 @@ export default function ProductEdit({ id }) {
               “Compare at” must be higher than the selling price, or the store will reject this.
             </p>
           )}
+        </Card>
+      )}
+
+      {/* New product only — these three are plain columns on `products`
+          (WRITABLE, no ledger, no productId dependency), the same as
+          Attributes/SEO below. They only ever lived on the Inventory tab
+          because that's where they're grouped for an EXISTING product;
+          nothing about them actually needs the product to exist yet, so
+          gating them behind a save-then-reopen round trip was never load-
+          bearing — unlike Stock on hand/history right below, which is a
+          real ledger and genuinely can't exist before the product does. */}
+      {tab === "Pricing" && isNew && (
+        <Card className="mt-4" title="Inventory settings">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <TextField label="Warn me below" type="number" min="0" value={form.low_stock_at ?? 5}
+              onChange={(e) => set("low_stock_at")(Number(e.target.value))} disabled={readOnly}
+              hint="Shows the “Only a few left” badge" />
+            <TextField label="Max per order" type="number" min="1" value={form.max_per_order ?? 6}
+              onChange={(e) => set("max_per_order")(Number(e.target.value))} disabled={readOnly} />
+          </div>
+          <div className="mt-4">
+            <Toggle label="Allow backorders" hint="Keep selling after stock hits zero."
+              checked={form.backorder_ok} onChange={set("backorder_ok")} disabled={readOnly} />
+          </div>
         </Card>
       )}
 
@@ -416,6 +501,23 @@ export default function ProductEdit({ id }) {
         body="It will be removed from the storefront immediately. Past orders keep it, and you can republish at any time — nothing is deleted."
         onConfirm={async () => { await archiveProduct(productId); adminNavigate("/admin/products"); }}
       />
+
+      {deleteOpen && (
+        <DeleteProductModal
+          product={form}
+          deleting={deleting}
+          error={deleteError}
+          onClose={() => { if (!deleting) { setDeleteOpen(false); setDeleteError(null); } }}
+          onConfirm={async () => {
+            setDeleting(true);
+            setDeleteError(null);
+            const { error } = await deleteProduct(productId);
+            setDeleting(false);
+            if (error) { setDeleteError(error.message ?? "Delete failed. Try again."); return; }
+            adminNavigate("/admin/products");
+          }}
+        />
+      )}
 
       <StockModal
         open={stockModal} onClose={() => setStockModal(false)} current={stock}
@@ -693,6 +795,44 @@ function InventoryTab({ productId, stock, form, readOnly, onSetField, onOpenStoc
         )}
       </Card>
     </div>
+  );
+}
+
+/** Permanent-delete confirmation — deliberately stronger than the generic
+ *  ConfirmModal: it requires typing the exact product name (a real
+ *  "type to confirm" gate, not just a click), and it surfaces a failed
+ *  delete inline instead of closing anyway. */
+function DeleteProductModal({ product, deleting, error, onClose, onConfirm }) {
+  const [typed, setTyped] = useState("");
+  const canConfirm = typed.trim() === (product?.name ?? "").trim() && typed.trim().length > 0;
+
+  return (
+    <Modal open onClose={onClose} title="Permanently delete this product?"
+      footer={
+        <>
+          <Btn variant="secondary" size="sm" onClick={onClose} disabled={deleting}>Cancel</Btn>
+          <Btn variant="danger" size="sm" loading={deleting} disabled={!canConfirm} onClick={onConfirm}>
+            <Trash2 className="h-3.5 w-3.5" /> Delete permanently
+          </Btn>
+        </>
+      }>
+      <p className="text-sm text-ink-soft">
+        This permanently deletes <strong className="text-ink">{product?.name}</strong> — its variants, photos,
+        video, stock history and reviews go with it. <strong className="text-ink">This cannot be undone.</strong>
+      </p>
+      <p className="mt-3 text-sm text-ink-soft">
+        Past orders that included this product are not affected: their line items keep the product's name, price
+        and image exactly as they were at the time of purchase — only the link back to this product page is removed.
+      </p>
+      <TextField
+        className="mt-4"
+        label={<>Type <strong>{product?.name}</strong> to confirm</>}
+        value={typed}
+        onChange={(e) => setTyped(e.target.value)}
+        disabled={deleting}
+      />
+      {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
+    </Modal>
   );
 }
 

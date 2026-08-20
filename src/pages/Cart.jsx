@@ -1,10 +1,10 @@
 import { navigate } from "../lib/navigate.js";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { AnimatePresence } from "framer-motion";
 import { ChevronLeft, Tag, ArrowRight, Lock, ShieldCheck, Truck } from "lucide-react";
 import { useCart } from "../context/CartContext.jsx";
 import { useUser } from "../context/UserContext.jsx";
-import { PRODUCTS } from "../data/products.js";
+import { listProducts } from "../lib/api/products.js";
 import { useStoreSettings } from "../lib/api/settings.js";
 import { useShippingMethods, cheapestZone } from "../lib/api/shipping.js";
 import { smartNavigate } from "../lib/nav-history.js";
@@ -44,13 +44,23 @@ export default function Cart() {
       : estimatedShippingPrice;
   const total = discounted + shipping;
 
+  // Live catalog, not the static data/products.js sample — see
+  // FeaturedProducts.jsx's comment for why that file 404s real product
+  // links (it was trimmed to a handful of stale slugs in 0008).
+  const [catalog, setCatalog] = useState([]);
+  useEffect(() => {
+    let alive = true;
+    listProducts().then(({ data }) => { if (alive && data) setCatalog(data); });
+    return () => { alive = false; };
+  }, []);
+
   const recommended = useMemo(() => {
     const inCart = new Set(items.map((i) => i.id));
-    return [...PRODUCTS]
+    return [...catalog]
       .filter((p) => !inCart.has(p.id))
       .sort((a, b) => b.popularity - a.popularity)
       .slice(0, 8);
-  }, [items]);
+  }, [items, catalog]);
 
   async function handlePromo(e, codeOverride) {
     e?.preventDefault?.();

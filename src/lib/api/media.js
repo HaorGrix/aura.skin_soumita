@@ -61,6 +61,48 @@ export async function uploadProductImage(productId, file, { position = 0, alt = 
   return { data, error: null };
 }
 
+/**
+ * Swap the file behind an EXISTING gallery slot without disturbing its
+ * position, alt text, or place in the reorder — the gap Delete-then-Add
+ * couldn't close on its own (Add always appends at the end, so replacing
+ * photo #2 of 5 meant deleting it, re-uploading, then manually dragging it
+ * back into place). Uploads the new file to its own fresh path first (same
+ * "never point a row at a file that isn't there yet" ordering as
+ * uploadProductImage), points the existing row at it, then removes the old
+ * object — only after the row update succeeds, so a mid-flight failure
+ * always leaves the OLD photo intact rather than an empty slot.
+ */
+export async function replaceProductImage(productId, imageRow, file) {
+  const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
+  const path = `products/${productId}/${imageRow.position}-${crypto.randomUUID()}.${ext}`;
+
+  const { error: uploadError } = await supabase.storage.from(BUCKET).upload(path, file, {
+    cacheControl: "31536000",
+    upsert: false,
+  });
+  if (uploadError) return { data: null, error: uploadError };
+
+  const { data, error } = await supabase
+    .from("product_images")
+    .update({ storage_path: path })
+    .eq("id", imageRow.id)
+    .select()
+    .single();
+
+  if (error) {
+    // Row update failed — the old row still points at the OLD file, so the
+    // just-uploaded new one is the orphan here; remove it.
+    await supabase.storage.from(BUCKET).remove([path]);
+    return { data: null, error };
+  }
+
+  // Best-effort: the row now points at the new file either way, so a
+  // failure removing the old object shouldn't be reported as the replace
+  // having failed — same reasoning as deleteProductVideo's storage cleanup.
+  await supabase.storage.from(BUCKET).remove([imageRow.storage_path]);
+  return { data, error: null };
+}
+
 /** Delete an image: removes the DB row first (so a dangling row can never
  *  point at a file that's already gone), then the Storage object. */
 export async function deleteProductImage(imageRow) {

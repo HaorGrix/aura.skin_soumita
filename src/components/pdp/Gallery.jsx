@@ -57,6 +57,14 @@ export default function Gallery({ product }) {
             }`}
           >
             <span className="absolute inset-0" style={{ background: tile(g) }} />
+            {g.image && (
+              <img
+                src={g.image}
+                alt={g.label || `${brand} ${name} — photo ${i + 1}`}
+                loading="lazy"
+                className="absolute inset-0 h-full w-full object-cover"
+              />
+            )}
             {g.label && (
               <span className="absolute inset-x-0 bottom-0 bg-black/30 py-0.5 text-[8px] font-medium text-white">
                 {g.label}
@@ -118,10 +126,26 @@ export default function Gallery({ product }) {
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-                className="group absolute inset-0 cursor-zoom-in"
+                className="group absolute inset-0 cursor-zoom-in touch-pan-y"
                 onMouseMove={onMove}
                 onMouseLeave={() => setZoom((z) => ({ ...z, on: false }))}
                 onClick={() => setLightbox(true)}
+                // Native swipe-to-change, standard mobile gallery UX. Locked to the
+                // x axis with zero drag distance (it snaps straight back) — this is
+                // a gesture trigger, not a finger-following drag, so it can't fight
+                // the AnimatePresence slide/fade between images. `touch-pan-y` above
+                // keeps vertical page scroll working while a horizontal swipe is
+                // captured, and dragThreshold on go() calls means it never fires
+                // this to fire on the same tap as the zoom-lightbox onClick.
+                drag={gallery.length > 1 ? "x" : false}
+                dragConstraints={{ left: 0, right: 0 }}
+                dragElastic={0.7}
+                onDragEnd={(_, info) => {
+                  const SWIPE_DISTANCE = 40;
+                  const SWIPE_VELOCITY = 350;
+                  if (info.offset.x <= -SWIPE_DISTANCE || info.velocity.x <= -SWIPE_VELOCITY) go(1);
+                  else if (info.offset.x >= SWIPE_DISTANCE || info.velocity.x >= SWIPE_VELOCITY) go(-1);
+                }}
               >
                 <div
                   className="absolute inset-0 transition-transform duration-200"
@@ -244,9 +268,12 @@ export default function Gallery({ product }) {
                 <button
                   key={g.id}
                   onClick={() => setActive(i)}
-                  className={`h-12 w-12 overflow-hidden rounded-lg ring-2 ${active === i ? "ring-white" : "ring-white/30"}`}
+                  className={`relative h-12 w-12 overflow-hidden rounded-lg ring-2 ${active === i ? "ring-white" : "ring-white/30"}`}
                 >
                   <span className="absolute inset-0" style={{ background: tile(g) }} />
+                  {g.image && (
+                    <img src={g.image} alt="" className="absolute inset-0 h-full w-full object-cover" />
+                  )}
                 </button>
               ))}
             </div>

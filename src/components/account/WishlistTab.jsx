@@ -1,9 +1,10 @@
 import { navigate } from "../../lib/navigate.js";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Heart, ShoppingBag, X } from "lucide-react";
 import { useWishlist } from "../../context/WishlistContext.jsx";
 import { useCart } from "../../context/CartContext.jsx";
-import { PRODUCTS } from "../../data/products.js";
+import { getProductsByIds } from "../../lib/api/products.js";
 import { formatPrice } from "../../lib/format.js";
 import { useToast } from "../../components/ui/Toast.jsx";
 import EmptyState from "../../components/ui/EmptyState.jsx";
@@ -14,10 +15,15 @@ export default function WishlistTab() {
   const { addItem, openCart } = useCart();
   const { toast } = useToast();
 
-  // Map ids back to products
-  const savedProducts = wishlistIds
-    .map((id) => PRODUCTS.find((p) => p.id === id))
-    .filter(Boolean);
+  // Live catalog lookup — see Wishlist.jsx's comment for why the static
+  // data/products.js sample can't resolve real saved ids.
+  const [savedProducts, setSavedProducts] = useState([]);
+  useEffect(() => {
+    let alive = true;
+    if (!wishlistIds.length) { setSavedProducts([]); return; }
+    getProductsByIds(wishlistIds).then(({ data }) => { if (alive && data) setSavedProducts(data); });
+    return () => { alive = false; };
+  }, [wishlistIds]);
 
   const handleMoveToCart = (product) => {
     // The cart refuses sold-out items, so removing it from the wishlist here

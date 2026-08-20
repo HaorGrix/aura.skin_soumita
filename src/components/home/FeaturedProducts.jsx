@@ -1,7 +1,7 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowRight } from "lucide-react";
-import { PRODUCTS } from "../../data/products.js";
+import { listProducts } from "../../lib/api/products.js";
 import ProductCard from "../ui/ProductCard.jsx";
 import QuickViewModal from "../shop/QuickViewModal.jsx";
 
@@ -13,17 +13,28 @@ const TABS = [
 export default function FeaturedProducts() {
   const [tab, setTab] = useState("best");
   const [quickView, setQuickView] = useState(null);
+  // Live catalog, not the static data/products.js sample — that file was
+  // trimmed down (0008_trim_catalog_to_sample.sql) and its slugs no longer
+  // match real products, so cards built from it were 404ing straight into
+  // "product not found." Same live source Shop.jsx already reads from.
+  const [products, setProducts] = useState([]);
+
+  useEffect(() => {
+    let alive = true;
+    listProducts().then(({ data }) => { if (alive && data) setProducts(data); });
+    return () => { alive = false; };
+  }, []);
 
   const items = useMemo(() => {
     if (tab === "new")
       // Only show products tagged isNew, ranked by popularity.
-      return [...PRODUCTS]
+      return [...products]
         .filter((p) => p.isNew)
         .sort((a, b) => b.popularity - a.popularity)
         .slice(0, 8);
-    // Best Sellers: rank by salesCount (synthetic units-sold), matching the Shop page.
-    return [...PRODUCTS].sort((a, b) => b.salesCount - a.salesCount).slice(0, 8);
-  }, [tab]);
+    // Best Sellers: rank by salesCount, matching the Shop page.
+    return [...products].sort((a, b) => b.salesCount - a.salesCount).slice(0, 8);
+  }, [tab, products]);
 
   return (
     <section id="featured" className="py-10 sm:py-14">

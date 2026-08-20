@@ -175,8 +175,17 @@ function SlideMedia({ slide, active }) {
       {/* Blurred backdrop. Source banners (and anything an admin uploads)
           don't share one aspect ratio and carry baked-in marketing text, so
           object-cover would crop that copy at unpredictable ratios. contain
-          + this fill keeps every banner whole AND the tile full-bleed. */}
-      {!video && (
+          + this fill keeps every banner whole AND the tile full-bleed.
+          Active-only: this and the foreground image below are otherwise the
+          SAME multi-MB file requested twice per slide, and Swiper mounts
+          every rail slide up front (not just the visible ones) — with 8
+          slides that was up to 16 full-size image fetches racing on first
+          paint, the actual cause of a slow-loading hero. Only the focal
+          slide needs the decorative blur at all; peeking neighbours are
+          partially cropped and small enough that its absence there is
+          imperceptible — same reasoning already applied to video playback
+          just below (only the active slide's video plays). */}
+      {!video && active && (
         <img
           src={src}
           alt=""
@@ -202,7 +211,12 @@ function SlideMedia({ slide, active }) {
         <img
           src={src}
           alt={slide.title || `${storeName} promotion`}
-          loading="eager"
+          // Only the focal slide is fetched with any urgency — every other
+          // rail slide (there can be up to MIN_LOOP_SLIDES of them mounted
+          // at once) lazy-loads instead of racing the active banner for
+          // bandwidth on first paint.
+          loading={active ? "eager" : "lazy"}
+          fetchPriority={active ? "high" : "low"}
           decoding="async"
           className="relative h-full w-full object-contain"
         />

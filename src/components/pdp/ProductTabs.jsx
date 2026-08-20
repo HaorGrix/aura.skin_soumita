@@ -96,11 +96,26 @@ function Row({ k, v }) {
 }
 
 function HowToUse({ product }) {
+  const howTo = product.howTo;
+
+  // A single free-typed paragraph (no line breaks in the admin's "How to
+  // use" field) reads as directions, not a numbered ritual — forcing it
+  // into one lonely card in an otherwise-3-column grid looked broken, so
+  // it gets the same prose treatment as the Description tab instead.
+  if (howTo.kind === "prose") {
+    return (
+      <div className="max-w-2xl">
+        <h3 className="font-display text-2xl text-ink">How to use</h3>
+        <p className="mt-3 leading-relaxed text-ink-soft">{howTo.text}</p>
+      </div>
+    );
+  }
+
   return (
     <div>
       <h3 className="font-display text-2xl text-ink">Your ritual, step by step</h3>
       <div className="mt-6 grid gap-5 sm:grid-cols-3">
-        {product.howTo.map((step, i) => (
+        {howTo.steps.map((step, i) => (
           <motion.div
             key={i}
             initial={{ opacity: 0, y: 18 }}

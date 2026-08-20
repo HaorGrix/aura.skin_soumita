@@ -293,7 +293,11 @@ export default function ProductEdit({ id }) {
             <TextField label="Short subtitle" value={form.subtitle ?? ""} onChange={setInput("subtitle")} disabled={readOnly} className="sm:col-span-2" />
             <TextField as="textarea" label="Description" hint="Shown on the product page as “The story.” Leave blank to show an auto-generated summary instead." value={form.description ?? ""} onChange={setInput("description")} disabled={readOnly} className="sm:col-span-2" />
             <TextField as="textarea" label="Brand philosophy" hint="Shown on the product page as “Our philosophy.” Leave blank to show the default philosophy blurb instead." value={form.philosophy ?? ""} onChange={setInput("philosophy")} disabled={readOnly} className="sm:col-span-2" />
-            <TextField as="textarea" label="How to use" value={form.how_to_use ?? ""} onChange={setInput("how_to_use")} disabled={readOnly} className="sm:col-span-2" />
+            <TextField
+              as="textarea" label="How to use"
+              hint="One step per line for a numbered ritual card layout (optionally start a line with a short title and a colon, e.g. “Apply: Smooth onto clean skin.”) — or write one paragraph for plain directions instead. Leave blank to show a default ritual for this category."
+              value={form.how_to_use ?? ""} onChange={setInput("how_to_use")} disabled={readOnly} className="sm:col-span-2" rows={5}
+            />
           </div>
         </Card>
       )}

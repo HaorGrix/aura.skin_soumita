@@ -114,6 +114,47 @@ const HOWTO = {
 };
 const HOWTO_DEFAULT = HOWTO.Serum;
 
+// Cosmetic-only rotation for admin-authored steps — there's no way to infer
+// a *meaningful* emoji per line of free text the way the category templates
+// above hand-pick one per step, so this just cycles through a neutral set
+// for visual rhythm instead of showing the same icon on every card.
+const HOWTO_CUSTOM_EMOJI = ["✨", "💧", "🤲", "🌙", "🧴", "🔁", "🌿", "☀️"];
+
+/** Turn the admin's free-text "How to use" into the same {emoji, title,
+ *  text} step shape the category templates use — same admin-input-wins,
+ *  template-as-fallback contract as longDescription/philosophy above.
+ *
+ *  Two shapes come out of one field, chosen by what the admin actually
+ *  typed, so this works whether they write a numbered ritual or a single
+ *  paragraph — no separate UI/field needed for either:
+ *   - Multiple non-blank lines → each line is one step. An optional
+ *     "Title: text" prefix (colon in the first ~40 chars) supplies the
+ *     step's title; otherwise it's labelled "Step N".
+ *   - Exactly one line (a plain paragraph, no line breaks) → doesn't force
+ *     a single lonely card into a 3-column step grid; rendered as prose
+ *     instead, matching the Description tab's style.
+ *   - Blank/missing → null, so buildPdp() falls back to the category
+ *     template untouched.
+ */
+function parseHowTo(rawText) {
+  const lines = (rawText ?? "").split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+  if (!lines.length) return null;
+
+  if (lines.length === 1) {
+    return { kind: "prose", text: lines[0] };
+  }
+
+  const steps = lines.map((line, i) => {
+    const m = line.match(/^([^:：]{1,40})[:：]\s*(.+)$/);
+    return {
+      emoji: HOWTO_CUSTOM_EMOJI[i % HOWTO_CUSTOM_EMOJI.length],
+      title: m ? m[1].trim() : `Step ${i + 1}`,
+      text: m ? m[2].trim() : line,
+    };
+  });
+  return { kind: "steps", steps };
+}
+
 /* Deterministic PRNG seeded from the product id (stable reviews) */
 function seeded(id) {
   let h = 2166136261;
@@ -284,7 +325,7 @@ export function buildPdp(product) {
     ingredients,
     longDescription,
     philosophy,
-    howTo: HOWTO[product.category] ?? HOWTO_DEFAULT,
+    howTo: parseHowTo(product.howToUse) ?? { kind: "steps", steps: HOWTO[product.category] ?? HOWTO_DEFAULT },
     // Real DB-backed products (getProductBySlug in lib/api/products.js)
     // already attach `product.variants` — the actual product_variants rows,
     // not a guess. buildVariants() only fires for the bundled static

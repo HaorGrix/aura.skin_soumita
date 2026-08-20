@@ -6,7 +6,6 @@ import { formatPrice } from "../../lib/format.js";
 
 const TABS = [
   { id: "description", label: "Description" },
-  { id: "ingredients", label: "Key Ingredients" },
   { id: "how", label: "How to Use" },
   { id: "reviews", label: "Reviews" },
   { id: "shipping", label: "Shipping & Returns" },
@@ -54,7 +53,6 @@ export default function ProductTabs({ product, active, onChange, onWriteReview }
           transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
         >
           {active === "description" && <Description product={product} />}
-          {active === "ingredients" && <Ingredients product={product} />}
           {active === "how" && <HowToUse product={product} />}
           {active === "reviews" && <ReviewsSection product={product} />}
           {active === "shipping" && <Shipping product={product} />}
@@ -93,37 +91,6 @@ function Row({ k, v }) {
     <div className="flex justify-between gap-4 border-b border-line pb-3 last:border-0">
       <dt className="shrink-0 text-ink-soft">{k}</dt>
       <dd className="text-right font-medium text-ink">{v}</dd>
-    </div>
-  );
-}
-
-function Ingredients({ product }) {
-  return (
-    <div>
-      <h3 className="font-display text-2xl text-ink">Key ingredients</h3>
-      <p className="mt-2 max-w-xl text-ink-soft">
-        Clean, effective actives — nothing harsh, everything purposeful.
-      </p>
-      <div className="mt-6 grid gap-4 sm:grid-cols-2">
-        {product.ingredients.map((ing) => (
-          <motion.div
-            key={ing.name}
-            initial={{ opacity: 0, y: 16 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, amount: 0.4 }}
-            transition={{ duration: 0.4 }}
-            className="flex gap-4 rounded-[1.25rem] bg-snow p-5 ring-1 ring-line"
-          >
-            <span className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-petal text-2xl">
-              {ing.emoji}
-            </span>
-            <div>
-              <p className="font-semibold text-ink">{ing.name}</p>
-              <p className="mt-1 text-sm leading-relaxed text-ink-soft">{ing.blurb}</p>
-            </div>
-          </motion.div>
-        ))}
-      </div>
     </div>
   );
 }

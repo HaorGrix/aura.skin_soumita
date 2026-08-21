@@ -347,7 +347,11 @@ export function buildPdp(product) {
       // in ProductTabs.jsx from store_settings.free_shipping_threshold_minor —
       // this module has no access to the live admin setting, so it's not
       // baked in here.
-      returns: "Loved-it-or-not 30-day returns. Empties welcome — we recycle. ♻️",
+      // Matches the real policy on the Shipping & Returns page (ShippingReturns.jsx)
+      // — hygiene rules on skincare mean unused/unopened only, not "any reason,
+      // any condition." The previous "Loved-it-or-not… empties welcome" line
+      // promised the opposite of what the store actually honours.
+      returns: "7-day returns on unused, unopened items. Damaged, faulty or incorrect orders are always covered.",
     },
   };
 }

@@ -1,0 +1,42 @@
+-- ===================================================================
+-- skin.theory — backfill blank SKUs to NULL; stop empty-string SKU
+-- collisions from blocking bulk product creation
+-- -------------------------------------------------------------------
+-- ROOT CAUSE (live audit, admin panel "Add Product stops working after
+-- a few products" bug): createProduct()/updateProduct()
+-- (lib/api/admin/catalog.js) passed the SKU field straight through from
+-- the form, with no empty-string-to-null normalization. products.sku
+-- is UNIQUE, and Postgres treats '' as a real, colliding value — unlike
+-- NULL, which is always distinct from every other NULL under a
+-- standard unique constraint. Leaving SKU blank (very normal during
+-- bulk cataloging — SKU isn't always known upfront) on a SECOND
+-- product after the first one was also left blank threw
+-- "duplicate key value violates unique constraint products_sku_key".
+--
+-- Confirmed this already happened for real, live catalog data before
+-- this fix: VASELINE LIP THERAPY ALOE VERA already had sku = '' in
+-- production, which would silently block any other blank-SKU product
+-- from ever being saved for as long as that row existed.
+--
+-- The application code is fixed separately (catalog.js's pickWritable
+-- now coerces sku: "" -> null on every future save). This migration is
+-- the one-time backfill for rows already stuck with the old, broken
+-- empty-string value.
+--
+-- HOW TO APPLY: Supabase Dashboard -> SQL Editor -> paste -> Run.
+-- ===================================================================
+
+update public.products set sku = null where sku = '';
+
+-- -------------------------------------------------------------------
+-- VERIFY
+--   select count(*) from products where sku = '';
+--   -- expect: 0
+--
+--   select id, name, sku from products where name = 'VASELINE LIP THERAPY ALOE VERA';
+--   -- expect: sku is null, not ''
+--
+--   -- two DIFFERENT products can both now be saved with SKU left blank:
+--   -- create product A with no SKU, then product B with no SKU — both
+--   -- succeed (previously the second would throw products_sku_key).
+-- ===================================================================

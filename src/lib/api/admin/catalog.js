@@ -170,6 +170,13 @@ const WRITABLE = [
 function pickWritable(input) {
   const out = {};
   for (const k of WRITABLE) if (input[k] !== undefined) out[k] = input[k];
+  // products.sku is UNIQUE, and Postgres treats '' as a real, colliding
+  // value (unlike NULL, which is always distinct from every other NULL
+  // under a standard unique constraint). Confirmed live: leaving SKU blank
+  // on a second product threw "duplicate key value violates unique
+  // constraint products_sku_key" — an empty string left over from the form
+  // is "no SKU yet", not literally the SKU "", so it must go in as NULL.
+  if (out.sku === "") out.sku = null;
   return out;
 }
 

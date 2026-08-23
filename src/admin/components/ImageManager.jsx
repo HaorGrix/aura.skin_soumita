@@ -29,7 +29,12 @@ import {
 import { Btn, ConfirmModal, Spinner } from "./kit.jsx";
 
 const MAX_BYTES = 5 * 1024 * 1024;
-const MAX_IMAGES = 6;
+// Storefront note: the PDP gallery (Gallery.jsx) only ever shows the first
+// PDP_VISIBLE_THUMBS (6) thumbnails inline — anything past that collapses
+// into a single "+N more" tile that opens the full set in the lightbox, so
+// raising this doesn't clutter the customer-facing gallery. This admin
+// grid itself always shows every slot; only the storefront collapses.
+const MAX_IMAGES = 12;
 // 15 MB caps a short (~30–60s), 720p H.264 clip — long enough for a real
 // "how to use" demo, small enough not to blow through a shopper's mobile
 // data just loading a product page. MP4/WebM only: universally playable in
@@ -242,9 +247,9 @@ export default function ImageManager({ productId, images = [], onChange, disable
   return (
     <div>
       {/* Auto-fit: the browser decides how many tiles fit per row at the
-          viewport's actual width, so 1, 3, or 6 images all lay out cleanly
-          with no leftover empty cells and no JS breakpoint logic to keep in
-          sync with the design.
+          viewport's actual width, so any count up to MAX_IMAGES lays out
+          cleanly with no leftover empty cells and no JS breakpoint logic to
+          keep in sync with the design.
 
           aspect-[4/5] on every tile below (grid, in-flight, add-button) is
           deliberately the SAME crop the storefront uses for this image —

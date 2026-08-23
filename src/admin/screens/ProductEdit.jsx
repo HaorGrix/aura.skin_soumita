@@ -142,56 +142,77 @@ export default function ProductEdit({ id }) {
   async function handleSave() {
     setSaving(true); setError(null);
 
-    if (!form.name?.trim()) { setSaving(false); setTab("Details"); return setError("A product needs a name."); }
-    // Without this, an empty category_id ("") reaches Postgres as-is and
-    // fails with "invalid input syntax for type uuid: ''" — a raw DB error
-    // shown to the admin instead of a plain-English reason to fix it.
-    if (!form.category_id) { setSaving(false); setTab("Details"); return setError("Category is required."); }
-    if (form.price_minor == null) { setSaving(false); setTab("Pricing"); return setError("A product needs a price."); }
+    // CRITICAL: everything below is wrapped in try/catch/finally. Without
+    // it, any THROWN (not returned) exception — a dropped network
+    // connection, a JWT-refresh edge case, any unexpected rejection out of
+    // the Supabase client — skipped every setSaving(false) call below and
+    // left `saving` stuck at `true` forever. Btn renders `disabled={loading
+    // || ...}` (kit.jsx), so a stuck `saving=true` permanently disables the
+    // Save button with NO visible error — clicking it does nothing at all,
+    // silently, for the rest of that component's life. Confirmed live: this
+    // is exactly the "fill in a product, click Save, nothing happens" bug
+    // reported after several back-to-back creations — a refresh resets
+    // `saving` to false again (fresh component state), which is why it
+    // looked like the form just "reset to blank," and why it felt random
+    // rather than tied to any specific product count — whatever transient
+    // condition throws (not returns) an error is what triggers it, not a
+    // counter. The `finally` below guarantees the button can never get
+    // stuck again: whatever happens, `saving` always ends up `false`.
+    try {
+      if (!form.name?.trim()) { setTab("Details"); return setError("A product needs a name."); }
+      // Without this, an empty category_id ("") reaches Postgres as-is and
+      // fails with "invalid input syntax for type uuid: ''" — a raw DB error
+      // shown to the admin instead of a plain-English reason to fix it.
+      if (!form.category_id) { setTab("Details"); return setError("Category is required."); }
+      if (form.price_minor == null) { setTab("Pricing"); return setError("A product needs a price."); }
 
-    const payload = { ...form, slug: form.slug || slugify(`${form.brand}-${form.name}`) };
+      const payload = { ...form, slug: form.slug || slugify(`${form.brand}-${form.name}`) };
 
-    const { data, error } = isNew
-      ? await createProduct(payload)
-      : await updateProduct(productId, payload, { previousSlug: original.slug });
+      const { data, error } = isNew
+        ? await createProduct(payload)
+        : await updateProduct(productId, payload, { previousSlug: original.slug });
 
-    if (error) { setSaving(false); return setError(error.message); }
+      if (error) return setError(error.message);
 
-    // Starting stock, applied as a real ledger movement right after the
-    // product exists — same adjust_stock() path the Inventory tab's "Adjust
-    // stock" uses, just triggered automatically instead of requiring a
-    // separate trip back into this same product. A failure here shouldn't
-    // hide that the PRODUCT itself saved fine (it did) — surfaced as its
-    // own message, product left open on the (now-unlocked) Inventory tab
-    // rather than blocking navigation.
-    const startingStock = isNew && initialStock !== "" ? Number(initialStock) : 0;
-    let stockError = null;
-    if (startingStock > 0) {
-      const { error: stockErr } = await adjustStock(data.id, startingStock, "restock", "Starting stock at creation");
-      stockError = stockErr;
-    }
-
-    setSaving(false);
-    setOriginal(data);
-    setForm(data);
-    if (isNew) {
-      setProductId(data.id);
-      setStockValue(stockError ? 0 : startingStock);
-      // Replace rather than push: going Back from a freshly created product
-      // should not land on the "new product" form again.
-      adminNavigate(`/admin/products/${data.id}`, { replace: true });
-      if (stockError) {
-        setTab("Inventory");
-        setError(`Product saved, but starting stock couldn't be set: ${stockError.message}. Set it from the Inventory tab.`);
-      } else {
-        // Everything fillable pre-save (Details, Pricing, Attributes, SEO,
-        // stock) is done — Images is genuinely the only thing that COULDN'T
-        // happen until this product had a real id, so it's the natural next
-        // stop rather than leaving the admin on Pricing wondering what's
-        // left. Landing here (not back on the product list) is what actually
-        // saves the "reopen the product to add photos" round trip.
-        setTab("Images");
+      // Starting stock, applied as a real ledger movement right after the
+      // product exists — same adjust_stock() path the Inventory tab's "Adjust
+      // stock" uses, just triggered automatically instead of requiring a
+      // separate trip back into this same product. A failure here shouldn't
+      // hide that the PRODUCT itself saved fine (it did) — surfaced as its
+      // own message, product left open on the (now-unlocked) Inventory tab
+      // rather than blocking navigation.
+      const startingStock = isNew && initialStock !== "" ? Number(initialStock) : 0;
+      let stockError = null;
+      if (startingStock > 0) {
+        const { error: stockErr } = await adjustStock(data.id, startingStock, "restock", "Starting stock at creation");
+        stockError = stockErr;
       }
+
+      setOriginal(data);
+      setForm(data);
+      if (isNew) {
+        setProductId(data.id);
+        setStockValue(stockError ? 0 : startingStock);
+        // Replace rather than push: going Back from a freshly created product
+        // should not land on the "new product" form again.
+        adminNavigate(`/admin/products/${data.id}`, { replace: true });
+        if (stockError) {
+          setTab("Inventory");
+          setError(`Product saved, but starting stock couldn't be set: ${stockError.message}. Set it from the Inventory tab.`);
+        } else {
+          // Everything fillable pre-save (Details, Pricing, Attributes, SEO,
+          // stock) is done — Images is genuinely the only thing that COULDN'T
+          // happen until this product had a real id, so it's the natural next
+          // stop rather than leaving the admin on Pricing wondering what's
+          // left. Landing here (not back on the product list) is what actually
+          // saves the "reopen the product to add photos" round trip.
+          setTab("Images");
+        }
+      }
+    } catch (e) {
+      setError(e?.message || "Save failed unexpectedly — please try again. If this keeps happening, check your connection.");
+    } finally {
+      setSaving(false);
     }
   }
 
@@ -516,10 +537,15 @@ export default function ProductEdit({ id }) {
           onConfirm={async () => {
             setDeleting(true);
             setDeleteError(null);
-            const { error } = await deleteProduct(productId);
-            setDeleting(false);
-            if (error) { setDeleteError(error.message ?? "Delete failed. Try again."); return; }
-            adminNavigate("/admin/products");
+            try {
+              const { error } = await deleteProduct(productId);
+              if (error) { setDeleteError(error.message ?? "Delete failed. Try again."); return; }
+              adminNavigate("/admin/products");
+            } catch (e) {
+              setDeleteError(e?.message || "Delete failed unexpectedly — please try again.");
+            } finally {
+              setDeleting(false);
+            }
           }}
         />
       )}
@@ -576,21 +602,30 @@ function VariantsTab({ productId, variants, readOnly, onReload, onProductReload 
 
   async function handleSave() {
     setSaving(true); setError(null);
-    for (const r of rows) {
-      if (!r.size_label?.trim()) { setSaving(false); return setError("Every size needs a name."); }
-      if (r.price_minor == null) { setSaving(false); return setError(`${r.size_label} needs a price.`); }
-      const { error } = await upsertVariant(r);
-      if (error) { setSaving(false); return setError(error.message); }
+    // See the identical try/catch/finally in the parent ProductEdit's own
+    // handleSave for why this matters: without it, a thrown (not returned)
+    // exception mid-loop skips every setSaving(false) below and leaves this
+    // Save button permanently disabled with no visible error.
+    try {
+      for (const r of rows) {
+        if (!r.size_label?.trim()) { return setError("Every size needs a name."); }
+        if (r.price_minor == null) { return setError(`${r.size_label} needs a price.`); }
+        const { error } = await upsertVariant(r);
+        if (error) return setError(error.message);
+      }
+      for (const r of newRows) {
+        if (!r.size_label?.trim()) { return setError("Every size needs a name."); }
+        if (r.price_minor == null) { return setError(`${r.size_label || "New size"} needs a price.`); }
+        const { error } = await upsertVariant({ ...r, product_id: productId });
+        if (error) return setError(error.message);
+      }
+      await onReload();
+      await onProductReload(); // the default variant may have changed price/stock mirrored onto the product
+    } catch (e) {
+      setError(e?.message || "Save failed unexpectedly — please try again.");
+    } finally {
+      setSaving(false);
     }
-    for (const r of newRows) {
-      if (!r.size_label?.trim()) { setSaving(false); return setError("Every size needs a name."); }
-      if (r.price_minor == null) { setSaving(false); return setError(`${r.size_label || "New size"} needs a price.`); }
-      const { error } = await upsertVariant({ ...r, product_id: productId });
-      if (error) { setSaving(false); return setError(error.message); }
-    }
-    setSaving(false);
-    await onReload();
-    await onProductReload(); // the default variant may have changed price/stock mirrored onto the product
   }
 
   return (
@@ -727,7 +762,7 @@ function VariantStockModal({ variant, onClose, onApply }) {
         <>
           <Btn variant="secondary" size="sm" onClick={onClose}>Cancel</Btn>
           <Btn size="sm" loading={busy} disabled={amount === "" || next < 0}
-            onClick={async () => { setBusy(true); await onApply(next, note || null); setBusy(false); }}>
+            onClick={async () => { setBusy(true); try { await onApply(next, note || null); } finally { setBusy(false); } }}>
             Apply
           </Btn>
         </>
@@ -855,7 +890,7 @@ function StockModal({ open, onClose, current, onApply }) {
         <>
           <Btn variant="secondary" size="sm" onClick={onClose}>Cancel</Btn>
           <Btn size="sm" loading={busy} disabled={amount === "" || next < 0}
-            onClick={async () => { setBusy(true); await onApply(next, note || null); setBusy(false); setAmount(""); setNote(""); }}>
+            onClick={async () => { setBusy(true); try { await onApply(next, note || null); } finally { setBusy(false); setAmount(""); setNote(""); } }}>
             Apply
           </Btn>
         </>

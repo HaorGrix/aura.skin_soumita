@@ -14,9 +14,19 @@ function tile(item) {
   return overlays[item.hue % overlays.length].replaceAll("TONE", item.tone);
 }
 
+// How many real thumbnails show inline next to the main image before
+// collapsing into a "+N more" tile. Products can carry up to 12 photos
+// (ImageManager.jsx's MAX_IMAGES) now, but the inline strip stays capped
+// here so a heavily-photographed product doesn't visually overwhelm the
+// gallery — the full set is still one tap away via the lightbox, which
+// already renders every image in `gallery`, not just the visible slice.
+const PDP_VISIBLE_THUMBS = 6;
+
 export default function Gallery({ product }) {
   const reduce = useReducedMotion();
   const { gallery, hasVideo, badge, brand, name } = product;
+  const overflowCount = Math.max(0, gallery.length - PDP_VISIBLE_THUMBS);
+  const visibleThumbs = overflowCount > 0 ? gallery.slice(0, PDP_VISIBLE_THUMBS) : gallery;
 
   const [tab, setTab] = useState("photos"); // photos | video
   const [active, setActive] = useState(0);
@@ -46,10 +56,18 @@ export default function Gallery({ product }) {
     // ~448px regardless of the actual column width and got silently
     // clipped by the page's overflow-x:hidden (no scrollbar, so it read as
     // "the image is cut off" rather than an obviously-scrollable overflow).
-    <div className="min-w-0 lg:flex lg:gap-4">
-      {/* Thumbnails (left on desktop, below on mobile) */}
-      <div className="order-2 mt-3 flex gap-3 lg:order-1 lg:mt-0 lg:flex-col">
-        {gallery.map((g, i) => (
+    // flex (not lg:flex) so the order-1/order-2 classes below actually apply
+    // on mobile too — they previously only worked from `lg` up, so below that
+    // breakpoint the browser fell back to plain DOM order (thumbnails first,
+    // stage after) with none of the intended gap between them: the thumbnail
+    // row sat flush against the top edge of the full-width hero image below
+    // it, reading as one clashing block instead of two distinct sections.
+    <div className="flex min-w-0 flex-col gap-3 lg:flex-row lg:gap-4">
+      {/* Thumbnails (left on desktop, below on mobile) — spacing now comes
+          from the parent flex's `gap`, not a one-sided margin, so it's
+          correct regardless of which order these actually render in. */}
+      <div className="order-2 flex gap-3 lg:order-1 lg:flex-col">
+        {visibleThumbs.map((g, i) => (
           <button
             key={g.id}
             onClick={() => {
@@ -79,6 +97,32 @@ export default function Gallery({ product }) {
             )}
           </button>
         ))}
+        {overflowCount > 0 && (
+          <button
+            onClick={() => {
+              setTab("photos");
+              setActive(PDP_VISIBLE_THUMBS); // jump straight to the first hidden photo
+              setLightbox(true);
+            }}
+            aria-label={`View ${overflowCount} more photo${overflowCount === 1 ? "" : "s"}`}
+            className={`relative h-16 w-16 shrink-0 overflow-hidden rounded-xl ring-2 transition-all lg:h-20 lg:w-20 ${
+              tab === "photos" && active >= PDP_VISIBLE_THUMBS ? "ring-magenta" : "ring-transparent hover:ring-rose/50"
+            }`}
+          >
+            <span className="absolute inset-0" style={{ background: tile(gallery[PDP_VISIBLE_THUMBS]) }} />
+            {gallery[PDP_VISIBLE_THUMBS]?.image && (
+              <img
+                src={gallery[PDP_VISIBLE_THUMBS].image}
+                alt=""
+                loading="lazy"
+                className="absolute inset-0 h-full w-full object-cover"
+              />
+            )}
+            <span className="absolute inset-0 flex items-center justify-center bg-ink/60 text-sm font-semibold text-white backdrop-blur-[1px]">
+              +{overflowCount}
+            </span>
+          </button>
+        )}
         {hasVideo && (
           <button
             onClick={() => setTab("video")}
@@ -100,7 +144,13 @@ export default function Gallery({ product }) {
           framing a photo for this ratio was getting a different crop
           here than everywhere else it's shown. */}
       <div className="order-1 flex-1 lg:order-2">
-        <div className="relative mx-auto aspect-[4/5] w-full max-w-[28rem] overflow-hidden rounded-2xl ring-1 ring-line sm:max-w-md lg:max-w-none lg:rounded-[1.5rem]">
+        {/* max-w-xs (320px) on mobile — the previous max-w-[28rem] (448px)
+            is wider than any phone, so it had zero effect there: the stage
+            ran full-bleed edge to edge and, at this 4:5 ratio, that made it
+            nearly 500px tall on a typical phone, dwarfing everything else
+            on the page. Still the SAME 4:5 crop everywhere (unchanged) —
+            only the box it's displayed in shrinks on small screens. */}
+        <div className="relative mx-auto aspect-[4/5] w-full max-w-xs overflow-hidden rounded-2xl ring-1 ring-line sm:max-w-md lg:max-w-none lg:rounded-[1.5rem]">
           {/* Tab pills */}
           <div className="absolute left-3 top-3 z-20 flex gap-1.5">
             <button

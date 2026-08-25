@@ -79,14 +79,28 @@ function Description({ product }) {
           <Row k="Category" v={product.category} />
           <Row k="Best for" v={product.skinType.join(", ")} />
           <Row k="Targets" v={product.concern.join(", ")} />
-          <Row k="Hero actives" v={product.ingredients.map((i) => i.name).join(", ")} />
+          {/* stacked, not inline+right-aligned like the rows above — a full
+              ingredient list can run to 30+ names, and right-aligning that
+              much wrapped text reads as a jagged, hard-to-scan mess (every
+              line trailing off the same right edge with nothing to anchor
+              on). Label-above/value-below, left-aligned, is how an actual
+              ingredients list is meant to read. */}
+          <Row k="Hero actives" v={product.ingredients.map((i) => i.name).join(", ")} stacked />
         </dl>
       </div>
     </div>
   );
 }
 
-function Row({ k, v }) {
+function Row({ k, v, stacked }) {
+  if (stacked) {
+    return (
+      <div className="border-b border-line pb-3 last:border-0">
+        <dt className="text-ink-soft">{k}</dt>
+        <dd className="mt-1.5 leading-relaxed text-ink">{v}</dd>
+      </div>
+    );
+  }
   return (
     <div className="flex justify-between gap-4 border-b border-line pb-3 last:border-0">
       <dt className="shrink-0 text-ink-soft">{k}</dt>

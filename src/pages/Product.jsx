@@ -132,8 +132,12 @@ export default function Product({ id }) {
        Sephora/ASOS; generous on desktop. Bottom padding clears the mobile
        sticky add-bar (~70px). */
     <div className="pb-28 lg:pb-24">
-      <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-10">
-        {/* Breadcrumb / back */}
+      <div className="relative z-10 mx-auto max-w-7xl px-4 pt-4 sm:px-6 lg:px-10">
+        {/* Breadcrumb / back — the shared page paddingTop (App.jsx's
+            --header-h, published by <Navbar>) clears the fixed header
+            EXACTLY, with no margin of its own, so without this pt-4 the
+            breadcrumb rendered flush against the header's bottom edge —
+            visibly touching it, not just close to it. */}
         <motion.nav
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}

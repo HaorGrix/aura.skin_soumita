@@ -75,9 +75,9 @@ export default function Gallery({ product }) {
               setActive(i);
             }}
             aria-label={g.label || `Photo ${i + 1}`}
-            className={`relative h-16 w-16 shrink-0 overflow-hidden rounded-xl ring-2 transition-all lg:h-20 lg:w-20 ${
+            className={`relative h-[4.5rem] w-[4.5rem] shrink-0 overflow-hidden rounded-2xl ring-2 transition-all lg:h-20 lg:w-20 lg:rounded-xl ${
               tab === "photos" && active === i
-                ? "ring-magenta"
+                ? "ring-[3px] ring-magenta lg:ring-2"
                 : "ring-transparent hover:ring-rose/50"
             }`}
           >
@@ -105,8 +105,8 @@ export default function Gallery({ product }) {
               setLightbox(true);
             }}
             aria-label={`View ${overflowCount} more photo${overflowCount === 1 ? "" : "s"}`}
-            className={`relative h-16 w-16 shrink-0 overflow-hidden rounded-xl ring-2 transition-all lg:h-20 lg:w-20 ${
-              tab === "photos" && active >= PDP_VISIBLE_THUMBS ? "ring-magenta" : "ring-transparent hover:ring-rose/50"
+            className={`relative h-[4.5rem] w-[4.5rem] shrink-0 overflow-hidden rounded-2xl ring-2 transition-all lg:h-20 lg:w-20 lg:rounded-xl ${
+              tab === "photos" && active >= PDP_VISIBLE_THUMBS ? "ring-[3px] ring-magenta lg:ring-2" : "ring-transparent hover:ring-rose/50"
             }`}
           >
             <span className="absolute inset-0" style={{ background: tile(gallery[PDP_VISIBLE_THUMBS]) }} />
@@ -127,8 +127,8 @@ export default function Gallery({ product }) {
           <button
             onClick={() => setTab("video")}
             aria-label="Watch video"
-            className={`relative grid h-16 w-16 shrink-0 place-items-center overflow-hidden rounded-xl bg-ink text-white ring-2 transition-all lg:h-20 lg:w-20 ${
-              tab === "video" ? "ring-magenta" : "ring-transparent hover:ring-rose/50"
+            className={`relative grid h-[4.5rem] w-[4.5rem] shrink-0 place-items-center overflow-hidden rounded-2xl bg-ink text-white ring-2 transition-all lg:h-20 lg:w-20 lg:rounded-xl ${
+              tab === "video" ? "ring-[3px] ring-magenta lg:ring-2" : "ring-transparent hover:ring-rose/50"
             }`}
           >
             <Play className="h-5 w-5" fill="currentColor" strokeWidth={0} />
@@ -144,13 +144,13 @@ export default function Gallery({ product }) {
           framing a photo for this ratio was getting a different crop
           here than everywhere else it's shown. */}
       <div className="order-1 flex-1 lg:order-2">
-        {/* max-w-xs (320px) on mobile — the previous max-w-[28rem] (448px)
-            is wider than any phone, so it had zero effect there: the stage
-            ran full-bleed edge to edge and, at this 4:5 ratio, that made it
-            nearly 500px tall on a typical phone, dwarfing everything else
-            on the page. Still the SAME 4:5 crop everywhere (unchanged) —
-            only the box it's displayed in shrinks on small screens. */}
-        <div className="relative mx-auto aspect-[4/5] w-full max-w-xs overflow-hidden rounded-2xl ring-1 ring-line sm:max-w-md lg:max-w-none lg:rounded-[1.5rem]">
+        {/* Full-bleed within the page's own gutters on mobile (no width cap) —
+            a deliberate change from the earlier max-w-xs treatment: that kept
+            the stage a fixed 320px regardless of the actual viewport, reading
+            as noticeably smaller/more boxed-in than a typical mobile PDP
+            hero. Still the SAME 4:5 crop everywhere (unchanged) — only the
+            box it's displayed in now fills the available width. */}
+        <div className="relative mx-auto aspect-[4/5] w-full overflow-hidden rounded-[1.75rem] ring-1 ring-line lg:rounded-[1.5rem]">
           {/* Tab pills */}
           <div className="absolute left-3 top-3 z-20 flex gap-1.5">
             <button

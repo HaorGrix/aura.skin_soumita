@@ -14,19 +14,9 @@ function tile(item) {
   return overlays[item.hue % overlays.length].replaceAll("TONE", item.tone);
 }
 
-// How many real thumbnails show inline next to the main image before
-// collapsing into a "+N more" tile. Products can carry up to 12 photos
-// (ImageManager.jsx's MAX_IMAGES) now, but the inline strip stays capped
-// here so a heavily-photographed product doesn't visually overwhelm the
-// gallery — the full set is still one tap away via the lightbox, which
-// already renders every image in `gallery`, not just the visible slice.
-const PDP_VISIBLE_THUMBS = 6;
-
 export default function Gallery({ product }) {
   const reduce = useReducedMotion();
   const { gallery, hasVideo, badge, brand, name } = product;
-  const overflowCount = Math.max(0, gallery.length - PDP_VISIBLE_THUMBS);
-  const visibleThumbs = overflowCount > 0 ? gallery.slice(0, PDP_VISIBLE_THUMBS) : gallery;
 
   const [tab, setTab] = useState("photos"); // photos | video
   const [active, setActive] = useState(0);
@@ -66,8 +56,16 @@ export default function Gallery({ product }) {
       {/* Thumbnails (left on desktop, below on mobile) — spacing now comes
           from the parent flex's `gap`, not a one-sided margin, so it's
           correct regardless of which order these actually render in. */}
-      <div className="order-2 flex gap-3 lg:order-1 lg:flex-col">
-        {visibleThumbs.map((g, i) => (
+      {/* Every photo (up to 12, ImageManager.jsx's MAX_IMAGES) gets a real
+          thumbnail here now — no cap, no "+N more" tile collapsing the
+          tail into the lightbox. On mobile this scrolls horizontally
+          (overflow-x-auto + snap) so the 12th photo is one swipe away,
+          same as any native mobile gallery strip; on desktop it's a
+          vertical rail that scrolls instead of running off the page.
+          Scrollbar hidden for a cleaner look — same pattern ProductTabs.jsx
+          uses for its own horizontally-scrolling tab bar. */}
+      <div className="order-2 flex gap-3 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden lg:order-1 lg:max-h-[36rem] lg:flex-col lg:overflow-x-visible lg:overflow-y-auto lg:pb-0 lg:pr-1">
+        {gallery.map((g, i) => (
           <button
             key={g.id}
             onClick={() => {
@@ -97,32 +95,6 @@ export default function Gallery({ product }) {
             )}
           </button>
         ))}
-        {overflowCount > 0 && (
-          <button
-            onClick={() => {
-              setTab("photos");
-              setActive(PDP_VISIBLE_THUMBS); // jump straight to the first hidden photo
-              setLightbox(true);
-            }}
-            aria-label={`View ${overflowCount} more photo${overflowCount === 1 ? "" : "s"}`}
-            className={`relative h-[4.5rem] w-[4.5rem] shrink-0 overflow-hidden rounded-2xl ring-2 transition-all lg:h-20 lg:w-20 lg:rounded-xl ${
-              tab === "photos" && active >= PDP_VISIBLE_THUMBS ? "ring-[3px] ring-magenta lg:ring-2" : "ring-transparent hover:ring-rose/50"
-            }`}
-          >
-            <span className="absolute inset-0" style={{ background: tile(gallery[PDP_VISIBLE_THUMBS]) }} />
-            {gallery[PDP_VISIBLE_THUMBS]?.image && (
-              <img
-                src={gallery[PDP_VISIBLE_THUMBS].image}
-                alt=""
-                loading="lazy"
-                className="absolute inset-0 h-full w-full object-cover"
-              />
-            )}
-            <span className="absolute inset-0 flex items-center justify-center bg-ink/60 text-sm font-semibold text-white backdrop-blur-[1px]">
-              +{overflowCount}
-            </span>
-          </button>
-        )}
         {hasVideo && (
           <button
             onClick={() => setTab("video")}

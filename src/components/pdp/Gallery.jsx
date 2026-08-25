@@ -123,17 +123,21 @@ export default function Gallery({ product }) {
             hero. Still the SAME 4:5 crop everywhere (unchanged) — only the
             box it's displayed in now fills the available width. */}
         <div className="relative mx-auto aspect-[4/5] w-full overflow-hidden rounded-[1.75rem] ring-1 ring-line lg:rounded-[1.5rem]">
-          {/* Tab pills */}
-          <div className="absolute left-3 top-3 z-20 flex gap-1.5">
-            <button
-              onClick={() => setTab("photos")}
-              className={`inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-xs font-semibold backdrop-blur transition-colors ${
-                tab === "photos" ? "bg-ink text-white" : "bg-white/80 text-ink"
-              }`}
-            >
-              <Images className="h-3.5 w-3.5" strokeWidth={1.8} /> Photos
-            </button>
-            {hasVideo && (
+          {/* Tab pills — only meaningful as a Photos/Video TOGGLE, so they
+              only render when there's actually a video to switch to. Most
+              products have no video, where "Photos" was just a permanent,
+              purposeless label sitting on top of the hero image with
+              nothing to toggle. */}
+          {hasVideo && (
+            <div className="absolute left-3 top-3 z-20 flex gap-1.5">
+              <button
+                onClick={() => setTab("photos")}
+                className={`inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-xs font-semibold backdrop-blur transition-colors ${
+                  tab === "photos" ? "bg-ink text-white" : "bg-white/80 text-ink"
+                }`}
+              >
+                <Images className="h-3.5 w-3.5" strokeWidth={1.8} /> Photos
+              </button>
               <button
                 onClick={() => setTab("video")}
                 className={`inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-xs font-semibold backdrop-blur transition-colors ${
@@ -142,8 +146,8 @@ export default function Gallery({ product }) {
               >
                 <Play className="h-3 w-3" fill="currentColor" strokeWidth={0} /> Video
               </button>
-            )}
-          </div>
+            </div>
+          )}
 
           {badge && (
             <div className="absolute right-3 top-3 z-20">

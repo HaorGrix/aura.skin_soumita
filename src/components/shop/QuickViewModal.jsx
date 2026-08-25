@@ -44,8 +44,32 @@ export default function QuickViewModal({ product, onClose }) {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 30, scale: 0.97 }}
             transition={{ type: "spring", stiffness: 280, damping: 30 }}
-            className="relative z-10 grid w-full max-w-3xl grid-cols-1 overflow-hidden rounded-t-[1.75rem] bg-white shadow-lift ring-1 ring-line sm:grid-cols-2 sm:rounded-[1.75rem]"
+            // max-h + flex-col here, with the actual scrolling delegated to
+            // the inner wrapper below — this used to have no height cap at
+            // all, so on mobile a product with enough copy made the panel
+            // taller than the viewport with nothing to scroll it (body
+            // scroll is deliberately locked while this is open): the top of
+            // the panel — image, discount badge, and the close button below
+            // — silently pushed off-screen with no way to ever reach it.
+            className="relative z-10 flex max-h-[92dvh] w-full max-w-3xl flex-col overflow-hidden rounded-t-[1.75rem] bg-white shadow-lift ring-1 ring-line sm:max-h-[85dvh] sm:rounded-[1.75rem]"
           >
+            {/* Close — a sibling of the scrollable area below, not inside
+                it, and positioned relative to THIS capped panel rather than
+                the (possibly taller) scrolling content, so it stays visible
+                and reachable at all times regardless of scroll position. */}
+            <button
+              onClick={onClose}
+              aria-label="Close quick view"
+              className="absolute right-4 top-4 z-20 grid h-9 w-9 place-items-center rounded-full bg-white/85 text-ink/70 backdrop-blur transition-colors hover:text-magenta"
+            >
+              <X className="h-4 w-4" strokeWidth={2} />
+            </button>
+
+            {/* min-h-0 overrides flex's default min-height:auto (which would
+                otherwise refuse to shrink below content size and defeat the
+                overflow-y-auto below entirely) — the one open flexbox
+                gotcha that makes internal scrolling actually work here. */}
+            <div className="grid min-h-0 flex-1 grid-cols-1 overflow-y-auto sm:grid-cols-2">
             {/* Media */}
             <div className="relative aspect-square sm:aspect-auto">
               <div
@@ -174,15 +198,7 @@ export default function QuickViewModal({ product, onClose }) {
                 View full details →
               </a>
             </div>
-
-            {/* Close */}
-            <button
-              onClick={onClose}
-              aria-label="Close quick view"
-              className="absolute right-4 top-4 z-20 grid h-9 w-9 place-items-center rounded-full bg-white/85 text-ink/70 backdrop-blur transition-colors hover:text-magenta"
-            >
-              <X className="h-4 w-4" strokeWidth={2} />
-            </button>
+            </div>
           </motion.div>
         </div>
       )}

@@ -15,3 +15,4 @@
 - Fixed global mega-menu search to use live Supabase products.
 - Fixed predictive search to accurately filter short queries using prefix logic.
 - Fixed product search card linking to invalid slugs.
+- Resolved mobile scroll conflicts on Swiper and drag-and-drop components by implementing a 400ms long-press delay and adjusting touch thresholds.

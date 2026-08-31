@@ -103,6 +103,7 @@ export default function ImageManager({ productId, images = [], onChange, disable
   const [dragIndex, setDragIndex] = useState(null);
   const [overIndex, setOverIndex] = useState(null);
   const [order, setOrder] = useState(null); // local optimistic order while dragging
+  const [pressTimer, setPressTimer] = useState(null);
 
   const shown = order ?? images;
   const roomLeft = MAX_IMAGES - images.length;
@@ -306,13 +307,23 @@ export default function ImageManager({ productId, images = [], onChange, disable
   /* ---- Touch-to-reorder (Mobile polyfill) ---- */
   const onTouchStart = useCallback((i) => (e) => {
     if (disabled) return;
-    setDragIndex(i);
-    setOrder(images);
-    document.body.style.overflow = "hidden"; // Prevent pull-to-refresh / scrolling
+    const timer = setTimeout(() => {
+      setDragIndex(i);
+      setOrder(images);
+      document.body.style.overflow = "hidden"; // Prevent pull-to-refresh / scrolling
+      if (navigator.vibrate) navigator.vibrate(50);
+    }, 400);
+    setPressTimer(timer);
   }, [disabled, images]);
 
   const onTouchMove = useCallback((e) => {
-    if (dragIndex === null) return;
+    if (dragIndex === null) {
+      if (pressTimer) {
+        clearTimeout(pressTimer);
+        setPressTimer(null);
+      }
+      return;
+    }
     const touch = e.touches[0];
     const target = document.elementFromPoint(touch.clientX, touch.clientY);
     if (!target) return;
@@ -334,6 +345,10 @@ export default function ImageManager({ productId, images = [], onChange, disable
   }, [dragIndex, overIndex, images]);
 
   const onTouchEnd = useCallback(async () => {
+    if (pressTimer) {
+      clearTimeout(pressTimer);
+      setPressTimer(null);
+    }
     document.body.style.overflow = "";
     if (dragIndex === null) return;
     setOverIndex(null);
@@ -380,7 +395,7 @@ export default function ImageManager({ productId, images = [], onChange, disable
             onTouchStart={onTouchStart(i)}
             onTouchMove={onTouchMove}
             onTouchEnd={onTouchEnd}
-            className={`group relative cursor-grab overflow-hidden rounded-xl bg-snow ring-1 ring-line active:cursor-grabbing touch-none ${
+            className={`group relative cursor-grab overflow-hidden rounded-xl bg-snow ring-1 ring-line active:cursor-grabbing ${
               overIndex === i ? "ring-2 ring-magenta" : ""
             }`}
           >

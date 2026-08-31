@@ -175,6 +175,7 @@ export default function Gallery({ product }) {
                 // captured, and dragThreshold on go() calls means it never fires
                 // this to fire on the same tap as the zoom-lightbox onClick.
                 drag={gallery.length > 1 ? "x" : false}
+                dragDirectionLock={true}
                 dragConstraints={{ left: 0, right: 0 }}
                 dragElastic={0.7}
                 onDragEnd={(_, info) => {

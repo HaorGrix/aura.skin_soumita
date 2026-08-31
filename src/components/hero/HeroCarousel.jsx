@@ -367,6 +367,8 @@ export default function HeroCarousel() {
         watchSlidesProgress
         keyboard={{ enabled: true }}
         a11y={{ enabled: true, prevSlideMessage: "Previous banner", nextSlideMessage: "Next banner" }}
+        touchStartPreventDefault={false}
+        threshold={15}
         // Honour reduced-motion: no self-advancing movement for users who
         // asked the OS for less of it.
         autoplay={

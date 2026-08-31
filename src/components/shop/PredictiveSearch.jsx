@@ -38,6 +38,9 @@ export default function PredictiveSearch({
   trending = [],
   onQueryChange,
   onApplyFilter,
+  onSubmit,
+  variant = "default",
+  onClose,
 }) {
   const [input, setInput] = useState("");
   const [debounced, setDebounced] = useState("");
@@ -85,7 +88,11 @@ export default function PredictiveSearch({
     setInput(text);
     setDebounced(text);
     onQueryChange?.(text);
-    setOpen(true);
+    if (onSubmit) {
+      onSubmit(text);
+    } else {
+      setOpen(true);
+    }
   }
 
   function pickProduct(p) {
@@ -107,8 +114,20 @@ export default function PredictiveSearch({
     } else if (e.key === "ArrowUp") {
       e.preventDefault();
       setActiveIdx((i) => Math.max(0, i - 1));
-    } else if (e.key === "Enter" && activeIdx >= 0 && results[activeIdx]) {
-      pickProduct(results[activeIdx]);
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      if (activeIdx >= 0 && results[activeIdx]) {
+        pickProduct(results[activeIdx]);
+      } else if (input.trim()) {
+        if (onSubmit) {
+          onSubmit(input.trim());
+        } else {
+          setDebounced(input.trim());
+          onQueryChange?.(input.trim());
+          setOpen(false);
+          e.target.blur();
+        }
+      }
     }
   }
 
@@ -118,39 +137,63 @@ export default function PredictiveSearch({
 
   return (
     <div ref={rootRef} className="relative flex-1">
-      <Search
-        className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-soft"
-        strokeWidth={1.8}
-      />
-      <input
-        value={input}
-        onChange={(e) => {
-          setInput(e.target.value);
-          setOpen(true);
-        }}
-        onFocus={() => setOpen(true)}
-        onKeyDown={handleKey}
-        placeholder={input ? "Search…" : `${typed}│`}
-        aria-label="Search products"
-        aria-autocomplete="list"
-        aria-expanded={open}
-        aria-controls="search-results-listbox"
-        /* py-3 mobile = ~48px thumb-friendly target; tighter on desktop */
-        className="w-full rounded-full bg-white py-3 pl-11 pr-10 text-base text-ink ring-1 ring-line outline-none transition-shadow placeholder:text-ink-soft/70 focus:ring-2 focus:ring-magenta/50 sm:py-2.5 sm:text-sm"
-      />
-      {input && (
-        <button
-          onClick={() => {
-            setInput("");
-            setDebounced("");
-            onQueryChange?.("");
-          }}
-          aria-label="Clear search"
-          className="absolute right-3 top-1/2 grid h-6 w-6 -translate-y-1/2 place-items-center rounded-full text-ink-soft hover:text-magenta"
-        >
-          <X className="h-3.5 w-3.5" strokeWidth={2.2} />
-        </button>
-      )}
+      <div className={variant === "megamenu" ? "flex items-center gap-3" : ""}>
+        <div className="relative flex-1">
+          <Search
+            className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-soft"
+            strokeWidth={1.8}
+          />
+          <input
+            value={input}
+            onChange={(e) => {
+              setInput(e.target.value);
+              setOpen(true);
+            }}
+            onFocus={() => setOpen(true)}
+            onKeyDown={handleKey}
+            placeholder={input ? "Search…" : `${typed}│`}
+            aria-label="Search products"
+            aria-autocomplete="list"
+            aria-expanded={open}
+            aria-controls="search-results-listbox"
+            className={
+              variant === "megamenu"
+                ? "w-full rounded-md bg-snow py-3 pl-11 pr-24 text-base text-ink ring-1 ring-line outline-none transition-shadow placeholder:text-ink-soft/70 focus:ring-2 focus:ring-magenta/50"
+                : "w-full rounded-full bg-white py-3 pl-11 pr-10 text-base text-ink ring-1 ring-line outline-none transition-shadow placeholder:text-ink-soft/70 focus:ring-2 focus:ring-magenta/50 sm:py-2.5 sm:text-sm"
+            }
+          />
+          {input && variant === "default" && (
+            <button
+              onClick={() => {
+                setInput("");
+                setDebounced("");
+                onQueryChange?.("");
+              }}
+              aria-label="Clear search"
+              className="absolute right-3 top-1/2 grid h-6 w-6 -translate-y-1/2 place-items-center rounded-full text-ink-soft hover:text-magenta"
+            >
+              <X className="h-3.5 w-3.5" strokeWidth={2.2} />
+            </button>
+          )}
+          {variant === "megamenu" && (
+            <button 
+              onClick={() => commit(input.trim())} 
+              className="absolute right-2 top-1/2 -translate-y-1/2 rounded bg-line/50 px-4 py-1.5 text-xs font-semibold text-ink hover:bg-line transition-colors"
+            >
+              Enter
+            </button>
+          )}
+        </div>
+        {variant === "megamenu" && onClose && (
+           <button 
+             onClick={onClose} 
+             className="rounded-full bg-white p-2.5 text-ink shadow-sm ring-1 ring-line hover:bg-snow shrink-0 transition-colors"
+             aria-label="Close search"
+           >
+              <X className="h-5 w-5" />
+           </button>
+        )}
+      </div>
 
       <AnimatePresence>
         {open && (showProducts || showEmpty || showFocused) && (
@@ -158,19 +201,22 @@ export default function PredictiveSearch({
             id="search-results-listbox"
             role="listbox"
             aria-label="Search suggestions"
-            initial={{ opacity: 0, y: -6, scale: 0.98 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -6, scale: 0.98 }}
+            initial={variant === "megamenu" ? { opacity: 0, y: -10 } : { opacity: 0, y: -6, scale: 0.98 }}
+            animate={variant === "megamenu" ? { opacity: 1, y: 0 } : { opacity: 1, y: 0, scale: 1 }}
+            exit={variant === "megamenu" ? { opacity: 0, y: -10 } : { opacity: 0, y: -6, scale: 0.98 }}
             transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
-            /* Layering: `z-[var(--z-dropdown)]` puts the panel above the body
-               grid. For this to actually beat sibling siblings of the toolbar,
-               the toolbar itself must be a positioned stacking context at
-               `z-sticky` — see Shop.jsx. Together they guarantee the dropdown
-               paints above all product cards. */
-            className="absolute left-0 right-0 top-full z-[var(--z-dropdown)] mt-2 max-h-[70vh] overflow-y-auto rounded-2xl bg-white/95 p-2 shadow-lift ring-1 ring-line backdrop-blur-md scrollbar-thin"
+            className={
+              variant === "megamenu"
+                ? "mt-8"
+                : "absolute left-0 right-0 top-full z-[var(--z-dropdown)] mt-2 max-h-[70vh] overflow-y-auto rounded-2xl bg-white/95 p-2 shadow-lift ring-1 ring-line backdrop-blur-md scrollbar-thin"
+            }
           >
+            {variant === "megamenu" && (showProducts || showEmpty) && (
+              <h2 className="font-serif text-2xl font-bold uppercase tracking-wide text-ink mb-6">Product</h2>
+            )}
+
             {/* Suggested filter chips */}
-            {suggestion && suggestion.facets.length > 0 && (
+            {suggestion && suggestion.facets.length > 0 && variant === "default" && (
               <div className="border-b border-line p-2">
                 <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-soft">
                   Refine by
@@ -190,7 +236,21 @@ export default function PredictiveSearch({
             )}
 
             {/* Top product matches */}
-            {showProducts && (
+            {showProducts && variant === "megamenu" && (
+              <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+                {suggestion.products.map((p, i) => (
+                  <SearchProductCard
+                    key={p.id}
+                    product={p}
+                    active={activeIdx === i}
+                    onHover={() => setActiveIdx(i)}
+                    onPick={() => pickProduct(p)}
+                  />
+                ))}
+              </div>
+            )}
+
+            {showProducts && variant === "default" && (
               <ul className="p-1">
                 {suggestion.isFuzzy && (
                   <li className="px-2 py-1.5 text-[11px] italic text-ink-soft">
@@ -221,6 +281,7 @@ export default function PredictiveSearch({
                 trending={trending}
                 onPickSearch={commit}
                 onPickProduct={pickProduct}
+                variant={variant}
               />
             )}
 
@@ -230,6 +291,7 @@ export default function PredictiveSearch({
                 trending={trending}
                 onPickSearch={commit}
                 onPickProduct={pickProduct}
+                variant={variant}
               />
             )}
           </motion.div>
@@ -286,6 +348,74 @@ function ProductRow({ product: p, active, onHover, onPick, compact = false }) {
   );
 }
 
+import { Star } from "lucide-react";
+import { useCart } from "../../context/CartContext.jsx";
+import { useToast } from "../ui/Toast.jsx";
+
+function SearchProductCard({ product: p, active, onHover, onPick }) {
+  const { addItem, openCart } = useCart();
+  const { toast } = useToast();
+
+  const handleAdd = (e) => {
+    e.stopPropagation();
+    addItem(p);
+    toast.cart(`${p.brand} — ${p.name}`);
+    openCart();
+  };
+
+  return (
+    <div
+      onClick={onPick}
+      onMouseEnter={onHover}
+      className={`group cursor-pointer flex flex-col bg-white overflow-hidden p-3 transition-colors ${
+        active ? "ring-1 ring-magenta shadow-sm" : "ring-1 ring-line/40 shadow-sm"
+      }`}
+    >
+      <div 
+        className="relative aspect-square w-full bg-snow flex items-center justify-center p-2 mb-3"
+      >
+        {p.image ? (
+          <img
+            src={p.image}
+            alt={p.name}
+            loading="lazy"
+            className="h-full w-full object-contain mix-blend-multiply"
+          />
+        ) : (
+           <div className="h-full w-full" style={{
+            background: `radial-gradient(120% 100% at 50% 0%, #fff 0%, ${p.tone} 75%, #ffe1ec 100%)`,
+          }} />
+        )}
+      </div>
+
+      <div className="flex flex-col flex-1">
+        <span className="inline-block px-2 py-0.5 mb-2 bg-petal/50 text-magenta text-[10px] font-medium w-max">
+          {p.category}
+        </span>
+        
+        <h3 className="text-sm font-medium text-ink line-clamp-2 leading-snug flex-1 mb-2">
+          {p.brand} {p.name}
+        </h3>
+
+        <div className="text-sm font-bold text-magenta mb-2">
+          {formatPrice(p.price)}
+        </div>
+
+        <div className="flex items-center gap-1 text-[11px] font-medium text-white bg-magenta w-max px-2 py-0.5 rounded-full mb-3">
+          {(p.rating ?? 4.8).toFixed(1)} <Star className="h-2.5 w-2.5" fill="currentColor" strokeWidth={0} /> ({p.reviews ?? 15})
+        </div>
+
+        <button
+          onClick={handleAdd}
+          className="mt-auto w-full border border-magenta text-magenta hover:bg-magenta hover:text-white transition-colors py-1.5 text-xs font-semibold uppercase tracking-wider"
+        >
+          Add to cart
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function PopularPills({ onPick }) {
   return (
     <div className="flex flex-wrap gap-1.5 px-2">
@@ -312,39 +442,77 @@ function TrendingList({ trending, onPick }) {
   );
 }
 
-function EmptyPanel({ query, trending, onPickSearch, onPickProduct }) {
+function EmptyPanel({ query, trending, onPickSearch, onPickProduct, variant }) {
   return (
-    <div className="p-2">
-      <p className="px-2 py-1.5 text-sm text-ink-soft">
+    <div className={variant === "megamenu" ? "mt-4" : "p-2"}>
+      <p className={variant === "megamenu" ? "text-lg text-ink-soft mb-6" : "px-2 py-1.5 text-sm text-ink-soft"}>
         No products match “{query}”.
       </p>
-      <p className="mt-3 mb-1.5 px-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-soft">
-        Popular searches
-      </p>
+      
+      {variant === "megamenu" && <h2 className="font-serif text-2xl font-bold uppercase tracking-wide text-ink mb-6">Popular searches</h2>}
+      {!variant || variant === "default" && (
+        <p className="mt-3 mb-1.5 px-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-soft">
+          Popular searches
+        </p>
+      )}
+      
       <PopularPills onPick={onPickSearch} />
+      
       {trending.length > 0 && (
         <>
-          <p className="mt-4 mb-1 inline-flex items-center gap-1.5 px-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-soft">
-            <TrendingUp className="h-3 w-3" strokeWidth={2} /> Trending now
-          </p>
-          <TrendingList trending={trending} onPick={onPickProduct} />
+          {variant === "megamenu" ? (
+             <div className="mt-10">
+               <h2 className="font-serif text-2xl font-bold uppercase tracking-wide text-ink mb-6">Trending now</h2>
+               <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+                 {trending.map((p, i) => (
+                   <SearchProductCard key={p.id} product={p} active={false} onHover={() => {}} onPick={() => onPickProduct(p)} />
+                 ))}
+               </div>
+             </div>
+          ) : (
+             <>
+               <p className="mt-4 mb-1 inline-flex items-center gap-1.5 px-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-soft">
+                 <TrendingUp className="h-3 w-3" strokeWidth={2} /> Trending now
+               </p>
+               <TrendingList trending={trending} onPick={onPickProduct} />
+             </>
+          )}
         </>
       )}
     </div>
   );
 }
 
-function FocusedPanel({ trending, onPickSearch, onPickProduct }) {
+function FocusedPanel({ trending, onPickSearch, onPickProduct, variant }) {
   return (
-    <div className="p-2">
-      <p className="mt-2 mb-1.5 px-2 inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-soft">
-        <Sparkles className="h-3 w-3" strokeWidth={2} /> Popular searches
-      </p>
+    <div className={variant === "megamenu" ? "mt-4" : "p-2"}>
+      {variant === "megamenu" ? (
+         <h2 className="font-serif text-2xl font-bold uppercase tracking-wide text-ink mb-6">Popular searches</h2>
+      ) : (
+         <p className="mt-2 mb-1.5 px-2 inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-soft">
+           <Sparkles className="h-3 w-3" strokeWidth={2} /> Popular searches
+         </p>
+      )}
+      
       <PopularPills onPick={onPickSearch} />
-      <p className="mt-4 mb-1 inline-flex items-center gap-1.5 px-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-soft">
-        <TrendingUp className="h-3 w-3" strokeWidth={2} /> Trending now
-      </p>
-      <TrendingList trending={trending} onPick={onPickProduct} />
+      
+      {variant === "megamenu" ? (
+         <div className="mt-10">
+           <h2 className="font-serif text-2xl font-bold uppercase tracking-wide text-ink mb-6">Trending now</h2>
+           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+             {trending.map((p, i) => (
+               <SearchProductCard key={p.id} product={p} active={false} onHover={() => {}} onPick={() => onPickProduct(p)} />
+             ))}
+           </div>
+         </div>
+      ) : (
+         <>
+           <p className="mt-4 mb-1 inline-flex items-center gap-1.5 px-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-soft">
+             <TrendingUp className="h-3 w-3" strokeWidth={2} /> Trending now
+           </p>
+           <TrendingList trending={trending} onPick={onPickProduct} />
+         </>
+      )}
     </div>
   );
 }

@@ -52,7 +52,7 @@ export default function Gallery({ product }) {
     // stage after) with none of the intended gap between them: the thumbnail
     // row sat flush against the top edge of the full-width hero image below
     // it, reading as one clashing block instead of two distinct sections.
-    <div className="flex min-w-0 flex-col gap-3 lg:flex-row lg:gap-4">
+    <div className="flex min-w-0 flex-col gap-3 lg:gap-4">
       {/* Thumbnails (left on desktop, below on mobile) — spacing now comes
           from the parent flex's `gap`, not a one-sided margin, so it's
           correct regardless of which order these actually render in. */}
@@ -64,7 +64,7 @@ export default function Gallery({ product }) {
           vertical rail that scrolls instead of running off the page.
           Scrollbar hidden for a cleaner look — same pattern ProductTabs.jsx
           uses for its own horizontally-scrolling tab bar. */}
-      <div className="order-2 flex gap-3 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden lg:order-1 lg:max-h-[36rem] lg:flex-col lg:overflow-x-visible lg:overflow-y-auto lg:pb-0 lg:pr-1">
+      <div className="order-2 flex gap-3 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {gallery.map((g, i) => (
           <button
             key={g.id}
@@ -73,7 +73,7 @@ export default function Gallery({ product }) {
               setActive(i);
             }}
             aria-label={g.label || `Photo ${i + 1}`}
-            className={`relative h-[4.5rem] w-[4.5rem] shrink-0 overflow-hidden rounded-2xl ring-2 transition-all lg:h-20 lg:w-20 lg:rounded-xl ${
+            className={`relative aspect-square w-[22%] min-w-[4.5rem] max-w-[6rem] shrink-0 overflow-hidden rounded-2xl ring-2 transition-all lg:rounded-xl ${
               tab === "photos" && active === i
                 ? "ring-[3px] ring-magenta lg:ring-2"
                 : "ring-transparent hover:ring-rose/50"
@@ -99,7 +99,7 @@ export default function Gallery({ product }) {
           <button
             onClick={() => setTab("video")}
             aria-label="Watch video"
-            className={`relative grid h-[4.5rem] w-[4.5rem] shrink-0 place-items-center overflow-hidden rounded-2xl bg-ink text-white ring-2 transition-all lg:h-20 lg:w-20 lg:rounded-xl ${
+            className={`relative grid aspect-square w-[22%] min-w-[4.5rem] max-w-[6rem] shrink-0 place-items-center overflow-hidden rounded-2xl bg-ink text-white ring-2 transition-all lg:rounded-xl ${
               tab === "video" ? "ring-[3px] ring-magenta lg:ring-2" : "ring-transparent hover:ring-rose/50"
             }`}
           >
@@ -115,14 +115,14 @@ export default function Gallery({ product }) {
           4:5 was established as the site-wide standard — an admin
           framing a photo for this ratio was getting a different crop
           here than everywhere else it's shown. */}
-      <div className="order-1 flex-1 lg:order-2">
+      <div className="order-1 w-full">
         {/* Full-bleed within the page's own gutters on mobile (no width cap) —
             a deliberate change from the earlier max-w-xs treatment: that kept
             the stage a fixed 320px regardless of the actual viewport, reading
             as noticeably smaller/more boxed-in than a typical mobile PDP
             hero. Still the SAME 4:5 crop everywhere (unchanged) — only the
             box it's displayed in now fills the available width. */}
-        <div className="relative mx-auto aspect-[4/5] w-full overflow-hidden rounded-[1.75rem] ring-1 ring-line lg:rounded-[1.5rem]">
+        <div className="relative mx-auto aspect-square w-full overflow-hidden rounded-[1.75rem] ring-1 ring-line lg:rounded-[1.5rem]">
           {/* Tab pills — only meaningful as a Photos/Video TOGGLE, so they
               only render when there's actually a video to switch to. Most
               products have no video, where "Photos" was just a permanent,
@@ -290,7 +290,7 @@ export default function Gallery({ product }) {
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
               transition={{ type: "spring", stiffness: 260, damping: 28 }}
-              className="relative aspect-[4/5] w-full max-w-lg overflow-hidden rounded-[1.5rem]"
+              className="relative aspect-square w-full max-w-lg overflow-hidden rounded-[1.5rem]"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="absolute inset-0" style={{ background: tile(current) }} />

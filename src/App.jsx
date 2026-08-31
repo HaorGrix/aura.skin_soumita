@@ -182,30 +182,37 @@ export default function App() {
           <AnimatePresence>
             {isSearchOpen && (
               <motion.div
-                className="fixed inset-0 z-[var(--z-modal)] bg-ink/60 backdrop-blur-sm p-4 sm:p-10 flex flex-col items-center pt-24"
+                className="fixed inset-0 z-[var(--z-modal)] bg-ink/60 backdrop-blur-sm"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 onClick={() => setIsSearchOpen(false)}
               >
                 <motion.div 
-                  initial={{ opacity: 0, scale: 0.95, y: -20 }}
-                  animate={{ opacity: 1, scale: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.95, y: -20 }}
-                  className="w-full max-w-2xl relative"
+                  initial={{ y: "-100%" }}
+                  animate={{ y: 0 }}
+                  exit={{ y: "-100%" }}
+                  transition={{ type: "tween", ease: [0.22, 1, 0.36, 1], duration: 0.4 }}
+                  className="w-full bg-snow shadow-lift pt-8 pb-12 px-5 sm:px-8 relative max-h-[90vh] overflow-y-auto scrollbar-thin rounded-b-3xl"
                   onClick={e => e.stopPropagation()}
                 >
-                  <button onClick={() => setIsSearchOpen(false)} className="absolute -right-2 -top-12 sm:-right-4 sm:-top-4 text-white/80 hover:text-white p-2">
-                    <X className="h-6 w-6" strokeWidth={1.5} />
-                  </button>
-                  <div className="bg-white rounded-2xl shadow-lift w-full relative z-[var(--z-dropdown)]">
-                    <PredictiveSearch 
-                      products={PRODUCTS} brands={BRANDS} categories={CATEGORIES} trending={trending}
-                      onQueryChange={() => {}} onApplyFilter={(key, val) => {
-                        navigate(`/shop?${key}=${val}`);
-                        setIsSearchOpen(false);
-                      }}
-                    />
+                  <div className="max-w-6xl mx-auto flex items-start gap-4">
+                    <div className="w-full relative z-[var(--z-dropdown)] flex-1">
+                      <PredictiveSearch 
+                        products={PRODUCTS} brands={BRANDS} categories={CATEGORIES} trending={trending}
+                        onQueryChange={() => {}} 
+                        onSubmit={(q) => {
+                          navigate(`/shop?q=${encodeURIComponent(q)}`);
+                          setIsSearchOpen(false);
+                        }}
+                        onApplyFilter={(key, val) => {
+                          navigate(`/shop?${key}=${val}`);
+                          setIsSearchOpen(false);
+                        }}
+                        variant="megamenu"
+                        onClose={() => setIsSearchOpen(false)}
+                      />
+                    </div>
                   </div>
                 </motion.div>
               </motion.div>

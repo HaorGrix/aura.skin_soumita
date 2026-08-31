@@ -20,7 +20,7 @@
  * adjacent-only reorder.
  * =================================================================== */
 import { useCallback, useRef, useState } from "react";
-import { ImagePlus, Play, RefreshCw, Star, X } from "lucide-react";
+import { ImagePlus, Play, RefreshCw, Star, X, Plus } from "lucide-react";
 import { supabase } from "../../lib/api/client.js";
 import {
   deleteProductImage, deleteProductVideo, publicImageUrl, publicVideoUrl,
@@ -98,6 +98,8 @@ export default function ImageManager({ productId, images = [], onChange, disable
   // single `inputRef` above for Add.
   const [replaceTarget, setReplaceTarget] = useState(null);
   const [replacingId, setReplacingId] = useState(null);
+  const [insertTargetIndex, setInsertTargetIndex] = useState(null);
+  const insertInputRef = useRef(null);
   const [dragIndex, setDragIndex] = useState(null);
   const [overIndex, setOverIndex] = useState(null);
   const [order, setOrder] = useState(null); // local optimistic order while dragging
@@ -163,6 +165,63 @@ export default function ImageManager({ productId, images = [], onChange, disable
     }
 
     setBusy(false);
+    onChange();
+  }
+
+  async function handleInsertFiles(fileList) {
+    const incoming = [...fileList];
+    if (!incoming.length) return;
+    if (busy || insertTargetIndex === null) return;
+    setError(null);
+
+    const accepted = incoming.slice(0, Math.max(roomLeft, 0));
+    if (incoming.length > accepted.length) {
+      setError(
+        accepted.length === 0
+          ? `This product already has the maximum of ${MAX_IMAGES} images.`
+          : `Only ${accepted.length} of ${incoming.length} files added — that's the ${MAX_IMAGES}-image limit for this product.`
+      );
+    }
+    if (!accepted.length) return;
+
+    setBusy(true);
+    let positionOffset = 0;
+    const uploadedImages = [];
+
+    for (const original of accepted) {
+      const key = `${original.name}-${Date.now()}-${Math.random()}`;
+      setStage(key, { name: original.name, stage: "converting", error: null });
+
+      const { file, error: validationError } = await validateImage(original);
+      if (validationError) {
+        setStage(key, { stage: "error", error: validationError });
+        setTimeout(() => clearStage(key), 4000);
+        continue;
+      }
+
+      setStage(key, { stage: "uploading" });
+      // Use a high position temporarily to avoid collisions. Reorder will fix this right after.
+      const { data, error: upErr } = await uploadProductImage(productId, file, { position: 999 + positionOffset, alt: "" });
+      if (upErr) {
+        setStage(key, { stage: "error", error: "Upload failed — please try again." });
+        setTimeout(() => clearStage(key), 4000);
+        continue;
+      }
+      if (data) {
+        uploadedImages.push(data);
+      }
+      clearStage(key);
+      positionOffset += 1;
+    }
+
+    if (uploadedImages.length > 0) {
+      const newOrder = [...images];
+      newOrder.splice(insertTargetIndex, 0, ...uploadedImages);
+      await reorderProductImages(newOrder.map(img => img.id));
+    }
+
+    setBusy(false);
+    setInsertTargetIndex(null);
     onChange();
   }
 
@@ -290,6 +349,16 @@ export default function ImageManager({ productId, images = [], onChange, disable
             )}
             {!disabled && replacingId !== img.id && (
               <div className="absolute right-1.5 top-1.5 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100">
+                {roomLeft > 0 && (
+                  <button
+                    onClick={() => { setInsertTargetIndex(i); insertInputRef.current?.click(); }}
+                    className="rounded-full bg-ink/70 p-1 text-white hover:bg-ink"
+                    aria-label="Insert image before"
+                    title="Insert new photo before this one"
+                  >
+                    <Plus className="h-3.5 w-3.5" />
+                  </button>
+                )}
                 <button
                   onClick={() => { setReplaceTarget(img); replaceInputRef.current?.click(); }}
                   className="rounded-full bg-ink/70 p-1 text-white hover:bg-ink"
@@ -359,6 +428,10 @@ export default function ImageManager({ productId, images = [], onChange, disable
       <input
         ref={replaceInputRef} type="file" accept={ACCEPT} disabled={disabled} className="hidden"
         onChange={(e) => { handleReplace(e.target.files?.[0]); e.target.value = ""; }}
+      />
+      <input
+        ref={insertInputRef} type="file" accept={ACCEPT} multiple disabled={disabled || busy} className="hidden"
+        onChange={(e) => { handleInsertFiles(e.target.files); e.target.value = ""; }}
       />
 
       {error && <p className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-xs text-red-700">{error}</p>}

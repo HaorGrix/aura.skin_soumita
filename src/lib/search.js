@@ -28,17 +28,23 @@ export const SEARCH_SYNONYMS = {
   ampoule: ["serum"], vit: ["vitamin"], ha: ["hyaluronic"], cica: ["centella"],
 };
 
-const searchWords = (item) =>
-  tokenize(
-    `${item.brand} ${item.name} ${item.concern.join(" ")} ${item.category} ${item.ingredients.join(" ")}`
-  );
+const coreWords = (item) =>
+  tokenize(`${item.brand} ${item.name} ${item.category} ${item.concern.join(" ")}`);
+
+const allWords = (item) =>
+  [...coreWords(item), ...tokenize(item.ingredients.join(" "))];
 
 /* Strict word-prefix AND match — no substring bleed ("mis" never hits "blemishes"). */
-export function matchesSearch(item, terms, words = searchWords(item)) {
+export function matchesSearch(item, terms) {
   if (!terms.length) return true;
+  const core = coreWords(item);
+  const all = allWords(item);
   return terms.every((t) => {
     const variants = [t, ...(SEARCH_SYNONYMS[t] || [])];
-    return variants.some((v) => words.some((w) => w.startsWith(v)));
+    // Short queries (1-2 chars) only match core info (brand, name, category, concern).
+    // This prevents a query like "b" from returning every product with "butylene glycol".
+    const searchSpace = t.length < 3 ? core : all;
+    return variants.some((v) => searchSpace.some((w) => w.startsWith(v)));
   });
 }
 
@@ -67,12 +73,15 @@ export function lev(a, b) {
 
 const fuzzyThreshold = (t) => (t.length <= 4 ? 1 : t.length <= 7 ? 2 : 3);
 
-export function fuzzyMatches(item, terms, words = searchWords(item)) {
+export function fuzzyMatches(item, terms) {
   if (!terms.length) return true;
+  const core = coreWords(item);
+  const all = allWords(item);
+  
   return terms.every((t) => {
-    if (t.length < 3) return words.some((w) => w.startsWith(t));
+    if (t.length < 3) return core.some((w) => w.startsWith(t));
     const tol = fuzzyThreshold(t);
-    return words.some((w) => {
+    return all.some((w) => {
       if (w.startsWith(t)) return true;
       if (Math.abs(w.length - t.length) > tol) return false;
       return lev(t, w) <= tol;

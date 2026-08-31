@@ -96,7 +96,7 @@ export default function PredictiveSearch({
   }
 
   function pickProduct(p) {
-    navigate(`/product/${p.id}`);
+    navigate(`/product/${p.slug}`);
     setOpen(false);
   }
 

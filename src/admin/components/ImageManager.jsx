@@ -303,6 +303,54 @@ export default function ImageManager({ productId, images = [], onChange, disable
     onChange();
   }, [order, images, onChange]);
 
+  /* ---- Touch-to-reorder (Mobile polyfill) ---- */
+  const onTouchStart = useCallback((i) => (e) => {
+    if (disabled) return;
+    setDragIndex(i);
+    setOrder(images);
+    document.body.style.overflow = "hidden"; // Prevent pull-to-refresh / scrolling
+  }, [disabled, images]);
+
+  const onTouchMove = useCallback((e) => {
+    if (dragIndex === null) return;
+    const touch = e.touches[0];
+    const target = document.elementFromPoint(touch.clientX, touch.clientY);
+    if (!target) return;
+
+    const dropZone = target.closest("[data-index]");
+    if (dropZone) {
+      const i = parseInt(dropZone.getAttribute("data-index"), 10);
+      if (i !== dragIndex && i !== overIndex) {
+        setOverIndex(i);
+        setOrder((cur) => {
+          const list = [...(cur ?? images)];
+          const [moved] = list.splice(dragIndex, 1);
+          list.splice(i, 0, moved);
+          return list;
+        });
+        setDragIndex(i);
+      }
+    }
+  }, [dragIndex, overIndex, images]);
+
+  const onTouchEnd = useCallback(async () => {
+    document.body.style.overflow = "";
+    if (dragIndex === null) return;
+    setOverIndex(null);
+    setDragIndex(null);
+    
+    const finalOrder = order;
+    setOrder(null);
+    if (!finalOrder) return;
+    if (finalOrder.every((img, i) => img.id === images[i]?.id)) return;
+
+    setBusy(true);
+    const { error } = await reorderProductImages(finalOrder.map((img) => img.id));
+    setBusy(false);
+    if (error) setError(error.message);
+    onChange();
+  }, [order, images, onChange, dragIndex]);
+
   return (
     <div>
       {/* Auto-fit: the browser decides how many tiles fit per row at the
@@ -323,12 +371,16 @@ export default function ImageManager({ productId, images = [], onChange, disable
         {shown.map((img, i) => (
           <div
             key={img.id}
+            data-index={i}
             draggable={!disabled}
             onDragStart={onDragStart(i)}
             onDragOver={onDragOver(i)}
             onDragEnd={onDragEnd}
             onDrop={(e) => e.preventDefault()}
-            className={`group relative cursor-grab overflow-hidden rounded-xl bg-snow ring-1 ring-line active:cursor-grabbing ${
+            onTouchStart={onTouchStart(i)}
+            onTouchMove={onTouchMove}
+            onTouchEnd={onTouchEnd}
+            className={`group relative cursor-grab overflow-hidden rounded-xl bg-snow ring-1 ring-line active:cursor-grabbing touch-none ${
               overIndex === i ? "ring-2 ring-magenta" : ""
             }`}
           >
@@ -348,7 +400,7 @@ export default function ImageManager({ productId, images = [], onChange, disable
               </div>
             )}
             {!disabled && replacingId !== img.id && (
-              <div className="absolute right-1.5 top-1.5 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100">
+              <div className="absolute right-1.5 top-1.5 flex gap-1 opacity-100 lg:opacity-0 transition-opacity lg:group-hover:opacity-100 focus-within:opacity-100">
                 {roomLeft > 0 && (
                   <button
                     onClick={() => { setInsertTargetIndex(i); insertInputRef.current?.click(); }}

@@ -3,6 +3,7 @@ import { ReactLenis } from "lenis/react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X } from "lucide-react";
 import { PRODUCTS, BRANDS, CATEGORIES } from "./data/products.js";
+import { listProducts } from "./lib/api/products.js";
 import PredictiveSearch from "./components/shop/PredictiveSearch.jsx";
 import { CartProvider } from "./context/CartContext.jsx";
 import { UserProvider } from "./context/UserContext.jsx";
@@ -103,7 +104,17 @@ export default function App() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const storeSettings = useStoreSettings();
 
-  const trending = useMemo(() => [...PRODUCTS].sort((a, b) => b.popularity - a.popularity).slice(0, 3), []);
+  const [liveProducts, setLiveProducts] = useState(PRODUCTS);
+
+  useEffect(() => {
+    let alive = true;
+    listProducts().then(({ data }) => {
+      if (alive && data) setLiveProducts(data);
+    });
+    return () => { alive = false; };
+  }, []);
+
+  const trending = useMemo(() => [...liveProducts].sort((a, b) => b.popularity - a.popularity).slice(0, 3), [liveProducts]);
 
   // Same "full-bleed, owns its own top spacing" set the padding logic below
   // already uses — these are the only routes with a hero/banner directly
@@ -199,7 +210,7 @@ export default function App() {
                   <div className="max-w-6xl mx-auto flex items-start gap-4">
                     <div className="w-full relative z-[var(--z-dropdown)] flex-1">
                       <PredictiveSearch 
-                        products={PRODUCTS} brands={BRANDS} categories={CATEGORIES} trending={trending}
+                        products={liveProducts} brands={BRANDS} categories={CATEGORIES} trending={trending}
                         onQueryChange={() => {}} 
                         onSubmit={(q) => {
                           navigate(`/shop?q=${encodeURIComponent(q)}`);

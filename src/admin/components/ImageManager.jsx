@@ -19,7 +19,7 @@
  * the position-swap trick this component already used for its old
  * adjacent-only reorder.
  * =================================================================== */
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { ImagePlus, Play, RefreshCw, Star, X, Plus } from "lucide-react";
 import { supabase } from "../../lib/api/client.js";
 import {
@@ -103,9 +103,14 @@ export default function ImageManager({ productId, images = [], onChange, disable
   const [dragIndex, setDragIndex] = useState(null);
   const [overIndex, setOverIndex] = useState(null);
   const [order, setOrder] = useState(null); // local optimistic order while dragging
+  const [optimisticImages, setOptimisticImages] = useState(images);
   const [pressTimer, setPressTimer] = useState(null);
 
-  const shown = order ?? images;
+  useEffect(() => {
+    setOptimisticImages(images);
+  }, [images]);
+
+  const shown = order ?? optimisticImages;
   const roomLeft = MAX_IMAGES - images.length;
 
   const setStage = (key, patch) =>
@@ -138,14 +143,15 @@ export default function ImageManager({ productId, images = [], onChange, disable
     }
     if (!accepted.length) return;
 
-    setBusy(true);
-    let position = images.length;
+    let positionOffset = 0;
+    const uploadedImages = [];
 
     // Sequential, not Promise.all: `position` must be assigned in the order
     // files were dropped, and parallel uploads would race that assignment.
     for (const original of accepted) {
       const key = `${original.name}-${Date.now()}-${Math.random()}`;
-      setStage(key, { name: original.name, stage: "converting", error: null });
+      const previewUrl = URL.createObjectURL(original);
+      setStage(key, { name: original.name, stage: "converting", error: null, previewUrl });
 
       const { file, error: validationError } = await validateImage(original);
       if (validationError) {
@@ -155,14 +161,21 @@ export default function ImageManager({ productId, images = [], onChange, disable
       }
 
       setStage(key, { stage: "uploading" });
-      const { error: upErr } = await uploadProductImage(productId, file, { position, alt: "" });
+      const tempPos = 10000 + Math.floor(Math.random() * 1000000) + positionOffset;
+      const { data, error: upErr } = await uploadProductImage(productId, file, { position: tempPos, alt: "" });
       if (upErr) {
         setStage(key, { stage: "error", error: "Upload failed — please try again." });
         setTimeout(() => clearStage(key), 4000);
         continue;
       }
+      if (data) uploadedImages.push(data);
       clearStage(key);
-      position += 1;
+      positionOffset += 1;
+    }
+
+    if (uploadedImages.length > 0) {
+      const newOrder = [...images, ...uploadedImages];
+      await reorderProductImages(newOrder.map(img => img.id));
     }
 
     setBusy(false);
@@ -191,7 +204,8 @@ export default function ImageManager({ productId, images = [], onChange, disable
 
     for (const original of accepted) {
       const key = `${original.name}-${Date.now()}-${Math.random()}`;
-      setStage(key, { name: original.name, stage: "converting", error: null });
+      const previewUrl = URL.createObjectURL(original);
+      setStage(key, { name: original.name, stage: "converting", error: null, previewUrl });
 
       const { file, error: validationError } = await validateImage(original);
       if (validationError) {
@@ -201,8 +215,9 @@ export default function ImageManager({ productId, images = [], onChange, disable
       }
 
       setStage(key, { stage: "uploading" });
-      // Use a high position temporarily to avoid collisions. Reorder will fix this right after.
-      const { data, error: upErr } = await uploadProductImage(productId, file, { position: 999 + positionOffset, alt: "" });
+      // Use a high random position temporarily to avoid collisions. Reorder will fix this right after.
+      const tempPos = 10000 + Math.floor(Math.random() * 1000000) + positionOffset;
+      const { data, error: upErr } = await uploadProductImage(productId, file, { position: tempPos, alt: "" });
       if (upErr) {
         setStage(key, { stage: "error", error: "Upload failed — please try again." });
         setTimeout(() => clearStage(key), 4000);
@@ -253,16 +268,21 @@ export default function ImageManager({ productId, images = [], onChange, disable
 
     setError(null);
     setReplacingId(target.id);
+    const previewUrl = URL.createObjectURL(picked);
+    setStage(`replace-${target.id}`, { previewUrl });
 
+    // Validate async without blocking render of the preview
     const { file, error: validationError } = await validateImage(picked);
     if (validationError) {
       setReplacingId(null);
       setError(validationError);
+      clearStage(`replace-${target.id}`);
       return;
     }
 
     const { error } = await replaceProductImage(productId, target, file);
     setReplacingId(null);
+    clearStage(`replace-${target.id}`);
     if (error) setError(error.message);
     else onChange();
   }
@@ -292,17 +312,23 @@ export default function ImageManager({ productId, images = [], onChange, disable
     setOverIndex(null);
     setDragIndex(null);
     const finalOrder = order;
-    setOrder(null);
     if (!finalOrder) return;
-    // No-op guard: dropping back in the original spot shouldn't fire a write.
-    if (finalOrder.every((img, i) => img.id === images[i]?.id)) return;
+    if (finalOrder.every((img, i) => img.id === optimisticImages[i]?.id)) {
+      setOrder(null);
+      return;
+    }
 
-    setBusy(true);
+    // Instantly commit locally
+    setOptimisticImages(finalOrder);
+    setOrder(null);
+
     const { error } = await reorderProductImages(finalOrder.map((img) => img.id));
-    setBusy(false);
-    if (error) setError(error.message);
+    if (error) {
+      setError(error.message);
+      setOptimisticImages(images); // rollback on fail
+    }
     onChange();
-  }, [order, images, onChange]);
+  }, [order, optimisticImages, images, onChange]);
 
   /* ---- Touch-to-reorder (Mobile polyfill) ---- */
   const onTouchStart = useCallback((i) => (e) => {
@@ -355,16 +381,23 @@ export default function ImageManager({ productId, images = [], onChange, disable
     setDragIndex(null);
     
     const finalOrder = order;
-    setOrder(null);
     if (!finalOrder) return;
-    if (finalOrder.every((img, i) => img.id === images[i]?.id)) return;
+    if (finalOrder.every((img, i) => img.id === optimisticImages[i]?.id)) {
+      setOrder(null);
+      return;
+    }
 
-    setBusy(true);
+    // Instantly commit locally
+    setOptimisticImages(finalOrder);
+    setOrder(null);
+
     const { error } = await reorderProductImages(finalOrder.map((img) => img.id));
-    setBusy(false);
-    if (error) setError(error.message);
+    if (error) {
+      setError(error.message);
+      setOptimisticImages(images); // rollback on fail
+    }
     onChange();
-  }, [order, images, onChange, dragIndex]);
+  }, [order, optimisticImages, images, onChange, dragIndex]);
 
   return (
     <div>
@@ -410,9 +443,14 @@ export default function ImageManager({ productId, images = [], onChange, disable
               </span>
             )}
             {replacingId === img.id && (
-              <div className="absolute inset-0 grid place-items-center bg-ink/50">
-                <Spinner className="h-5 w-5 text-white" />
-              </div>
+              <>
+                {inFlight[`replace-${img.id}`]?.previewUrl && (
+                  <img src={inFlight[`replace-${img.id}`].previewUrl} alt="" className="absolute inset-0 h-full w-full object-cover" />
+                )}
+                <div className="absolute inset-0 grid place-items-center bg-ink/50">
+                  <Spinner className="h-5 w-5 text-white" />
+                </div>
+              </>
             )}
             {!disabled && replacingId !== img.id && (
               <div className="absolute right-1.5 top-1.5 flex gap-1 opacity-100 lg:opacity-0 transition-opacity lg:group-hover:opacity-100 focus-within:opacity-100">
@@ -452,23 +490,31 @@ export default function ImageManager({ productId, images = [], onChange, disable
           </div>
         ))}
 
-        {Object.entries(inFlight).map(([key, f]) => (
-          <div key={key} className="relative flex aspect-[4/5] flex-col items-center justify-center gap-2 rounded-xl bg-snow p-3 text-center ring-1 ring-line">
-            {f.stage === "error" ? (
-              <>
-                <X className="h-5 w-5 text-red-500" />
-                <span className="text-[11px] leading-snug text-red-600">{f.error}</span>
-              </>
-            ) : (
-              <>
-                <Spinner className="h-5 w-5" />
-                <span className="text-[11px] leading-snug text-ink-soft">
-                  {f.stage === "converting" ? "Converting…" : f.stage === "saving" ? "Saving…" : "Uploading…"}
-                </span>
-              </>
-            )}
-          </div>
-        ))}
+        {Object.entries(inFlight).map(([key, f]) => {
+          if (key.startsWith("replace-")) return null; // rendered inside the tile
+          return (
+            <div key={key} className="relative flex aspect-[4/5] flex-col items-center justify-center gap-2 rounded-xl bg-snow text-center ring-1 ring-line overflow-hidden">
+              {f.previewUrl && (
+                <img src={f.previewUrl} alt="" className="absolute inset-0 h-full w-full object-cover opacity-50" />
+              )}
+              <div className="relative z-10 flex flex-col items-center gap-2 rounded-lg bg-white/80 px-2 py-1 backdrop-blur-sm">
+                {f.stage === "error" ? (
+                  <>
+                    <X className="h-5 w-5 text-red-500" />
+                    <span className="text-[11px] leading-snug text-red-600">{f.error}</span>
+                  </>
+                ) : (
+                  <>
+                    <Spinner className="h-5 w-5" />
+                    <span className="text-[11px] leading-snug text-ink-soft">
+                      {f.stage === "converting" ? "Converting…" : f.stage === "saving" ? "Saving…" : "Uploading…"}
+                    </span>
+                  </>
+                )}
+              </div>
+            </div>
+          );
+        })}
 
         {/* The single add tile — appears after the last real image, or alone
             as the empty-state prompt when the product has none yet. Never

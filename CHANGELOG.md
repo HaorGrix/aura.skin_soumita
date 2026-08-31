@@ -17,3 +17,4 @@
 - Fixed product search card linking to invalid slugs.
 - Resolved mobile scroll conflicts on Swiper and drag-and-drop components by implementing a 400ms long-press delay and adjusting touch thresholds.
 - Fixed critical mobile UI freeze during image uploads by removing HEIC from the `accept` attribute, forcing native OS off-thread JPEG conversion instead of relying on main-thread WASM conversion.
+- Optimized ImageManager with Optimistic UI updates for instant drag-and-drop reordering feedback and non-blocking local Object URL previews for uploads and replacements.

@@ -16,3 +16,4 @@
 - Fixed predictive search to accurately filter short queries using prefix logic.
 - Fixed product search card linking to invalid slugs.
 - Resolved mobile scroll conflicts on Swiper and drag-and-drop components by implementing a 400ms long-press delay and adjusting touch thresholds.
+- Fixed critical mobile UI freeze during image uploads by removing HEIC from the `accept` attribute, forcing native OS off-thread JPEG conversion instead of relying on main-thread WASM conversion.

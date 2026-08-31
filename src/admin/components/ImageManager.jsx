@@ -44,7 +44,7 @@ const VIDEO_ACCEPT = "video/mp4,video/webm";
 const VIDEO_TYPES = new Set(["video/mp4", "video/webm"]);
 // HEIC files never appear in this list: they're converted to JPEG client-side
 // before this check ever runs (see convertIfHeic).
-const ACCEPT = "image/jpeg,image/png,image/webp,image/avif,image/heic,image/heif";
+const ACCEPT = "image/jpeg,image/png,image/webp,image/avif";
 const IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/avif"]);
 
 function isHeic(file) {

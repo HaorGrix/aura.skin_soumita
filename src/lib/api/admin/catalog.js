@@ -180,6 +180,18 @@ function pickWritable(input) {
   return out;
 }
 
+// products_slug_unique_idx (0058): the slug is also normalized server-side
+// on every insert/update (0058's trigger), so two DIFFERENT typed slugs can
+// still collide once normalized (e.g. "10% Serum" and "10%-Serum" both
+// become "...-10-serum") — same reasoning as updateVariantPrice()'s
+// compare_at_price_minor_check translation below.
+function friendlySlugError(error) {
+  if (error && /products_slug_unique_idx/.test(error.message ?? "")) {
+    return { message: "That name produces a web address another product already uses. Try a more specific name, or set a custom slug." };
+  }
+  return error;
+}
+
 export async function createProduct(input) {
   const row = pickWritable(input);
   row.slug = row.slug || slugify(`${input.brand ?? ""}-${input.name ?? ""}`);
@@ -187,19 +199,31 @@ export async function createProduct(input) {
   // Stock is set via adjust_stock() after creation so the very first units
   // land in the ledger like every later movement does.
   const { data, error } = await supabase.from("products").insert(row).select().single();
-  return { data, error };
+  return { data, error: error ? friendlySlugError(error) : null };
 }
 
 /**
  * Update a product. If the slug changed, the OLD slug is parked in
  * product_slug_history first — otherwise renaming a product silently 404s
  * every existing link to it.
+ *
+ * Compares against slugify(row.slug), not the raw value: 0058's DB trigger
+ * normalizes the slug on every write regardless of whether the admin
+ * touched that field, so a still-un-normalized legacy slug (mixed case,
+ * spaces, symbols — most of the catalog predates that trigger) silently
+ * becomes its clean form on the product's NEXT edit, whatever that edit
+ * is. Comparing raw strings would miss that as a "rename" and skip the
+ * history row, silently breaking that product's existing links exactly
+ * the way this function exists to prevent. Comparing against the
+ * normalized target catches it every time, whether the admin edited the
+ * slug on purpose or not.
  */
 export async function updateProduct(id, input, { previousSlug } = {}) {
   const row = pickWritable(input);
   row.updated_at = new Date().toISOString();
 
-  if (previousSlug && row.slug && row.slug !== previousSlug) {
+  const nextSlug = row.slug ? slugify(row.slug) : previousSlug;
+  if (previousSlug && nextSlug && nextSlug !== previousSlug) {
     const { error: histError } = await supabase
       .from("product_slug_history")
       .upsert({ slug: previousSlug, product_id: id }, { onConflict: "slug" });
@@ -208,7 +232,7 @@ export async function updateProduct(id, input, { previousSlug } = {}) {
 
   const { data, error } = await supabase
     .from("products").update(row).eq("id", id).select().single();
-  return { data, error };
+  return { data, error: error ? friendlySlugError(error) : null };
 }
 
 /** Name/brand for a specific set of product ids — used by pickers (Sales'

@@ -40,10 +40,24 @@ export async function getBlock(slot) {
     .from("content_blocks").select("*").eq("slot", slot).maybeSingle();
   if (error) return { data: null, error };
 
+  // Backfill any field the schema has grown since this row was last saved —
+  // same merge lib/api/content.js's getContent() already does for the
+  // storefront read path. Without this, a slot saved before a new field
+  // existed showed that field as genuinely empty here (0 items, blank
+  // text) even though the storefront was correctly falling back to its
+  // schema default — an admin opening the editor had no way to tell "this
+  // is already showing something" from "this is actually blank on the
+  // live site", and saving as-is here would keep it that way forever
+  // (still absent, since nothing wrote to it) or, if they touched the
+  // field at all, could persist an explicit empty value that WOULD now
+  // override the storefront's fallback. Existing saved values always win —
+  // this only fills in what was never there.
+  const payload = data?.payload ? { ...defaultsFor(schema), ...data.payload } : defaultsFor(schema);
+
   return {
     data: {
       schema,
-      payload: data?.payload ?? defaultsFor(schema),
+      payload,
       updatedAt: data?.updated_at ?? null,
       exists: !!data,
     },

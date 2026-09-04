@@ -118,8 +118,9 @@ export const SLOTS = [
   },
   {
     slot: "home.why",
-    label: "Why skin.theory",
+    label: "Why Skin Theory",
     group: "Homepage",
+    help: "The 4 pillar cards and the stats bar below them. The icon for each pillar is picked automatically by position — this only controls its title and description text. Leave \"Heading\" blank to keep the designed default (\"Why you'll love [store name]\", with a styled accent word) — anything you type replaces it outright, in plain styling.",
     fields: [
       { key: "heading", label: "Heading", type: "text", max: 48, default: "" },
       {
@@ -128,7 +129,31 @@ export const SLOTS = [
           { key: "title", label: "Title", type: "text", max: 36 },
           { key: "body", label: "Description", type: "textarea", max: 160 },
         ],
-        default: [],
+        // The exact copy hardcoded in WhyAura.jsx before this slot was
+        // wired up — an unedited install must keep showing these 4
+        // pillars, not an empty grid.
+        default: [
+          { title: "Organic", body: "Plant-derived actives, sourced from growers we can name." },
+          { title: "Cruelty-Free", body: "Never tested on animals, at any stage, by anyone we stock." },
+          { title: "Clean", body: "Full INCI on every product. Nothing hidden behind “fragrance”." },
+          { title: "Sustainable", body: "Glass and aluminium where it works. Refills where it doesn’t." },
+        ],
+      },
+      {
+        key: "stats", label: "Stats bar", type: "list", max: 6,
+        itemFields: [
+          { key: "n", label: "Number", type: "text", max: 12, help: "e.g. 12k+, 100%" },
+          { key: "l", label: "Label", type: "text", max: 30, help: "e.g. 5-star reviews" },
+        ],
+        // Exact copy previously hardcoded as WhyAura.jsx's own STATS
+        // constant — same "unedited install shows what it always showed"
+        // contract as `items` above.
+        default: [
+          { n: "12k+", l: "5-star reviews" },
+          { n: "30+", l: "authentic brands" },
+          { n: "100%", l: "cruelty-free" },
+          { n: "48h", l: "fast dispatch" },
+        ],
       },
     ],
   },

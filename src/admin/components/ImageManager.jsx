@@ -1,25 +1,31 @@
 /* =================================================================== *
  * skin.theory admin — product image manager
  * -------------------------------------------------------------------
- * Upload (drag-and-drop or click), drag-to-reorder, replace, and delete a
+ * Upload (drag-and-drop or click), replace, insert-before, and delete a
  * product's gallery — 0 to MAX_IMAGES images, laid out on a fluid auto-fit
  * grid so the tile count drives the layout instead of a fixed column count.
- * Replace swaps the file behind one existing slot in place (same position,
- * alt text and spot in the order) — the gap plain delete-then-add left,
- * since Add always appends at the end rather than refilling the slot that
- * was just emptied.
+ *
+ * Deliberately NO drag-to-reorder — an earlier version had one (mouse DnD
+ * plus a long-press touch polyfill), but it was heavy/slow for what this
+ * screen actually needs. Every slot is position-locked instead: Replace
+ * swaps the file behind one existing slot in place (same position, alt
+ * text and spot in the order) without touching any other row — the gap
+ * plain delete-then-add left, since Add always appends at the end rather
+ * than refilling the slot that was just emptied. Both Replace and Delete
+ * require an explicit confirm before they commit — neither can be undone.
  * Position 0 is the front shot — the one ProductCard and every listing
  * uses — labelled explicitly ("Main") rather than left as an invisible
- * convention.
+ * convention; changing it means Replace-ing that specific slot.
  *
  * All Storage/DB work goes through lib/api/media.js, which already does the
  * safety-critical parts (rollback the uploaded file if the DB insert fails;
- * delete the DB row before the Storage object) — unchanged by this file.
- * The one addition there, `reorderProductImages`, is a pure extension of
- * the position-swap trick this component already used for its old
- * adjacent-only reorder.
+ * delete the DB row before the Storage object, and genuinely remove the old
+ * Storage object on both Replace and Delete — never just an unlinked DB
+ * row) — unchanged by this file. `reorderProductImages` there is used only
+ * to place a newly Added/Inserted photo at the right spot, not for
+ * reordering existing ones.
  * =================================================================== */
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { ImagePlus, Play, RefreshCw, Star, X, Plus } from "lucide-react";
 import { supabase } from "../../lib/api/client.js";
 import {
@@ -100,17 +106,10 @@ export default function ImageManager({ productId, images = [], onChange, disable
   const [replacingId, setReplacingId] = useState(null);
   const [insertTargetIndex, setInsertTargetIndex] = useState(null);
   const insertInputRef = useRef(null);
-  const [dragIndex, setDragIndex] = useState(null);
-  const [overIndex, setOverIndex] = useState(null);
-  const [order, setOrder] = useState(null); // local optimistic order while dragging
-  const [optimisticImages, setOptimisticImages] = useState(images);
-  const [pressTimer, setPressTimer] = useState(null);
+  // Held between "file picked" and "admin confirmed" — Replace no longer
+  // commits immediately on pick; see handleReplacePick/confirmReplace below.
+  const [pendingReplace, setPendingReplace] = useState(null);
 
-  useEffect(() => {
-    setOptimisticImages(images);
-  }, [images]);
-
-  const shown = order ?? optimisticImages;
   const roomLeft = MAX_IMAGES - images.length;
 
   const setStage = (key, patch) =>
@@ -256,15 +255,22 @@ export default function ImageManager({ productId, images = [], onChange, disable
     else onChange();
   }
 
-  /** Swap the file behind one existing gallery slot in place — the target
-   *  row's id/position/alt/label are untouched; only which file it points
-   *  at changes. No confirmation modal, matching SingleImageField's
-   *  immediate-on-pick Replace elsewhere in this file: a wrong pick here is
-   *  a second click away from being un-done, same as swapping a CMS banner. */
-  async function handleReplace(picked) {
+  /** File picked via the OS picker for one tile's Replace button — held,
+   *  NOT uploaded yet, until the admin confirms in the modal below. */
+  function handleReplacePick(picked) {
     const target = replaceTarget;
     setReplaceTarget(null);
     if (!picked || !target) return;
+    setPendingReplace({ target, file: picked });
+  }
+
+  /** Swap the file behind one existing gallery slot in place — the target
+   *  row's id/position/alt/label are untouched; only which file it points
+   *  at changes. Nothing about any OTHER slot's row is read or written, so
+   *  this can never shift another tile's position. */
+  async function confirmReplace() {
+    const { target, file: picked } = pendingReplace;
+    setPendingReplace(null);
 
     setError(null);
     setReplacingId(target.id);
@@ -287,118 +293,6 @@ export default function ImageManager({ productId, images = [], onChange, disable
     else onChange();
   }
 
-  /* ---- Drag-to-reorder — native HTML5 DnD, no dependency needed. ---- */
-  const onDragStart = useCallback((i) => (e) => {
-    if (disabled) return;
-    setDragIndex(i);
-    setOrder(images);
-    e.dataTransfer.effectAllowed = "move";
-  }, [disabled, images]);
-
-  const onDragOver = useCallback((i) => (e) => {
-    e.preventDefault();
-    if (dragIndex === null || dragIndex === i) return;
-    setOverIndex(i);
-    setOrder((cur) => {
-      const list = [...(cur ?? images)];
-      const [moved] = list.splice(dragIndex, 1);
-      list.splice(i, 0, moved);
-      return list;
-    });
-    setDragIndex(i);
-  }, [dragIndex, images]);
-
-  const onDragEnd = useCallback(async () => {
-    setOverIndex(null);
-    setDragIndex(null);
-    const finalOrder = order;
-    if (!finalOrder) return;
-    if (finalOrder.every((img, i) => img.id === optimisticImages[i]?.id)) {
-      setOrder(null);
-      return;
-    }
-
-    // Instantly commit locally
-    setOptimisticImages(finalOrder);
-    setOrder(null);
-
-    const { error } = await reorderProductImages(finalOrder.map((img) => img.id));
-    if (error) {
-      setError(error.message);
-      setOptimisticImages(images); // rollback on fail
-    }
-    onChange();
-  }, [order, optimisticImages, images, onChange]);
-
-  /* ---- Touch-to-reorder (Mobile polyfill) ---- */
-  const onTouchStart = useCallback((i) => (e) => {
-    if (disabled) return;
-    const timer = setTimeout(() => {
-      setDragIndex(i);
-      setOrder(images);
-      document.body.style.overflow = "hidden"; // Prevent pull-to-refresh / scrolling
-      if (navigator.vibrate) navigator.vibrate(50);
-    }, 400);
-    setPressTimer(timer);
-  }, [disabled, images]);
-
-  const onTouchMove = useCallback((e) => {
-    if (dragIndex === null) {
-      if (pressTimer) {
-        clearTimeout(pressTimer);
-        setPressTimer(null);
-      }
-      return;
-    }
-    const touch = e.touches[0];
-    const target = document.elementFromPoint(touch.clientX, touch.clientY);
-    if (!target) return;
-
-    const dropZone = target.closest("[data-index]");
-    if (dropZone) {
-      const i = parseInt(dropZone.getAttribute("data-index"), 10);
-      if (i !== dragIndex && i !== overIndex) {
-        setOverIndex(i);
-        setOrder((cur) => {
-          const list = [...(cur ?? images)];
-          const [moved] = list.splice(dragIndex, 1);
-          list.splice(i, 0, moved);
-          return list;
-        });
-        setDragIndex(i);
-      }
-    }
-  }, [dragIndex, overIndex, images]);
-
-  const onTouchEnd = useCallback(async () => {
-    if (pressTimer) {
-      clearTimeout(pressTimer);
-      setPressTimer(null);
-    }
-    document.body.style.overflow = "";
-    if (dragIndex === null) return;
-    setOverIndex(null);
-    setDragIndex(null);
-    
-    const finalOrder = order;
-    if (!finalOrder) return;
-    if (finalOrder.every((img, i) => img.id === optimisticImages[i]?.id)) {
-      setOrder(null);
-      return;
-    }
-
-    // Instantly commit locally
-    setOptimisticImages(finalOrder);
-    setOrder(null);
-
-    const { error } = await reorderProductImages(finalOrder.map((img) => img.id));
-    if (error) {
-      setError(error.message);
-      setOptimisticImages(images); // rollback on fail
-    }
-    onChange();
-  }, [order, optimisticImages, images, onChange, dragIndex]);
-
   return (
     <div>
       {/* Auto-fit: the browser decides how many tiles fit per row at the
@@ -416,21 +310,10 @@ export default function ImageManager({ productId, images = [], onChange, disable
         className="grid gap-3"
         style={{ gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))" }}
       >
-        {shown.map((img, i) => (
+        {images.map((img, i) => (
           <div
             key={img.id}
-            data-index={i}
-            draggable={!disabled}
-            onDragStart={onDragStart(i)}
-            onDragOver={onDragOver(i)}
-            onDragEnd={onDragEnd}
-            onDrop={(e) => e.preventDefault()}
-            onTouchStart={onTouchStart(i)}
-            onTouchMove={onTouchMove}
-            onTouchEnd={onTouchEnd}
-            className={`group relative cursor-grab overflow-hidden rounded-xl bg-snow ring-1 ring-line active:cursor-grabbing ${
-              overIndex === i ? "ring-2 ring-magenta" : ""
-            }`}
+            className="group relative overflow-hidden rounded-xl bg-snow ring-1 ring-line"
           >
             <img
               src={publicImageUrl(img.storage_path)} alt={img.alt || ""}
@@ -452,12 +335,17 @@ export default function ImageManager({ productId, images = [], onChange, disable
                 </div>
               </>
             )}
+            {/* p-1.5 (not p-1) and gap-1.5 (not gap-1) — at the old size these
+                were ~22px targets crowded together, uncomfortably small for
+                a thumb on a ~140px mobile tile. Always visible on mobile
+                (opacity-100 below lg) rather than hover-revealed, since
+                touch has no hover state to reveal them with. */}
             {!disabled && replacingId !== img.id && (
-              <div className="absolute right-1.5 top-1.5 flex gap-1 opacity-100 lg:opacity-0 transition-opacity lg:group-hover:opacity-100 focus-within:opacity-100">
+              <div className="absolute right-1.5 top-1.5 flex gap-1.5 opacity-100 lg:opacity-0 transition-opacity lg:group-hover:opacity-100 focus-within:opacity-100">
                 {roomLeft > 0 && (
                   <button
                     onClick={() => { setInsertTargetIndex(i); insertInputRef.current?.click(); }}
-                    className="rounded-full bg-ink/70 p-1 text-white hover:bg-ink"
+                    className="rounded-full bg-ink/70 p-1.5 text-white hover:bg-ink"
                     aria-label="Insert image before"
                     title="Insert new photo before this one"
                   >
@@ -466,7 +354,7 @@ export default function ImageManager({ productId, images = [], onChange, disable
                 )}
                 <button
                   onClick={() => { setReplaceTarget(img); replaceInputRef.current?.click(); }}
-                  className="rounded-full bg-ink/70 p-1 text-white hover:bg-ink"
+                  className="rounded-full bg-ink/70 p-1.5 text-white hover:bg-ink"
                   aria-label="Replace image"
                   title="Replace this photo"
                 >
@@ -474,7 +362,7 @@ export default function ImageManager({ productId, images = [], onChange, disable
                 </button>
                 <button
                   onClick={() => setRemoving(img)}
-                  className="rounded-full bg-ink/70 p-1 text-white hover:bg-red-600"
+                  className="rounded-full bg-ink/70 p-1.5 text-white hover:bg-red-600"
                   aria-label="Delete image"
                   title="Delete this photo"
                 >
@@ -540,7 +428,7 @@ export default function ImageManager({ productId, images = [], onChange, disable
       />
       <input
         ref={replaceInputRef} type="file" accept={ACCEPT} disabled={disabled} className="hidden"
-        onChange={(e) => { handleReplace(e.target.files?.[0]); e.target.value = ""; }}
+        onChange={(e) => { handleReplacePick(e.target.files?.[0]); e.target.value = ""; }}
       />
       <input
         ref={insertInputRef} type="file" accept={ACCEPT} multiple disabled={disabled || busy} className="hidden"
@@ -549,9 +437,10 @@ export default function ImageManager({ productId, images = [], onChange, disable
 
       {error && <p className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-xs text-red-700">{error}</p>}
       <p className="mt-3 text-[11px] text-ink-soft">
-        The first image is what shoppers see in listings — drag any photo to the front to make it the main one.
-        The label under each photo shows on the storefront gallery thumbnail exactly as typed — leave it blank
-        to show nothing. JPEG, PNG, WebP, AVIF or HEIC (auto-converted), up to 5 MB each, {MAX_IMAGES} max.
+        The first image ("Main") is what shoppers see in listings — use Replace on that slot to swap in a
+        different one. The label under each photo shows on the storefront gallery thumbnail exactly as typed —
+        leave it blank to show nothing. JPEG, PNG, WebP, AVIF or HEIC (auto-converted), up to 5 MB each,{" "}
+        {MAX_IMAGES} max.
       </p>
 
       {images.length === 0 && Object.keys(inFlight).length === 0 && (
@@ -566,6 +455,14 @@ export default function ImageManager({ productId, images = [], onChange, disable
         confirmLabel="Delete"
         body="This removes it from the product permanently — it can't be undone."
         onConfirm={confirmRemove}
+      />
+
+      <ConfirmModal
+        open={!!pendingReplace} onClose={() => setPendingReplace(null)} danger
+        title="Replace this image?"
+        confirmLabel="Replace"
+        body="This cannot be undone."
+        onConfirm={confirmReplace}
       />
     </div>
   );

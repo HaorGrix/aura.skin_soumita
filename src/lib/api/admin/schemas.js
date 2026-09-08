@@ -6,11 +6,20 @@
  * plus reading it in the component. No new admin screen, no new table.
  *
  * Field types the editor knows how to render:
- *   text | textarea | number | boolean | image | media | route | link | color | date | list
+ *   text | textarea | number | boolean | image | media | route | link | concern | color | date | list
  *
  * `route` is a dropdown of known top-level pages; `link` is free text that
  * additionally accepts deep paths and off-site URLs. Prefer `route` when the
  * target really is one of the main pages — the dropdown can't be typo'd.
+ *
+ * `concern` is a dropdown of the live `concerns` table
+ * (0059_concerns_table.sql, src/lib/api/concerns.js) — same "dropdown so it
+ * can't be typo'd" reasoning as `route`, used wherever a CMS value has to
+ * line up exactly with a product's `concern` tags for the storefront
+ * filter to find anything (e.g. home.concerns' tile). The option VALUE
+ * stored is the concern's stable slug, not its (admin-editable) name, so
+ * renaming a concern can never break an already-picked tile — see
+ * ContentEdit.jsx's "concern" case, which does the actual fetching.
  *
  * `media` (unlike `image`) accepts video too — uploads go to the `site-media`
  * bucket (0011_hero_carousel_media.sql), not product-images. Use it for CMS
@@ -103,16 +112,59 @@ export const SLOTS = [
     slot: "home.concerns",
     label: "Shop by Concern",
     group: "Homepage",
-    help: "The concern tiles. Images are shown uncropped, so any aspect ratio is fine.",
+    // Corrected: these tiles are CROPPED to fill a fixed 3:4 box
+    // (ConcernCard's `aspect-[3/4]` + `object-cover`, ShopByConcern.jsx),
+    // not shown uncropped — the previous copy here was stale/wrong and
+    // would have set the wrong expectation for what to upload.
+    help: "The concern tiles. Each image is cropped to fill a 3:4 portrait frame — see the Image field below for the exact recommended size.",
     fields: [
       { key: "heading", label: "Section heading", type: "text", max: 48, default: "Shop by concern" },
       {
         key: "items", label: "Concerns", type: "list", max: 12,
         itemFields: [
-          { key: "label", label: "Concern", type: "text", max: 30 },
-          { key: "image", label: "Image", type: "image" },
+          { key: "label", label: "Tile heading", type: "text", max: 30,
+            help: "The display text on the tile — can be worded however you like (e.g. \"Acne & Breakouts\")." },
+          // Separate from `label` on purpose: `label` is free-text display
+          // copy an admin should be able to word however they like ("Acne &
+          // Breakouts" reads better than a raw catalog term), but the link
+          // this tile sends a visitor to has to be an EXACT catalog concern
+          // or the filter finds nothing. Splitting them means editing the
+          // headline can never silently break the tile's link, and vice
+          // versa — same reasoning as ProductEdit's constrained concern
+          // multi-select (both read the same live `concerns` table).
+          { key: "concern", label: "Links to concern", type: "concern",
+            help: "Which catalog concern this tile filters to when clicked. Tag products with the same concern (Products → Attributes) so the tile's link finds them. Leave unset if no catalog concern honestly fits yet — the tile then links to the unfiltered shop instead of a dead filter." },
+          // Cropped to a fixed 3:4 box (ConcernCard, object-cover) at up to
+          // 280×373 CSS px (measured — stable across every breakpoint from
+          // tablet up; mobile is smaller). 900×1200 covers that sharply
+          // even at 3x/retina density. Same 5MB cap SingleImageField
+          // already hard-enforces everywhere else (MAX_BYTES) — not a new
+          // limit, just stated here too.
+          { key: "image", label: "Image", type: "image", aspect: "3:4",
+            help: "Recommended: 900 × 1200 px · aspect ratio 3:4. JPG, PNG, or WebP, up to 5MB. Off-ratio images still work — they're cropped to fit, centered." },
+          { key: "emoji", label: "Emoji", type: "text", max: 4, help: "Shown in the corner chip, e.g. 💧" },
+          { key: "blurb", label: "Short blurb", type: "text", max: 40 },
         ],
-        default: [],
+        // Every default below is the EXACT copy that was hardcoded in
+        // ShopByConcern.jsx before this slot was wired to the CMS — an
+        // unedited install must keep showing these, not an empty strip.
+        // `image` stays "" (a real value here is a Storage path, which a
+        // hardcoded default can't be); the component falls back to its own
+        // bundled art by label when this is empty, and `tone` is likewise
+        // NOT a CMS field — it's a decorative value derived in the
+        // component, same as Offers.jsx's card tones.
+        // `concern` values are the concerns table's slugs (0059_concerns_table.sql),
+        // not display names — matches what a real saved tile now stores.
+        default: [
+          { label: "Hydration", concern: "hydration", image: "", emoji: "💧", blurb: "Dewy, plump skin" },
+          { label: "Barrier Repair", concern: "barrier-repair", image: "", emoji: "🛡️", blurb: "Strengthen & protect" },
+          { label: "Brightening", concern: "brightening", image: "", emoji: "🌟", blurb: "Glass-skin glow" },
+          { label: "Acne & Blemishes", concern: "acne-blemishes", image: "", emoji: "🌿", blurb: "Calm & clarify" },
+          { label: "Pores", concern: "pores", image: "", emoji: "🔬", blurb: "Refined texture" },
+          { label: "Soothing", concern: "soothing", image: "", emoji: "🍃", blurb: "Aloe-calm comfort" },
+          { label: "Anti-Aging", concern: "anti-aging", image: "", emoji: "⏳", blurb: "Firm & smooth" },
+          { label: "Sun Protection", concern: "sun-protection", image: "", emoji: "☀️", blurb: "Daily SPF shield" },
+        ],
       },
     ],
   },

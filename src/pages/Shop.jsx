@@ -2,7 +2,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { SlidersHorizontal, Loader2 } from "lucide-react";
 import {
-  CONCERNS,
   BRANDS,
   CATEGORIES,
   SKIN_TYPES,
@@ -12,6 +11,7 @@ import {
   SORTS,
   queryProducts,
 } from "../data/products.js";
+import { useConcerns } from "../lib/api/concerns.js";
 import { listProducts } from "../lib/api/products.js";
 import { listActiveSales } from "../lib/api/sales.js";
 import {
@@ -41,10 +41,17 @@ const PAGE = 12;
 /* Valid values per facet — the single source of truth for what a URL param may
  * legally hold. Parsing filters incoming values through these sets so a stale,
  * misspelled, or renamed param (e.g. an old "Acne" link vs "Acne & Blemishes")
- * is dropped instead of silently producing an empty grid. */
+ * is dropped instead of silently producing an empty grid.
+ *
+ * `concern` is deliberately absent here — unlike the other facets it's no
+ * longer a static list (0059_concerns_table.sql), so it can't be
+ * pre-validated at module load. It's handled like `category`: accepted
+ * optimistically at parse time (URLs already carry the concern's stable
+ * slug, same value products.concern stores — see ShopByConcern.jsx), then
+ * pruned once the live concern list has actually loaded (the effect below
+ * results memo's dependency on `concerns`). */
 const FACET_VALUES = {
   skinType: new Set(SKIN_TYPES),
-  concern: new Set(CONCERNS),
   brand: new Set(BRANDS),
   category: new Set(CATEGORIES),
   price: new Set(PRICE_RANGES.map((r) => r.id)),
@@ -108,6 +115,16 @@ function parseUrlQuery(tree) {
     const valid = raw.split(",").map((v) => v.trim()).filter((v) => FACET_VALUES[key].has(v));
     if (valid.length) filters[key] = valid;
   }
+
+  // `concern` isn't in FACET_VALUES (see the comment above it) — accepted
+  // optimistically here (already the stable slug), pruned once the live
+  // concern list loads (see the effect keyed on `concerns` below).
+  const rawConcern = params.get("concern");
+  if (rawConcern) {
+    const tokens = rawConcern.split(",").map((v) => v.trim()).filter(Boolean);
+    if (tokens.length) filters.concern = tokens;
+  }
+
   search = params.get("q") || "";
   return { filters, search };
 }
@@ -125,6 +142,22 @@ export default function Shop() {
   // that empty-query callback fires, so syncUrl preserves it.
   const [search, setSearch] = useState(() => parseUrlQuery().search);
   const [filters, setFilters] = useState(() => parseUrlQuery().filters);
+
+  // Live concern list (0059_concerns_table.sql) — arrives async, so a
+  // `?concern=<slug>` was accepted optimistically at parse time above.
+  // Once the real slugs are known, drop anything that isn't one of them
+  // (a stale/misspelled param), same "accept then prune" shape category
+  // uses for its own async tree resolution.
+  const concerns = useConcerns();
+  useEffect(() => {
+    if (!concerns.length || !filters.concern.length) return;
+    const known = new Set(concerns.map((c) => c.slug));
+    const pruned = filters.concern.filter((slug) => known.has(slug));
+    if (pruned.length !== filters.concern.length) {
+      setFilters((f) => ({ ...f, concern: pruned }));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [concerns]);
 
   // The tree arrives asynchronously, but the two useState initialisers above
   // run on the very first render. A `?category=<slug>` link therefore can't be
@@ -491,19 +524,19 @@ export default function Shop() {
 
           {/* Mobile quick concern chips */}
           <div className="mt-3 flex gap-2 overflow-x-auto pb-1 lg:hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            {CONCERNS.map((c) => {
-              const on = filters.concern.includes(c);
+            {concerns.map((c) => {
+              const on = filters.concern.includes(c.slug);
               return (
                 <button
-                  key={c}
-                  onClick={() => toggleFilter("concern", c)}
+                  key={c.slug}
+                  onClick={() => toggleFilter("concern", c.slug)}
                   className={`shrink-0 rounded-full px-3.5 py-1.5 text-xs font-medium ring-1 transition-colors ${
                     on
                       ? "bg-magenta text-white ring-magenta"
                       : "bg-white text-ink-soft ring-line"
                   }`}
                 >
-                  {c}
+                  {c.name}
                 </button>
               );
             })}

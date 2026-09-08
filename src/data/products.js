@@ -611,17 +611,9 @@ export const AVAILABILITY = [
 ];
 export const SKIN_TYPES = ["Dry", "Oily", "Combination", "Sensitive", "Normal"];
 
-export const CONCERNS = [
-  "Hydration",
-  "Barrier Repair",
-  "Brightening",
-  "Acne & Blemishes",
-  "Pores",
-  "Anti-Aging",
-  "Soothing",
-  "Exfoliation",
-  "Sun Protection",
-];
+// Concerns moved to a real, admin-editable table — see
+// src/lib/api/concerns.js (storefront/admin reads) and
+// 0059_concerns_table.sql. No static list lives here any more.
 
 export const CATEGORIES = [
   "Cleanser",

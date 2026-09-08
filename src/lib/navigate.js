@@ -10,6 +10,7 @@
  * rewriting each anchor into a framework <Link> — so components keep their
  * plain <a> tags and only the href STRING changes (#/x → /x).
  * =================================================================== */
+import { isAdminPath } from "./adminPath.js";
 
 const EVENT = "skinscript:navigate";
 
@@ -42,6 +43,14 @@ export function onRouteChange(handler) {
  *   • target="_blank", download, rel="external"
  *   • cross-origin links and non-"/" schemes (mailto:, tel:, http://…)
  *   • in-page fragments (#section) — native smooth-scroll still handles those
+ *   • any link headed INTO the admin, or a click that originated INSIDE the
+ *     admin panel — the admin has its own router (adminNavigate,
+ *     AdminApp.jsx) with its own private event channel; this interceptor
+ *     promoting one of its clicks to a storefront navigate() would silently
+ *     hijack it onto the wrong router (a plain browser navigation for a
+ *     link OUT of the admin, like Shell's logo or Login's "back to store",
+ *     is exactly what should happen instead — it's a full page load either
+ *     way, just without this interceptor's SPA shortcut)
  * so existing behaviour is preserved everywhere it should be. Handlers that
  * call e.preventDefault() (e.g. BackButton, smartNavigate links) are skipped
  * via the defaultPrevented guard, so there's never a double navigation. */
@@ -60,6 +69,7 @@ export function installLinkInterceptor() {
     if (!href || href[0] === "#") return;           // in-page anchor → native scroll
     if (a.origin !== window.location.origin) return; // external / other origin
     if (href[0] !== "/") return;                     // mailto:, tel:, protocol-relative, etc.
+    if (isAdminPath(href) || isAdminPath(window.location.pathname)) return; // admin has its own router
 
     e.preventDefault();
     navigate(a.pathname + a.search + a.hash);

@@ -9,7 +9,7 @@
 import { useEffect, useState } from "react";
 import {
   Award, BarChart3, BookOpen, Boxes, ClipboardList, FileText, FolderTree, LayoutDashboard, LogOut,
-  Menu, MessageSquareQuote, Package, Percent, Settings as SettingsIcon, ShieldCheck, Tag, Truck, Users, X,
+  Menu, MessageSquareQuote, Package, Percent, Settings as SettingsIcon, ShieldCheck, Sparkles, Tag, Truck, Users, X,
 } from "lucide-react";
 import { signOut } from "../../lib/api/admin/auth.js";
 import { useAdmin } from "../context.js";
@@ -23,6 +23,7 @@ const NAV = [
     { id: "products",   label: "Products",   icon: Package,  min: "support" },
     { id: "categories", label: "Categories", icon: FolderTree, min: "admin" },
     { id: "brands",     label: "Brands",     icon: Award,    min: "admin" },
+    { id: "concerns",   label: "Concerns",   icon: Sparkles, min: "admin" },
     { id: "inventory",  label: "Inventory",  icon: Boxes,    min: "admin" },
   ]},
   { group: "Fulfillment", items: [

@@ -3,7 +3,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ChevronDown, Check, X } from "lucide-react";
 import {
   SKIN_TYPES,
-  CONCERNS,
   BRANDS,
   CATEGORIES,
   PRICE_RANGES,
@@ -11,17 +10,24 @@ import {
   AVAILABILITY,
   SORTS,
 } from "../../data/products.js";
+import { useConcerns, concernNameFor } from "../../lib/api/concerns.js";
 
-/* The filter groups, in display order */
-const GROUPS = [
-  { key: "availability", label: "Availability", options: AVAILABILITY },
-  { key: "discount", label: "Discount", options: DISCOUNT_TIERS.map((t) => ({ id: t.id, label: t.label })) },
-  { key: "skinType", label: "Skin Type", options: SKIN_TYPES },
-  { key: "concern", label: "Concern", options: CONCERNS },
-  { key: "brand", label: "Brand", options: BRANDS },
-  { key: "category", label: "Category", options: CATEGORIES },
-  { key: "price", label: "Price", options: PRICE_RANGES.map((r) => ({ id: r.id, label: r.label })) },
-];
+/* The filter groups, in display order. `concern`'s options come from the
+ * live `concerns` table (0059_concerns_table.sql) — id = stable slug,
+ * label = current, admin-editable name — so renaming a concern updates
+ * this list with no code change. Every other facet is still the static
+ * catalog list; only concern moved off it. */
+function buildGroups(concerns) {
+  return [
+    { key: "availability", label: "Availability", options: AVAILABILITY },
+    { key: "discount", label: "Discount", options: DISCOUNT_TIERS.map((t) => ({ id: t.id, label: t.label })) },
+    { key: "skinType", label: "Skin Type", options: SKIN_TYPES },
+    { key: "concern", label: "Concern", options: concerns.map((c) => ({ id: c.slug, label: c.name })) },
+    { key: "brand", label: "Brand", options: BRANDS },
+    { key: "category", label: "Category", options: CATEGORIES },
+    { key: "price", label: "Price", options: PRICE_RANGES.map((r) => ({ id: r.id, label: r.label })) },
+  ];
+}
 
 export const EMPTY_FILTERS = {
   availability: [],
@@ -191,8 +197,9 @@ function SortFacet({ value, onChange }) {
  * SortMenu and omits these props).
  */
 export function FilterPanel({ filters, onToggle, onClear, sort, onSortChange, hiddenGroups = [] }) {
+  const concerns = useConcerns();
   const active = countActive(filters);
-  const groups = GROUPS.filter((g) => !hiddenGroups.includes(g.key));
+  const groups = buildGroups(concerns).filter((g) => !hiddenGroups.includes(g.key));
   return (
     <div>
       <div className="flex items-center justify-between pb-2">
@@ -222,10 +229,12 @@ export function FilterPanel({ filters, onToggle, onClear, sort, onSortChange, hi
 
 /* Active selections as removable chips (shown above the grid) */
 export function ActiveChips({ filters, onToggle, onClear }) {
+  const concerns = useConcerns();
   const labelFor = (key, id) => {
     if (key === "price") return PRICE_RANGES.find((r) => r.id === id)?.label ?? id;
     if (key === "availability") return AVAILABILITY.find((a) => a.id === id)?.label ?? id;
     if (key === "discount") return DISCOUNT_TIERS.find((t) => t.id === id)?.label ?? id;
+    if (key === "concern") return concernNameFor(concerns, id);
     return id;
   };
   const chips = Object.entries(filters).flatMap(([key, arr]) =>

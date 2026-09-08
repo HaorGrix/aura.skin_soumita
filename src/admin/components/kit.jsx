@@ -355,28 +355,35 @@ export function TagsField({ label, hint, value = [], onChange, suggestions = [],
  *  skin_type where free text invites typos/duplicates ("Oily" vs "oily" vs
  *  "Olly") and the real option set is small and known up front. Unlike
  *  TagsField's comma-separated text, every value here is guaranteed to be
- *  one of `options`, so filter logic elsewhere can match on it exactly. */
+ *  one of `options`, so filter logic elsewhere can match on it exactly.
+ *
+ *  `options` accepts either plain strings (value === display, the
+ *  original shape — skin_type still uses this) or `{value, label}` pairs
+ *  for a stable-id + editable-display-name field like concern, where the
+ *  stored value (a slug) shouldn't be what the admin reads on the pill. */
 export function MultiSelectField({ label, hint, value = [], onChange, options = [], disabled, className = "" }) {
-  const toggle = (opt) => {
+  const norm = (opt) => (typeof opt === "object" && opt !== null ? opt : { value: opt, label: opt });
+  const toggle = (v) => {
     if (disabled) return;
-    onChange(value.includes(opt) ? value.filter((v) => v !== opt) : [...value, opt]);
+    onChange(value.includes(v) ? value.filter((x) => x !== v) : [...value, v]);
   };
   return (
     <div className={className}>
       {label && <Label hint={hint}>{label}</Label>}
       <div className="flex flex-wrap gap-2">
         {options.map((opt) => {
-          const on = value.includes(opt);
+          const { value: v, label: l } = norm(opt);
+          const on = value.includes(v);
           return (
             <button
-              key={opt} type="button" disabled={disabled} onClick={() => toggle(opt)} aria-pressed={on}
+              key={v} type="button" disabled={disabled} onClick={() => toggle(v)} aria-pressed={on}
               className={`rounded-full border px-3 py-1.5 text-xs font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
                 on
                   ? "border-magenta bg-magenta text-white"
                   : "border-line text-ink-soft hover:border-magenta/50 hover:text-ink"
               }`}
             >
-              {opt}
+              {l}
             </button>
           );
         })}

@@ -797,3 +797,119 @@ export async function deleteBrand(id) {
   }
   return { error };
 }
+
+/* ---------------------------------------------------------------- *
+ * Concerns (0059_concerns_table.sql) — a real, managed table, editable
+ * in place. Unlike Brands, nothing else stores a concern's NAME — every
+ * consumer (products.concern, a Shop-by-Concern tile's `concern` field)
+ * stores the stable `slug` and looks the current name up live
+ * (src/lib/api/concerns.js), so renaming here needs no cascade trigger:
+ * there's nothing elsewhere to keep in sync.
+ * ---------------------------------------------------------------- */
+
+export async function listConcernRows() {
+  const { data, error } = await supabase
+    .from("concerns").select("id, name, slug, image_path, created_at").order("name", { ascending: true });
+  return { data, error };
+}
+
+/** Concerns plus how many products currently tag each one, and how many
+ *  Shop-by-Concern tiles link to it — same "see the blast radius before you
+ *  act" reasoning as listBrandsWithCounts(). A product's `concern` is an
+ *  array, so this counts membership, not rows; a tile's `concern` lives
+ *  inside content_blocks' jsonb payload, so that's a third query rather
+ *  than a join. Both counts feed deleteConcern()'s block-if-in-use check —
+ *  fetched here too so the delete button can be disabled up front instead
+ *  of the admin only finding out after clicking it. */
+export async function listConcernsWithCounts() {
+  const [concerns, prods, block] = await Promise.all([
+    supabase.from("concerns").select("id, name, slug, image_path, created_at").order("name", { ascending: true }),
+    supabase.from("products").select("concern").not("concern", "is", null),
+    supabase.from("content_blocks").select("payload").eq("slot", "home.concerns").maybeSingle(),
+  ]);
+  if (concerns.error) return { data: null, error: concerns.error };
+  if (prods.error) return { data: null, error: prods.error };
+  if (block.error) return { data: null, error: block.error };
+
+  const counts = {};
+  for (const p of prods.data ?? []) {
+    for (const slug of p.concern ?? []) counts[slug] = (counts[slug] ?? 0) + 1;
+  }
+  const tileCounts = {};
+  for (const item of block.data?.payload?.items ?? []) {
+    if (item?.concern) tileCounts[item.concern] = (tileCounts[item.concern] ?? 0) + 1;
+  }
+
+  return {
+    data: concerns.data.map((c) => ({
+      ...c,
+      productCount: counts[c.slug] ?? 0,
+      tileCount: tileCounts[c.slug] ?? 0,
+    })),
+    error: null,
+  };
+}
+
+/** Insert or rename/re-image a concern. `id` present -> update; absent ->
+ *  create. Slug is derived from the name and never changes once set on an
+ *  update (see the WHERE below skips slug on rename) — it's the stable
+ *  reference every product tag and tile link stores, so it must survive a
+ *  rename unchanged. */
+export async function upsertConcern({ id, name, image_path }) {
+  const trimmed = (name ?? "").trim();
+  if (!trimmed) return { data: null, error: { message: "Concern name can't be empty." } };
+
+  if (id) {
+    const { data, error } = await supabase
+      .from("concerns").update({ name: trimmed, image_path: image_path ?? null }).eq("id", id).select().single();
+    if (!error) return { data, error: null };
+    if (/concerns_name_key/.test(error.message)) {
+      return { data: null, error: { message: "A concern with this name already exists." } };
+    }
+    return { data: null, error };
+  }
+
+  const payload = { name: trimmed, slug: slugify(trimmed), image_path: image_path ?? null };
+  const { data, error } = await supabase.from("concerns").insert(payload).select().single();
+  if (!error) return { data, error: null };
+  if (/concerns_name_key|concerns_slug_key/.test(error.message)) {
+    return { data: null, error: { message: "A concern with this name already exists." } };
+  }
+  return { data: null, error };
+}
+
+/**
+ * Delete a concern. Unlike Brands/Categories there's no FK to lean on for
+ * free — products.concern is a text[] and a Shop-by-Concern tile's
+ * `concern` field lives inside content_blocks' jsonb payload, so nothing
+ * at the DB level refuses this on its own. Checked here instead, same
+ * "block outright rather than silently orphan a reference" precedent as
+ * deleteBrand/deleteCategory: a product left tagged with a deleted
+ * concern's slug, or a tile still linked to one, would just stop matching
+ * anything on the storefront with no error surfaced anywhere. This is the
+ * fallback for the race between Concerns.jsx's own productCount/tileCount
+ * check (which disables the button up front, from listConcernsWithCounts)
+ * and the click — same relationship deleteCategory() has to its screen's
+ * own pre-check.
+ */
+export async function deleteConcern(id, slug) {
+  const [{ data: prods, error: prodErr }, { data: block, error: blockErr }] = await Promise.all([
+    supabase.from("products").select("id").contains("concern", [slug]),
+    supabase.from("content_blocks").select("payload").eq("slot", "home.concerns").maybeSingle(),
+  ]);
+  if (prodErr) return { error: prodErr };
+  if (blockErr) return { error: blockErr };
+
+  const productCount = prods?.length ?? 0;
+  const tileCount = (block?.payload?.items ?? []).filter((item) => item?.concern === slug).length;
+
+  if (productCount > 0 || tileCount > 0) {
+    const parts = [];
+    if (productCount > 0) parts.push(`${productCount} product${productCount === 1 ? "" : "s"}`);
+    if (tileCount > 0) parts.push(`${tileCount} Shop-by-Concern tile${tileCount === 1 ? "" : "s"}`);
+    return { error: { message: `Still used by ${parts.join(" and ")}. Untag those products or unlink those tiles first.` } };
+  }
+
+  const { error } = await supabase.from("concerns").delete().eq("id", id);
+  return { error };
+}

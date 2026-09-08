@@ -17,6 +17,7 @@ import AuthModal from "./components/auth/AuthModal.jsx";
 import FloatingCart from "./components/FloatingCart.jsx";
 import { recordRoute } from "./lib/nav-history.js";
 import { navigate, onRouteChange } from "./lib/navigate.js";
+import { isAdminPath } from "./lib/adminPath.js";
 import { applySeo } from "./lib/seo.js";
 import { useStoreSettings } from "./lib/api/settings.js";
 import { injectMetaPixel } from "./lib/analytics.js";
@@ -62,7 +63,10 @@ function useRoute() {
     if (p === "") p = "/";
     // Admin does its own /admin/* sub-routing and renders outside the
     // storefront chrome, so it's matched before any storefront route.
-    if (p === "/admin" || p.startsWith("/admin/")) return { name: "admin" };
+    // isAdminPath is the SAME check AdminApp.jsx's own dev-time safeguard
+    // uses (src/lib/adminPath.js) — shared rather than re-derived here, so
+    // the two routers can never drift on where the admin boundary is.
+    if (isAdminPath(p)) return { name: "admin" };
     if (p === "/") return { name: "home" };
     if (p.startsWith("/product/")) {
       let id = p.slice("/product/".length);

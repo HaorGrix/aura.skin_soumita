@@ -26,6 +26,7 @@ import {
   Btn, Card, ConfirmModal, Modal, MoneyField, MultiSelectField, PageHeader, Pill, SaveBar,
   SearchableCreatableSelect, SelectField, Spinner, StockPill, TagsField, TextField, Toggle, money, useAsync,
 } from "../components/kit.jsx";
+import { useConcerns } from "../../lib/api/concerns.js";
 
 const TABS = ["Details", "Pricing", "Variants", "Inventory", "Attributes", "Images", "SEO"];
 
@@ -46,6 +47,7 @@ export default function ProductEdit({ id }) {
   const isNew = id === "new";
   const { can } = useAdmin();
   const { storeName } = useStoreSettings();
+  const concerns = useConcerns();
   const readOnly = !can("admin");
   // Explicit client decision: delete is open to Editor and up, same as
   // every other staff-facing admin action here — not gated above the
@@ -433,8 +435,9 @@ export default function ProductEdit({ id }) {
       {tab === "Attributes" && (
         <Card description="These power the storefront filters. Use the same wording as your other products so the filter lists stay tidy.">
           <div className="grid gap-4 sm:grid-cols-2">
-            <TagsField label="Skin concerns" value={form.concern} onChange={set("concern")}
-              hint="e.g. Hydration, Acne & Blemishes" />
+            <MultiSelectField label="Skin concerns" hint="Powers the homepage's Shop by Concern tiles and the concern filter on Shop"
+              value={form.concern} onChange={set("concern")}
+              options={concerns.map((c) => ({ value: c.slug, label: c.name }))} disabled={readOnly} />
             <MultiSelectField label="Skin types" hint="'All Skin Types' matches every skin-type filter on the storefront"
               value={form.skin_type} onChange={set("skin_type")} options={SKIN_TYPES} disabled={readOnly} />
             <TagsField label="Key ingredients" value={form.ingredients} onChange={set("ingredients")} className="sm:col-span-2" />

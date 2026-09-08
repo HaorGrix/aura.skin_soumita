@@ -17,6 +17,7 @@ import { MediaField, collectMediaPaths, deleteSiteMedia } from "../components/Me
 import {
   Btn, Card, PageHeader, SaveBar, SelectField, Spinner, TextField, Toggle, useAsync,
 } from "../components/kit.jsx";
+import { useConcerns } from "../../lib/api/concerns.js";
 
 const ROUTES = ["/", "/shop", "/offers", "/rewards", "/journal", "/about", "/contact", "/wishlist"];
 
@@ -150,6 +151,10 @@ export default function ContentEdit({ slot }) {
 
 function FieldRenderer({ field, value, onChange }) {
   const common = { label: field.label, hint: field.help };
+  // Called unconditionally (rules of hooks) even though only the "concern"
+  // case below uses it — cheap no-op fetch for every other field type,
+  // same cache as every other consumer (lib/api/concerns.js).
+  const concerns = useConcerns();
 
   switch (field.type) {
     case "boolean":
@@ -178,6 +183,17 @@ function FieldRenderer({ field, value, onChange }) {
       return (
         <SelectField {...common} value={value ?? ""} onChange={(e) => onChange(e.target.value)}
           placeholder="Choose a page" options={ROUTES.map((r) => ({ id: r, label: r === "/" ? "Home" : r }))} />
+      );
+
+    case "concern":
+      // Live from the `concerns` table (0059_concerns_table.sql), not a
+      // hardcoded list — the option LABEL is the current name (so a rename
+      // in /admin/concerns shows up here immediately), but the option
+      // VALUE stored on the tile is the stable slug, so a rename never
+      // breaks an already-picked tile.
+      return (
+        <SelectField {...common} value={value ?? ""} onChange={(e) => onChange(e.target.value)}
+          placeholder="Choose a concern" options={concerns.map((c) => ({ id: c.slug, label: c.name }))} />
       );
 
     case "link":

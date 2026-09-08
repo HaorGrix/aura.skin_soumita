@@ -20,12 +20,14 @@ import Shell from "./layout/Shell.jsx";
 import Login from "./screens/Login.jsx";
 import SetPassword from "./screens/SetPassword.jsx";
 import { Spinner } from "./components/kit.jsx";
+import { isAdminPath } from "../lib/adminPath.js";
 
 const Dashboard   = lazy(() => import("./screens/Dashboard.jsx"));
 const Products    = lazy(() => import("./screens/Products.jsx"));
 const ProductEdit = lazy(() => import("./screens/ProductEdit.jsx"));
 const Categories  = lazy(() => import("./screens/Categories.jsx"));
 const Brands      = lazy(() => import("./screens/Brands.jsx"));
+const Concerns    = lazy(() => import("./screens/Concerns.jsx"));
 const Inventory   = lazy(() => import("./screens/Inventory.jsx"));
 const Shipping    = lazy(() => import("./screens/Shipping.jsx"));
 const Orders      = lazy(() => import("./screens/Orders.jsx"));
@@ -40,6 +42,18 @@ const Journal      = lazy(() => import("./screens/Journal.jsx"));
 const Settings    = lazy(() => import("./screens/Settings.jsx"));
 const Staff       = lazy(() => import("./screens/Staff.jsx"));
 const Audit       = lazy(() => import("./screens/Audit.jsx"));
+
+// Admin-only navigation event. Deliberately NOT "popstate" — a native
+// PopStateEvent dispatched on `window` is also caught by the storefront's
+// own router (App.jsx's onRouteChange, via lib/navigate.js), which used to
+// mean every single admin click (Edit, tab switch, Save-redirect, ...) also
+// re-ran the storefront's route parsing, SEO tags, and route-history
+// recording for no reason. A private event name means adminNavigate() can
+// never wake up code outside this file. Real browser Back/Forward inside
+// the admin still fires a genuine "popstate" (handled below alongside this
+// one), so History API buttons keep working exactly as before — only the
+// SYNTHETIC dispatch changed channels.
+const ADMIN_ROUTE_EVENT = "skinscript:admin-navigate";
 
 /** Parse /admin/... into a screen + optional id. Mirrors the storefront's
  *  own minimal History-API router rather than pulling in a routing dep. */
@@ -61,11 +75,11 @@ function parseAdminRoute() {
  *  that had ALREADY done `history.replaceState(..., to)` itself right
  *  before calling this (to avoid a double history entry) meant
  *  `location.pathname === to` was true by the time this ran, so the guard
- *  returned before ever dispatching popstate — the URL bar changed but
- *  nothing re-rendered, leaving the admin on a stale, blank screen until a
- *  manual refresh. `replace: true` now does that pathname update itself
- *  (still exactly once) and always dispatches, so there's no window where
- *  the two can race. */
+ *  returned before ever dispatching the route event — the URL bar changed
+ *  but nothing re-rendered, leaving the admin on a stale, blank screen
+ *  until a manual refresh. `replace: true` now does that pathname update
+ *  itself (still exactly once) and always dispatches, so there's no window
+ *  where the two can race. */
 export function adminNavigate(to, { replace = false } = {}) {
   if (replace) {
     window.history.replaceState({}, "", to);
@@ -73,7 +87,7 @@ export function adminNavigate(to, { replace = false } = {}) {
     if (window.location.pathname === to) return;
     window.history.pushState({}, "", to);
   }
-  window.dispatchEvent(new PopStateEvent("popstate"));
+  window.dispatchEvent(new Event(ADMIN_ROUTE_EVENT));
 }
 
 export default function AdminApp() {
@@ -89,10 +103,38 @@ export default function AdminApp() {
   const [linkError] = useState(() => consumeAuthRedirectError());
 
   useEffect(() => {
-    const onPop = () => setRoute(parseAdminRoute());
-    window.addEventListener("popstate", onPop);
-    return () => window.removeEventListener("popstate", onPop);
+    const onRouteChange = () => setRoute(parseAdminRoute());
+    // Real "popstate" covers browser Back/Forward; the private event covers
+    // adminNavigate()'s own synthetic dispatches. Two listeners, same
+    // handler — mirrors the storefront's onRouteChange (lib/navigate.js)
+    // shape on purpose, just on a channel the storefront never hears.
+    window.addEventListener("popstate", onRouteChange);
+    window.addEventListener(ADMIN_ROUTE_EVENT, onRouteChange);
+    return () => {
+      window.removeEventListener("popstate", onRouteChange);
+      window.removeEventListener(ADMIN_ROUTE_EVENT, onRouteChange);
+    };
   }, []);
+
+  // Dev-only safeguard: AdminApp only ever mounts because App.jsx decided
+  // the pathname was inside "/admin" (isAdminPath). If the pathname has
+  // since drifted away from that — while this component is still mounted
+  // and reacting to route changes — some navigation reached the browser's
+  // real URL through a channel neither router is listening to (e.g. a
+  // future in-admin <a href> hijacked by the storefront's link
+  // interceptor, or a popstate/event-name mismatch reintroduced by a
+  // later edit). Cheap enough to just warn, not worth a full assertion
+  // harness for.
+  useEffect(() => {
+    if (!import.meta.env?.DEV) return;
+    if (!isAdminPath(window.location.pathname)) {
+      console.warn(
+        "[AdminApp] Still mounted, but the URL no longer looks like an admin path:",
+        window.location.pathname,
+        "— this route change likely leaked through a channel this router doesn't listen to."
+      );
+    }
+  }, [route]);
 
   // The admin runs on a light surface; the storefront is dark by default.
   useEffect(() => {
@@ -218,6 +260,7 @@ function Screen({ route }) {
     case "products":  return id ? <ProductEdit id={id} /> : <Products />;
     case "categories": return <Categories />;
     case "brands":    return <Brands />;
+    case "concerns":  return <Concerns />;
     case "inventory": return <Inventory />;
     case "shipping": return <Shipping />;
     case "orders":    return id ? <OrderDetail id={id} /> : <Orders />;

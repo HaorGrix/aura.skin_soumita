@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Check, ArrowRight, Instagram, Facebook } from "lucide-react";
+import { ArrowUp, Check, ArrowRight, Instagram, Facebook } from "lucide-react";
 import { isValidEmail } from "../lib/email-validation.js";
 import { useStoreSettings } from "../lib/api/settings.js";
 import { useContent } from "../lib/api/content.js";
@@ -172,6 +172,28 @@ export default function Footer() {
             <a href="/terms" className="hover:text-magenta">Terms</a>
             <a href="/cookies" className="hover:text-magenta">Cookies</a>
           </div>
+        </div>
+
+        {/* Developer attribution + back-to-top */}
+        <div className="mt-4 flex flex-col items-center gap-2 text-center text-xs text-ink-soft/70">
+          <p>
+            Website designed &amp; developed by{" "}
+            <a
+              href="https://haorgrix.com/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-medium text-ink-soft transition-colors hover:text-magenta"
+            >
+              HaorGrix
+            </a>
+          </p>
+          <button
+            type="button"
+            onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+            className="inline-flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-widest text-ink-soft/70 transition-colors hover:text-magenta"
+          >
+            <ArrowUp className="h-3 w-3" strokeWidth={2} /> Back to top
+          </button>
         </div>
       </div>
     </footer>

@@ -164,26 +164,30 @@ export default function Footer() {
           ))}
         </div>
 
-        {/* Bottom bar — developer attribution + back-to-top lead, legal links trail */}
-        <div className="mt-12 flex flex-col items-center gap-3 border-t border-line pt-6 text-center text-xs text-ink-soft">
-          <p>
-            Website designed &amp; developed by{" "}
-            <a
-              href="https://haorgrix.com/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="font-medium text-ink-soft underline underline-offset-2 transition-colors hover:text-magenta"
+        {/* Bottom bar — attribution + back-to-top on the left, legal links on
+            the right. Stacks (centered) below sm; side-by-side from sm up. */}
+        <div className="mt-12 flex flex-col items-center gap-3 border-t border-line pt-6 text-xs text-ink-soft sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:text-left">
+          <div className="flex flex-col items-center gap-2 text-center sm:items-start sm:text-left">
+            <p>
+              Website designed &amp; developed by{" "}
+              <a
+                href="https://haorgrix.com/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-medium text-ink-soft underline underline-offset-2 transition-colors hover:text-magenta"
+              >
+                HaorGrix
+              </a>
+            </p>
+            <button
+              type="button"
+              onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+              className="inline-flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-widest text-ink-soft/70 transition-colors hover:text-magenta"
             >
-              HaorGrix
-            </a>
-          </p>
-          <button
-            type="button"
-            onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-            className="inline-flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-widest text-ink-soft/70 transition-colors hover:text-magenta"
-          >
-            <ArrowUp className="h-3 w-3" strokeWidth={2} /> Back to top
-          </button>
+              <ArrowUp className="h-3 w-3" strokeWidth={2} /> Back to top
+            </button>
+          </div>
+
           <div className="flex gap-5">
             <a href="/privacy" className="hover:text-magenta">Privacy</a>
             <a href="/terms" className="hover:text-magenta">Terms</a>

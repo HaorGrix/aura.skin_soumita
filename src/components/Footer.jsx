@@ -164,25 +164,15 @@ export default function Footer() {
           ))}
         </div>
 
-        {/* Bottom bar */}
-        <div className="mt-12 flex flex-col items-center justify-between gap-4 border-t border-line pt-6 text-xs text-ink-soft sm:flex-row">
-          <p>© {new Date().getFullYear()} {storeName} — {content.copyright}</p>
-          <div className="flex gap-5">
-            <a href="/privacy" className="hover:text-magenta">Privacy</a>
-            <a href="/terms" className="hover:text-magenta">Terms</a>
-            <a href="/cookies" className="hover:text-magenta">Cookies</a>
-          </div>
-        </div>
-
-        {/* Developer attribution + back-to-top */}
-        <div className="mt-4 flex flex-col items-center gap-2 text-center text-xs text-ink-soft/70">
+        {/* Bottom bar — developer attribution + back-to-top lead, legal links trail */}
+        <div className="mt-12 flex flex-col items-center gap-3 border-t border-line pt-6 text-center text-xs text-ink-soft">
           <p>
             Website designed &amp; developed by{" "}
             <a
               href="https://haorgrix.com/"
               target="_blank"
               rel="noopener noreferrer"
-              className="font-medium text-ink-soft transition-colors hover:text-magenta"
+              className="font-medium text-ink-soft underline underline-offset-2 transition-colors hover:text-magenta"
             >
               HaorGrix
             </a>
@@ -194,6 +184,11 @@ export default function Footer() {
           >
             <ArrowUp className="h-3 w-3" strokeWidth={2} /> Back to top
           </button>
+          <div className="flex gap-5">
+            <a href="/privacy" className="hover:text-magenta">Privacy</a>
+            <a href="/terms" className="hover:text-magenta">Terms</a>
+            <a href="/cookies" className="hover:text-magenta">Cookies</a>
+          </div>
         </div>
       </div>
     </footer>

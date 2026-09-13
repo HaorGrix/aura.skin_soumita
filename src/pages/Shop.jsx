@@ -477,11 +477,11 @@ export default function Shop() {
             Shop the ritual
           </p>
           <h1 className="mt-2 font-serif text-[clamp(2.25rem,6vw,4rem)] leading-[1.02] text-ink lg:text-3xl xl:text-4xl">
-            All <span className="italic text-gradient-glow">glass-skin</span> essentials
+            Discover the theory behind <span className="italic text-gradient-glow">better skin</span>
           </h1>
           <p className="mt-3 max-w-xl text-ink-soft lg:hidden">
-            Authentic K & J-Beauty from the brands you love — filtered to your skin,
-            your concern, your glow. 🌸
+            Explore authentic K & J-Beauty essentials selected to elevate your
+            everyday routine.
           </p>
         </motion.div>
 

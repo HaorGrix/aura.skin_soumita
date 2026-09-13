@@ -42,10 +42,10 @@ export default function FeaturedProducts() {
         <div className="flex flex-col items-start justify-between gap-5 sm:flex-row sm:items-end">
           <div>
             <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-magenta">
-              Loved by 12k+ glowing humans
+              Current obsessions
             </p>
             <h2 className="mt-2 font-serif text-[clamp(1.9rem,4.5vw,3.25rem)] leading-tight text-ink">
-              Shelf <span className="italic text-gradient-glow">favourites</span>
+              Curated for your <span className="italic text-gradient-glow">glow</span>
             </h2>
           </div>
 

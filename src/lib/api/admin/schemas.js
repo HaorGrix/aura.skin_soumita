@@ -24,12 +24,6 @@
  * `media` (unlike `image`) accepts video too — uploads go to the `site-media`
  * bucket (0011_hero_carousel_media.sql), not product-images. Use it for CMS
  * fields that should support both, like the Hero Carousel's banners.
- *
- * NOTE on `home.hero`: Hero.jsx currently holds its headline as a WORD ARRAY
- * (`["Glass","skin,","every","day."]`) because the entrance animation
- * staggers per word. The CMS stores a plain string and the component splits
- * it at render — so the client types a sentence, not an array, and the
- * animation is untouched.
  * =================================================================== */
 
 export const SLOTS = [
@@ -40,28 +34,11 @@ export const SLOTS = [
   // one now has the link + schedule fields this dead slot used to promise
   // (0041_announcement_bar_link_schedule.sql) — edit the bar from Settings,
   // not from here.
-  {
-    slot: "home.hero",
-    label: "Homepage Hero",
-    group: "Homepage",
-    help: "The first thing a visitor sees. The headline animates word by word — just type a normal sentence.",
-    // Every default below is the EXACT copy that was hardcoded in Hero.jsx
-    // before the CMS existed. That's deliberate: wiring a component to the
-    // CMS must be visually invisible until the client actually edits it. A
-    // "nicer" default here silently rewrites the live site on deploy.
-    // The first two words of line 2 get the italic glow treatment.
-    fields: [
-      { key: "eyebrow", label: "Eyebrow", type: "text", max: 40, default: "For every skin · K & J-Beauty" },
-      { key: "line1", label: "Headline line 1", type: "text", max: 24, default: "Glow within." },
-      { key: "line2", label: "Headline line 2", type: "text", max: 40, default: "Glass skin, every day." },
-      { key: "body", label: "Supporting text", type: "textarea", max: 240,
-        default: "Real K- and J-Beauty, straight from authorised distributors. Barrier-first formulas for the skin you actually have, plus honest advice about what you can skip. ✨" },
-      { key: "ctaLabel", label: "Button label", type: "text", max: 24, default: "Start Your Ritual" },
-      { key: "ctaHref", label: "Button target", type: "route", default: "/shop" },
-      { key: "image", label: "Background image", type: "image", aspect: "3:4", default: "" },
-      { key: "imageAlt", label: "Image description", type: "text", max: 120, default: "" },
-    ],
-  },
+  // NOTE: there is also no "home.hero" slot here. It existed as a single-hero
+  // block with a word-staggered headline animation, but was refactored into the
+  // Hero Carousel (home.heroCarousel, below) when the multi-banner design was
+  // adopted. The old slot definition was left in place unused, confusing admins
+  // and accepting edits that were never displayed. Removed 2026-09-13.
   {
     slot: "home.heroCarousel",
     label: "Homepage Hero Carousel",
@@ -172,11 +149,9 @@ export const SLOTS = [
     slot: "home.why",
     label: "Why Skin Theory",
     group: "Homepage",
-    help: "The eyebrow label, heading, intro line, and the 4 promise cards below them (plus the stats bar). The icon for each card is picked automatically by position — text fields only control title and description.",
+    help: "The 4 pillar cards and the stats bar below them. The icon for each pillar is picked automatically by position — this only controls its title and description text. Leave \"Heading\" blank to keep the designed default (\"Why you'll love [store name]\", with a styled accent word) — anything you type replaces it outright, in plain styling.",
     fields: [
-      { key: "eyebrow", label: "Eyebrow label", type: "text", max: 48, default: "The Skin Theory Promise" },
-      { key: "heading", label: "Heading", type: "text", max: 60, default: "What your skin deserves, every time." },
-      { key: "body", label: "Intro line", type: "textarea", max: 200, default: "No complicated promises. Just authentic products, thoughtful choices, and skincare you can shop with confidence." },
+      { key: "heading", label: "Heading", type: "text", max: 48, default: "" },
       {
         key: "items", label: "Points", type: "list", max: 6,
         itemFields: [
@@ -187,10 +162,10 @@ export const SLOTS = [
         // wired up — an unedited install must keep showing these 4
         // pillars, not an empty grid.
         default: [
-          { title: "Authentic, Always", body: "We carefully source our products so you can shop your favourite skincare with confidence." },
-          { title: "Chosen With Purpose", body: "We don't believe in stocking everything. We focus on products worth making part of your routine." },
-          { title: "Freshness Matters", body: "Products are checked for packaging, condition and expiry before reaching your shelf." },
-          { title: "Care Beyond Checkout", body: "Confused about what suits your skin? We're here to help you make a more informed choice." },
+          { title: "Organic", body: "Plant-derived actives, sourced from growers we can name." },
+          { title: "Cruelty-Free", body: "Never tested on animals, at any stage, by anyone we stock." },
+          { title: "Clean", body: "Full INCI on every product. Nothing hidden behind “fragrance”." },
+          { title: "Sustainable", body: "Glass and aluminium where it works. Refills where it doesn’t." },
         ],
       },
       {

@@ -8,8 +8,9 @@ import {
   ArrowRight,
   Star,
   Leaf,
-  FlaskConical,
+  Heart,
   Users,
+  Check,
 } from "lucide-react";
 import Button from "../components/ui/Button.jsx";
 import Footer from "../components/Footer.jsx";
@@ -52,30 +53,52 @@ function Reveal({ children, delay = 0, className = "" }) {
 /* ─────────────────────────────────────────────
    TRUST PILLARS  — the four commitments
 ───────────────────────────────────────────── */
-const buildPillars = (storeName) => [
+const buildPillars = () => [
   {
     icon: ShieldCheck,
-    title: "100% Authentic Guarantee",
-    body: `Every product on ${storeName} is sourced directly from authorized brand distributors. We verify each batch with lot-number tracing so you never unknowingly receive a counterfeit.`,
+    title: "Authentic, Always",
+    body: "We carefully source our products so you can shop your favourite skincare with confidence.",
     accent: "magenta",
   },
   {
-    icon: FlaskConical,
-    title: "Rigorous Quality Control",
-    body: "Our curation team evaluates formula integrity, shelf life, and packaging before a SKU reaches the catalogue. If it doesn't pass, it doesn't ship.",
+    icon: Sparkles,
+    title: "Chosen With Purpose",
+    body: "We don't believe in stocking everything. We focus on products worth making part of your routine.",
     accent: "cyan",
   },
   {
-    icon: RotateCcw,
-    title: "Money-Back Promise",
-    body: "Not seeing results in 30 days? Send it back. No forms, no restocking fee, no asking you to justify it. Opened bottles included.",
+    icon: Leaf,
+    title: "Freshness Matters",
+    body: "Products are checked for packaging, condition and expiry before reaching your shelf.",
     accent: "gold",
   },
   {
-    icon: Sparkles,
-    title: "Expert Skin-Care Guidance",
-    body: "Our care desk is staffed by certified estheticians. Tell us your skin type and concern and we'll build you a personalised AM/PM ritual — free of charge.",
+    icon: Heart,
+    title: "Care Beyond Checkout",
+    body: "Confused about what suits your skin? We're here to help you make a more informed choice.",
     accent: "rose",
+  },
+];
+
+/* ─────────────────────────────────────────────
+   TRANSPARENCY CHECKLIST — dark-mode trust section
+───────────────────────────────────────────── */
+const TRUST_CHECKLIST = [
+  {
+    title: "Authentic Products",
+    body: "We carefully source genuine skincare from trusted suppliers.",
+  },
+  {
+    title: "Quality Checked",
+    body: "Every order is checked for product condition and packaging before dispatch.",
+  },
+  {
+    title: "Fresh Stock",
+    body: "We pay attention to expiry dates and product condition before products reach you.",
+  },
+  {
+    title: "Here to Help",
+    body: "Need help choosing between products? Our team is here to make skincare shopping simpler.",
   },
 ];
 
@@ -121,7 +144,7 @@ const ACCENT_BORDER = {
 export default function About() {
   const { storeName } = useStoreSettings();
   const { content } = useContent("page.about");
-  const PILLARS = buildPillars(storeName);
+  const PILLARS = buildPillars();
   const heroIntro = (content.intro || "").replace(/\{storeName\}/g, storeName);
   // "Transparency|in Every Drop." -> plain "Transparency" + italic "in Every
   // Drop." — the pipe is the admin-editable equivalent of the two <span>s
@@ -219,14 +242,14 @@ export default function About() {
       <section className="mx-auto w-full max-w-6xl px-5 py-20 sm:px-8 sm:py-28">
         <Reveal className="mb-14 max-w-xl">
           <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-magenta">
-            Our Four Commitments
+            The Skin Theory Promise
           </p>
           <h2 className="mt-3 font-serif text-[clamp(2rem,5vw,3.5rem)] leading-tight text-ink">
-            What we promise. What we prove.
+            What your skin deserves, every time.
           </h2>
           <p className="mt-4 text-base leading-relaxed text-ink-soft">
-            Not marketing slogans — operational standards that every team member is
-            accountable to, every single day.
+            No complicated promises. Just authentic products, thoughtful choices, and
+            skincare you can shop with confidence.
           </p>
         </Reveal>
 
@@ -254,7 +277,7 @@ export default function About() {
       {/* ══════════════════════════════════════
           TRANSPARENCY / AUTHENTICITY BANNER
       ══════════════════════════════════════ */}
-      <section className="relative overflow-hidden bg-ink px-5 py-20 sm:py-28">
+      <section className="relative overflow-hidden bg-ink px-5 py-16 sm:py-20">
         {/* Pink glow top-left */}
         <div
           aria-hidden
@@ -266,39 +289,43 @@ export default function About() {
           className="pointer-events-none absolute -bottom-16 right-0 h-[360px] w-[360px] rounded-full bg-cyan/15 blur-[90px]"
         />
 
-        <div className="relative mx-auto grid max-w-5xl items-center gap-10 lg:grid-cols-[1fr_400px]">
+        <div className="relative mx-auto grid max-w-7xl items-start gap-10 lg:grid-cols-[1fr_400px]">
           <div>
             <Reveal>
-              <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-rose">
-                Transparency & Authenticity
+              <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-cyan">
+                Skin Theory, With Confidence
               </p>
             </Reveal>
             <Reveal delay={1}>
               <h2 className="mt-4 font-serif text-[clamp(2.2rem,5vw,4rem)] leading-tight text-white">
-                We show our work — because you deserve to know what you're putting on your skin.
+                Your skin deserves the real thing.
               </h2>
             </Reveal>
             <Reveal delay={2}>
-              <p className="mt-6 max-w-lg text-base leading-relaxed text-white/65">
-                Every brand in our catalogue passes a source verification review. Lot numbers
-                are traceable. Expiry dates are checked at intake. When a product doesn't clear
-                our threshold, it doesn't appear on the shelf — no exceptions, no shortcuts.
+              <p className="mt-6 max-w-lg text-[1.05rem] leading-[1.6] text-white/65">
+                From cult-favourite K-Beauty to everyday skincare essentials, we carefully
+                select every product so you can shop with confidence.
               </p>
             </Reveal>
             <Reveal delay={3}>
-              <ul className="mt-8 space-y-3">
-                {[
-                  "Authorized distributor contracts on file",
-                  "Batch-level lot-number tracing",
-                  "Expiry verified at warehouse intake",
-                  "No grey-market or parallel-import stock",
-                ].map((item) => (
-                  <li key={item} className="flex items-start gap-3 text-sm text-white/80">
-                    <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-magenta" strokeWidth={2} />
-                    {item}
+              <ul className="mt-9 max-w-lg space-y-6">
+                {TRUST_CHECKLIST.map((item) => (
+                  <li key={item.title} className="flex items-start gap-4">
+                    <span className="mt-0.5 inline-grid h-12 w-12 shrink-0 place-items-center rounded-full bg-cyan/15 text-cyan">
+                      <Check className="h-5 w-5" strokeWidth={2.25} />
+                    </span>
+                    <div>
+                      <h3 className="text-[1.1rem] font-bold text-white">{item.title}</h3>
+                      <p className="mt-1 text-[0.95rem] leading-[1.5] text-white/60">{item.body}</p>
+                    </div>
                   </li>
                 ))}
               </ul>
+            </Reveal>
+            <Reveal delay={4}>
+              <p className="mt-9 max-w-lg text-base italic leading-relaxed text-white/55">
+                No confusion. No compromise. Just skincare you can trust.
+              </p>
             </Reveal>
           </div>
 
@@ -370,8 +397,8 @@ export default function About() {
           FINAL CTA
       ══════════════════════════════════════ */}
       <section className="relative overflow-hidden px-5 pb-24 sm:pb-32">
-        <Reveal className="mx-auto max-w-3xl rounded-[2rem] bg-gradient-to-br from-petal via-white to-cyan-soft/30 p-10 text-center ring-1 ring-line sm:p-14">
-          <span className="text-4xl" role="img" aria-label="glow">✨</span>
+        <Reveal className="mx-auto max-w-3xl rounded-[2rem] bg-gradient-to-br from-petal via-white to-cyan-soft/30 p-12 text-center ring-1 ring-line sm:p-16">
+          <Sparkles className="mx-auto h-8 w-8 text-gold" strokeWidth={1.7} />
           <h2 className="mt-5 font-serif text-[clamp(2rem,5vw,3.4rem)] leading-tight text-ink">
             Your glow routine starts here.
           </h2>
@@ -384,7 +411,7 @@ export default function About() {
               Shop the collection
               <ArrowRight className="h-4 w-4" strokeWidth={2} />
             </Button>
-            <Button variant="secondary" size="lg" as="a" href="/account" magnetic={false}>
+            <Button variant="secondary" size="lg" as="a" href="/rewards" magnetic={false}>
               Join {storeName} Rewards
               <Sparkles className="h-4 w-4" strokeWidth={2} />
             </Button>

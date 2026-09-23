@@ -9,7 +9,6 @@ import { CartProvider } from "./context/CartContext.jsx";
 import { UserProvider } from "./context/UserContext.jsx";
 import { WishlistProvider } from "./context/WishlistContext.jsx";
 import { ToastProvider } from "./components/ui/Toast.jsx";
-import Loader from "./components/Loader.jsx";
 import Navbar from "./components/Navbar.jsx";
 import Home from "./pages/Home.jsx";
 import CartDrawer from "./components/cart/CartDrawer.jsx";
@@ -103,7 +102,6 @@ function useRoute() {
 }
 
 export default function App() {
-  const [loaded, setLoaded] = useState(false);
   const route = useRoute();
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const storeSettings = useStoreSettings();
@@ -189,9 +187,6 @@ export default function App() {
         <UserProvider>
         <WishlistProvider>
         <ToastProvider>
-          {/* Entry ritual */}
-          <Loader onComplete={() => setLoaded(true)} />
-
           <Navbar onOpenSearch={() => setIsSearchOpen(true)} hasHero={hasHero} />
 
           <AnimatePresence>
@@ -239,11 +234,10 @@ export default function App() {
           {/* Login / sign-up — global, opened on demand (navbar, checkout) */}
           <AuthModal />
 
-          {/* Floating cart FAB — sits above the loader (z-140 > z-100), so gate
-              it on the splash finishing. Also hidden on the cart/checkout pages,
-              where opening the cart drawer is redundant — consistent behaviour
+          {/* Floating cart FAB — hidden on the cart/checkout pages, where
+              opening the cart drawer is redundant — consistent behaviour
               everywhere else (it self-hides when the cart is empty). */}
-          {loaded && route.name !== "cart" && route.name !== "checkout" && (
+          {route.name !== "cart" && route.name !== "checkout" && (
             <FloatingCart />
           )}
 

@@ -16,6 +16,7 @@ import { useWishlist } from "../context/WishlistContext.jsx";
 import { useFocusTrap } from "../lib/useFocusTrap.js";
 import { useBodyScrollLock } from "../lib/scrollLock.js";
 import { useStoreSettings } from "../lib/api/settings.js";
+import { navigate } from "../lib/navigate.js";
 import logoWordmark from "../../assests/theory-logo-header.png";
 import MegaMenu, { MobileCategoryNav } from "./nav/MegaMenu.jsx";
 
@@ -113,6 +114,17 @@ export default function Navbar({ onOpenSearch, hasHero = false }) {
     return () => ro.disconnect();
   }, []);
 
+  // The mobile drawer's Offers link was landing on a full browser reload
+  // instead of the SPA route — the global link interceptor (navigate.js)
+  // relies on a native document click bubbling up from the anchor, but the
+  // drawer's exit animation + AnimatePresence unmount on some mobile
+  // browsers can race that bubble. Navigating explicitly here sidesteps the
+  // race entirely; preventDefault stops the native <a> reload in all cases.
+  const handleOffersClick = (e) => {
+    e.preventDefault();
+    navigate("/offers");
+  };
+
   const iconBtn =
     "relative grid h-11 w-11 place-items-center rounded-full p-2 text-ink/75 " +
     "transition-colors hover:bg-petal hover:text-magenta";
@@ -195,6 +207,7 @@ export default function Navbar({ onOpenSearch, hasHero = false }) {
                 <a
                   key={link.label}
                   href={link.href}
+                  onClick={link.href === "/offers" ? handleOffersClick : undefined}
                   className="group relative rounded-full px-4 py-2 font-display text-sm font-medium text-ink/70 transition-colors hover:text-ink"
                 >
                   {link.label}
@@ -363,7 +376,10 @@ export default function Navbar({ onOpenSearch, hasHero = false }) {
                   >
                     <a
                       href={link.href}
-                      onClick={() => setOpen(false)}
+                      onClick={(e) => {
+                        setOpen(false);
+                        if (link.href === "/offers") handleOffersClick(e);
+                      }}
                       className="group flex items-center justify-between py-4 font-display text-[1.7rem] font-medium leading-none text-ink transition-all hover:pl-2 hover:text-magenta"
                     >
                       {link.label}

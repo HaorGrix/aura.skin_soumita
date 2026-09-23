@@ -221,21 +221,18 @@ export default function Shop() {
     return () => { alive = false; };
   }, [saleId]);
 
-  // Re-sync on REAL navigation only — browser back/forward, or clicking another
-  // concern card while already on Shop. In-page filter toggles use
-  // history.replaceState (see syncUrl), which emits no route event, so they
-  // never round-trip through here and can't clobber React state.
-  useEffect(() => onRouteChange(() => {
-    const { filters: parsedFilters, search: parsedSearch } = parseUrlQuery(treeRef.current);
-    setFilters(parsedFilters);
-    setSearch(parsedSearch);
-  }), []);
-
-  // Resolve a slug-based ?category= once the tree is available. Guarded on the
-  // URL still carrying a category param, so it can never overwrite filters the
-  // shopper has since changed by hand.
-  useEffect(() => {
-    if (!categoryTree.length) return;
+  // Resolve a slug-based ?category= against whichever tree is available right
+  // now (treeRef, kept current by the effect above). Shared by both the
+  // "tree just loaded" effect and the route-change handler below — without
+  // that second call site, clicking a second category link while already on
+  // /shop (a query-string-only navigation; the component never remounts)
+  // left categorySlugs/categoryNames pinned to the FIRST click forever, since
+  // nothing but a [categoryTree] effect ever re-ran this resolution. The
+  // results memo then intersected the new `filters` against the stale
+  // category, which could easily produce a false "No products found" until
+  // a manual refresh re-mounted the page and resolved the current URL fresh.
+  const resolveCategoryFromUrl = useCallback(() => {
+    const tree = treeRef.current;
     const raw = new URLSearchParams(window.location.search).get("category");
     if (!raw) {
       pendingCategoryRef.current = false;
@@ -243,12 +240,13 @@ export default function Shop() {
       setCategoryUnresolved(false);
       return;
     }
+    if (!tree.length) return; // tree not loaded yet — the [categoryTree] effect will resolve it
 
     // Slugs, not names: after the hierarchy landed, "Serum" exists under both
     // Skin Care and K-Beauty, so a name can no longer identify one column.
     const slugs = [...new Set(
       raw.split(",").map((t) => t.trim()).filter(Boolean)
-        .flatMap((token) => categorySlugsFor(categoryTree, token))
+        .flatMap((token) => categorySlugsFor(tree, token))
     )];
 
     // Release the URL guard either way: an unresolvable slug is a dead link,
@@ -258,10 +256,28 @@ export default function Shop() {
     setCategoryUnresolved(slugs.length === 0);
     setCategoryNames([...new Set(
       raw.split(",").map((t) => t.trim()).filter(Boolean)
-        .flatMap((token) => categoryNamesFor(categoryTree, token))
+        .flatMap((token) => categoryNamesFor(tree, token))
     )]);
-    setActiveCategoryName(findBySlug(categoryTree, raw.split(",")[0].trim())?.name ?? null);
-  }, [categoryTree]);
+    setActiveCategoryName(findBySlug(tree, raw.split(",")[0].trim())?.name ?? null);
+  }, []);
+
+  // Re-sync on REAL navigation only — browser back/forward, clicking another
+  // category/concern link while already on Shop. In-page filter toggles use
+  // history.replaceState (see syncUrl), which emits no route event, so they
+  // never round-trip through here and can't clobber React state.
+  useEffect(() => onRouteChange(() => {
+    const { filters: parsedFilters, search: parsedSearch } = parseUrlQuery(treeRef.current);
+    setFilters(parsedFilters);
+    setSearch(parsedSearch);
+    resolveCategoryFromUrl();
+  }), [resolveCategoryFromUrl]);
+
+  // Resolve a slug-based ?category= once the tree is available. Guarded on the
+  // URL still carrying a category param, so it can never overwrite filters the
+  // shopper has since changed by hand.
+  useEffect(() => {
+    resolveCategoryFromUrl();
+  }, [categoryTree, resolveCategoryFromUrl]);
   // ?sort=best|newest|... — same "read once on mount" pattern as ?sale=
   // above; an unrecognized/missing value falls back to "featured" rather
   // than crashing queryProducts on a bad sort id.

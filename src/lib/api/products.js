@@ -142,6 +142,46 @@ function mapProduct(row) {
 }
 
 /**
+ * Attach each product's default-variant `sizeLabel` (e.g. "100ml") onto the
+ * already-mapped product list, for surfaces that show only the catalog list
+ * — the Shop grid, product cards, wishlist, the homepage carousel — and
+ * never fetch the full per-product variant array the PDP does.
+ *
+ * `products_public` deliberately doesn't carry size_label at all (see
+ * 0016_product_variants.sql §ARCHITECTURE — it wasn't safe to touch that
+ * view's untracked definition), so this is a second, parallel query against
+ * `product_variants_public`, the same "small parallel view" pattern
+ * `getVariantsForProduct` already uses for the PDP. Restricted to
+ * `is_default` rows: one row per product is all a card needs, and it's also
+ * the size every OTHER mirrored field (price, stock) on `products_public`
+ * already reflects, so the label always matches the price/stock already
+ * shown.
+ *
+ * This was the actual bug behind "single-variant products don't show their
+ * size" — it wasn't the single-variant case specifically, no product's card
+ * had ever fetched size_label at all, multi-variant included. The PDP's own
+ * variant picker was the only surface that ever queried it, which is why
+ * only detail-page multi-size products appeared to "work".
+ */
+async function attachSizeLabels(products) {
+  const dbIds = products.map((p) => p.dbId).filter(Boolean);
+  if (!dbIds.length) return products;
+
+  const { data, error } = await supabase
+    .from("product_variants_public")
+    .select("product_id, size_label")
+    .in("product_id", dbIds)
+    .eq("is_default", true);
+
+  // A failed lookup shouldn't take down the grid — products just render
+  // without a size chip, exactly like today.
+  if (error || !data) return products;
+
+  const bySize = new Map(data.map((r) => [r.product_id, r.size_label]));
+  return products.map((p) => ({ ...p, sizeLabel: bySize.get(p.dbId) ?? null }));
+}
+
+/**
  * Fetch every active product (the whole catalog is a few hundred rows at
  * most, so — like the current static array — the client keeps doing its own
  * search/filter/sort over one in-memory list; no server-side pagination
@@ -157,7 +197,7 @@ export async function listProducts({ limit } = {}) {
 
   const { data, error } = await query;
   if (error) return { data: null, error };
-  return { data: data.map(mapProduct), error: null };
+  return { data: await attachSizeLabels(data.map(mapProduct)), error: null };
 }
 
 /**
@@ -174,7 +214,7 @@ export async function getProductsByIds(slugs) {
     .select("*")
     .in("slug", slugs);
   if (error) return { data: null, error };
-  return { data: data.map(mapProduct), error: null };
+  return { data: await attachSizeLabels(data.map(mapProduct)), error: null };
 }
 
 /**

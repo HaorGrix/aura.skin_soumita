@@ -42,6 +42,7 @@ export default function ProductCard({ product, onQuickView }) {
     reviews = 0,
     image,
     badge,
+    sizeLabel,
     tone = "var(--color-petal)",
   } = product;
 
@@ -172,11 +173,19 @@ export default function ProductCard({ product, onQuickView }) {
           </a>
         </h3>
 
-        {/* Rating */}
+        {/* Rating + size/volume — shown for every product that has a saved
+            size, single-variant included (previously fetched for none of
+            them; see attachSizeLabels() in lib/api/products.js). */}
         <div className="mt-1.5 flex items-center gap-1.5 text-xs text-ink-soft">
           <Star className="h-3.5 w-3.5 text-gold" fill="var(--color-gold)" strokeWidth={0} />
           <span className="font-medium text-ink">{rating.toFixed(1)}</span>
           {reviews > 0 && <span>({reviews.toLocaleString()})</span>}
+          {sizeLabel && (
+            <>
+              <span aria-hidden className="text-ink/20">·</span>
+              <span>{sizeLabel}</span>
+            </>
+          )}
         </div>
 
         {/* Price + Add — locked to the bottom via mt-auto so it aligns across

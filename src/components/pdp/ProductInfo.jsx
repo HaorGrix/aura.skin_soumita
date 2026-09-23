@@ -127,7 +127,7 @@ export default function ProductInfo({ product, onWriteReview }) {
           isOnSale: unitIsOnSale,
           discountPercent: unitDiscountPercent,
           variantId: selectedVariant?.id ?? null,
-          sizeLabel: variants.length > 1 ? selectedVariant?.sizeLabel : null,
+          sizeLabel: selectedVariant?.sizeLabel ?? null,
         },
         qty
       );
@@ -227,39 +227,48 @@ export default function ProductInfo({ product, onWriteReview }) {
         {product.longDescription}
       </p>
 
-      {/* Size — hidden entirely for a single-size product, so it looks
-          exactly like it always did. Only shows once there's an actual
-          choice to make. */}
-      {variants.length > 1 && (
+      {/* Size — always shown when the product carries a real size label, so
+          a single-size product (e.g. "100ml") is just as clear about its
+          volume as a multi-size one. The clickable picker only renders once
+          there's an actual choice to make; a single variant just shows its
+          label as plain text. */}
+      {selectedVariant?.sizeLabel && (
         <div className="mt-6">
           <p className="mb-2 text-sm font-semibold text-ink">
             Size:{" "}
             <span className="font-normal text-ink-soft">
-              {selectedVariant?.sizeLabel}
+              {selectedVariant.sizeLabel}
             </span>
           </p>
-          <div className="flex flex-wrap gap-2">
-            {variants.map((v) => {
-              const on = v.id === variantId;
-              return (
-                <button
-                  key={v.id}
-                  onClick={() => { setVariantId(v.id); setQty(1); }}
-                  disabled={!v.inStock}
-                  title={!v.inStock ? `${v.sizeLabel} is out of stock` : undefined}
-                  className={`rounded-full border px-4 py-2 text-sm font-medium transition-all ${
-                    on
-                      ? "border-magenta bg-magenta text-white"
-                      : !v.inStock
-                      ? "cursor-not-allowed border-ink/10 text-ink-soft/50 line-through"
-                      : "border-ink/15 text-ink hover:border-magenta/50"
-                  }`}
-                >
-                  {v.sizeLabel}
-                </button>
-              );
-            })}
-          </div>
+          {variants.length > 1 && (
+            <div className="flex flex-wrap gap-2">
+              {variants.map((v) => {
+                const on = v.id === variantId;
+                // Out-of-stock variants stay clickable — selecting one must
+                // surface its explicit Out of Stock state (price, "Notify
+                // Me" CTA, stock hint below) rather than silently blocking
+                // the click, so shoppers can see exactly why that size is
+                // unavailable instead of it just looking unresponsive.
+                return (
+                  <button
+                    key={v.id}
+                    onClick={() => { setVariantId(v.id); setQty(1); }}
+                    title={!v.inStock ? `${v.sizeLabel} is out of stock` : undefined}
+                    aria-pressed={on}
+                    className={`rounded-full border px-4 py-2 text-sm font-medium transition-all ${
+                      on
+                        ? "border-magenta bg-magenta text-white"
+                        : !v.inStock
+                        ? "border-ink/10 text-ink-soft/50 line-through hover:border-magenta/30"
+                        : "border-ink/15 text-ink hover:border-magenta/50"
+                    }`}
+                  >
+                    {v.sizeLabel}
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
       )}
 

@@ -123,6 +123,12 @@ export default function QuickViewModal({ product, onClose }) {
                   {product.rating.toFixed(1)}
                 </span>
                 <span>({product.reviews.toLocaleString()} reviews)</span>
+                {product.sizeLabel && (
+                  <>
+                    <span aria-hidden className="text-ink/20">·</span>
+                    <span>{product.sizeLabel}</span>
+                  </>
+                )}
               </div>
 
               <p className="mt-4 text-sm leading-relaxed text-ink-soft">

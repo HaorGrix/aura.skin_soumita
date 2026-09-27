@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+### Added
+- Every image uploaded in the admin panel (product photos, hero/CMS banners, testimonials, journal images) is now compressed in the browser before upload: resized to at most 2000 px (2400 px for banners) and saved as WebP. A typical 1–2 MB photo becomes 85–150 KB; large phone photos that used to be rejected for size are now accepted.
+- A one-off script compresses the product photos already in Supabase Storage to WebP and repoints product galleries and order history at the smaller files, keeping the originals and a rollback map (`scripts/compress-storage-images.mjs`, dry run by default).
+
+### Changed
+- Product and homepage images bundled with the site now ship as WebP capped at 2000 px, cutting them from 57 MB to 19 MB (built site: 61 MB → 27 MB), so product grids and the homepage load noticeably faster.
+
 ## [2026-07-01]
 ### Changed
 - Refactored `UserContext.jsx` to dynamically bind loyalty points and order history to the logged-in user's email using `aura_users_store` in `localStorage`.

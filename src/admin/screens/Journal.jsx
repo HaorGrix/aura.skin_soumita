@@ -9,7 +9,7 @@ import { useState } from "react";
 import { Plus, X } from "lucide-react";
 import {
   deleteJournalArticle, estimateReadMinutes, journalImageUrl, listJournalArticles,
-  saveJournalArticle, slugify, suggestSlug, uploadJournalImage, MAX_IMAGE_BYTES,
+  saveJournalArticle, slugify, suggestSlug, uploadJournalImage,
 } from "../../lib/api/admin/journal.js";
 import { useAdmin } from "../context.js";
 import JournalEditor from "../components/JournalEditor.jsx";
@@ -217,9 +217,6 @@ function CoverImageField({ value, onChange }) {
   async function upload(file) {
     if (!file) return;
     setError(null);
-    if (file.size > MAX_IMAGE_BYTES) {
-      return setError(`"${file.name}" is over the 5 MB limit.`);
-    }
     setBusy(true);
     const { path, error } = await uploadJournalImage(file);
     setBusy(false);

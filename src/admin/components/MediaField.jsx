@@ -11,6 +11,7 @@ import { useRef, useState } from "react";
 import { Film, ImagePlus, Trash2 } from "lucide-react";
 import { supabase } from "../../lib/api/client.js";
 import { publicUrl } from "../../lib/api/storage-url.js";
+import { BANNER_MAX_DIMENSION, compressImageSafe } from "../../lib/image-compress.js";
 import { Btn, Spinner } from "./kit.jsx";
 
 const MAX_BYTES = 30 * 1024 * 1024;
@@ -62,10 +63,17 @@ export function MediaField({ label, value, onChange, hint }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
 
-  async function upload(file) {
-    if (!file) return;
-    if (file.size > MAX_BYTES) return setError("File must be under 30 MB.");
+  async function upload(picked) {
+    if (!picked) return;
     setBusy(true); setError(null);
+
+    const file = picked.type.startsWith("image/")
+      ? await compressImageSafe(picked, { maxDimension: BANNER_MAX_DIMENSION })
+      : picked;
+    if (file.size > MAX_BYTES) {
+      setBusy(false);
+      return setError("File must be under 30 MB.");
+    }
 
     const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
     const path = `hero/${crypto.randomUUID()}.${ext}`;
@@ -137,8 +145,8 @@ export function MediaField({ label, value, onChange, hint }) {
             non-2:1 art gets soft blurred bars at the sides.</li>
           <li>• <strong>Video</strong> is cropped to fill, so 2:1 matters more: keep titles and
             logos away from the top/bottom edges.</li>
-          <li>• JPEG, PNG, WebP, or MP4/WebM — up to 30 MB. Aim under 400 KB for
-            images and 3 MB for video so the homepage stays fast.</li>
+          <li>• JPEG, PNG, WebP, or MP4/WebM — up to 30 MB. Images are compressed to
+            WebP automatically; aim under 3 MB for video so the homepage stays fast.</li>
         </ul>
       </div>
     </div>

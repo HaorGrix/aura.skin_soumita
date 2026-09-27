@@ -4,11 +4,19 @@ import { ChevronLeft, ChevronRight, ArrowRight } from "lucide-react";
 import { SKIN_TYPES } from "../../data/products.js";
 import { useContent, contentImage } from "../../lib/api/content.js";
 import { useConcerns } from "../../lib/api/concerns.js";
+import hydrationImg from "../../../assests/hydration.jpg";
+import barrierRepairImg from "../../../assests/barrier repair.jpg";
+import brighteningImg from "../../../assests/brightening.jpg";
+import acneImg from "../../../assests/acne.jfif";
+import poresImg from "../../../assests/open pores.jfif";
+import soothingImg from "../../../assests/soothing.webp";
+import antiAgingImg from "../../../assests/anti aging.jfif";
+import sunProtectionImg from "../../../assests/sun protection.jfif";
 
 /* ------------------------------------------------------------------ *
- * Concern image registry — each file lives at /assests/{name}. Vite
- * bundles them via `new URL(..., import.meta.url)`, which also
- * URL-encodes spaces in filenames (e.g. "barrier repair.jpg") cleanly.
+ * Concern image registry — each file lives at /assests/{name}. Plain
+ * imports (not `new URL(..., import.meta.url)`) so they go through the
+ * imagetools WebP conversion in vite.config.js like every other photo.
  *
  * This is now a FALLBACK, not the source of truth: the real image for
  * each tile comes from the CMS (home.concerns, admin/content), and this
@@ -19,14 +27,14 @@ import { useConcerns } from "../../lib/api/concerns.js";
  * further, to the branded gradient (see <ConcernCard />).
  * ------------------------------------------------------------------ */
 const IMG = {
-  Hydration:         new URL("../../../assests/hydration.jpg",       import.meta.url).href,
-  "Barrier Repair":  new URL("../../../assests/barrier repair.jpg",  import.meta.url).href,
-  Brightening:       new URL("../../../assests/brightening.jpg",     import.meta.url).href,
-  "Acne & Blemishes":new URL("../../../assests/acne.jfif",           import.meta.url).href,
-  Pores:             new URL("../../../assests/open pores.jfif",     import.meta.url).href,
-  Soothing:          new URL("../../../assests/soothing.webp",       import.meta.url).href,
-  "Anti-Aging":      new URL("../../../assests/anti aging.jfif",     import.meta.url).href,
-  "Sun Protection":  new URL("../../../assests/sun protection.jfif", import.meta.url).href,
+  Hydration:          hydrationImg,
+  "Barrier Repair":   barrierRepairImg,
+  Brightening:        brighteningImg,
+  "Acne & Blemishes": acneImg,
+  Pores:              poresImg,
+  Soothing:           soothingImg,
+  "Anti-Aging":       antiAgingImg,
+  "Sun Protection":   sunProtectionImg,
 };
 
 // Decorative gradient tone per tile — NOT a CMS field, same reasoning as

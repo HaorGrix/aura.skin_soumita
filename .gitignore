@@ -35,3 +35,6 @@ category-row-with-pink-tiles/
 
 # Supabase CLI local state (project link cache) — machine-specific, not source.
 supabase/.temp/
+
+# Local backups written by scripts/compress-storage-images.mjs (path maps).
+backups/

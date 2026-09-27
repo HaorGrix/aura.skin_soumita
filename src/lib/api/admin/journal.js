@@ -12,6 +12,7 @@
  * =================================================================== */
 import { supabase } from "../client.js";
 import { publicUrl } from "../storage-url.js";
+import { compressImageSafe } from "../../image-compress.js";
 
 export const MAX_IMAGE_BYTES = 5 * 1024 * 1024; // 5 MB, matches product image cap
 export const IMAGE_ACCEPT = "image/jpeg,image/png,image/webp";
@@ -116,7 +117,8 @@ export async function deleteJournalArticle(id, imagePaths = []) {
   return { error: null };
 }
 
-export async function uploadJournalImage(file) {
+export async function uploadJournalImage(picked) {
+  const file = await compressImageSafe(picked);
   if (file.size > MAX_IMAGE_BYTES) {
     return { path: null, error: { message: "Image must be under 5 MB." } };
   }

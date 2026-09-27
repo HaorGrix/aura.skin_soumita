@@ -12,6 +12,7 @@
  * =================================================================== */
 import { supabase } from "../client.js";
 import { publicUrl } from "../storage-url.js";
+import { compressImageSafe } from "../../image-compress.js";
 
 export const MAX_IMAGE_BYTES = 2 * 1024 * 1024; // 2 MB, per the admin's stated spec
 export const RECOMMENDED_RATIO = 1300 / 500;     // ~2.6:1
@@ -79,7 +80,8 @@ export async function deleteTestimonial(id, imagePath) {
   return { error: null };
 }
 
-export async function uploadTestimonialImage(file) {
+export async function uploadTestimonialImage(picked) {
+  const file = await compressImageSafe(picked);
   if (file.size > MAX_IMAGE_BYTES) {
     return { path: null, error: { message: "Image must be under 2 MB." } };
   }

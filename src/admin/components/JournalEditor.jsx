@@ -17,7 +17,7 @@ import {
   Bold, Heading1, Heading2, Image as ImageIcon, Italic, Link as LinkIcon,
   List, ListOrdered, Redo, Undo,
 } from "lucide-react";
-import { uploadJournalImage, journalImageUrl, MAX_IMAGE_BYTES } from "../../lib/api/admin/journal.js";
+import { uploadJournalImage, journalImageUrl } from "../../lib/api/admin/journal.js";
 import { Label, Spinner } from "./kit.jsx";
 
 function ToolbarBtn({ active, onClick, disabled, children, label }) {
@@ -71,10 +71,6 @@ export default function JournalEditor({ label, hint, value, onChange }) {
 
   async function insertImage(file) {
     if (!file || uploadingRef.current) return;
-    if (file.size > MAX_IMAGE_BYTES) {
-      alert(`"${file.name}" is over the 5 MB limit.`);
-      return;
-    }
     uploadingRef.current = true;
     const { path, error } = await uploadJournalImage(file);
     uploadingRef.current = false;

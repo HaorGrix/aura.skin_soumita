@@ -15,7 +15,7 @@
 import { useRef, useState } from "react";
 import { AlertTriangle, ImagePlus, Plus, Star, X } from "lucide-react";
 import {
-  deleteTestimonial, listTestimonials, MAX_IMAGE_BYTES, RECOMMENDED_RATIO,
+  deleteTestimonial, listTestimonials, RECOMMENDED_RATIO,
   IMAGE_ACCEPT, saveTestimonial, testimonialImageUrl, uploadTestimonialImage,
 } from "../../lib/api/admin/testimonials.js";
 import { useAdmin } from "../context.js";
@@ -265,9 +265,6 @@ function TestimonialImageField({ value, onChange }) {
 
     if (!["image/jpeg", "image/png"].includes(file.type)) {
       return setError("JPG or PNG only.");
-    }
-    if (file.size > MAX_IMAGE_BYTES) {
-      return setError(`“${file.name}” is ${(file.size / 1024 / 1024).toFixed(1)} MB — the limit is 2 MB.`);
     }
 
     const off = await checkRatio(file);

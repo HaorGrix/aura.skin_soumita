@@ -32,6 +32,7 @@ import {
   deleteProductImage, deleteProductVideo, publicImageUrl, publicVideoUrl,
   replaceProductImage, reorderProductImages, uploadProductImage, uploadProductVideo,
 } from "../../lib/api/media.js";
+import { compressImageSafe } from "../../lib/image-compress.js";
 import { Btn, ConfirmModal, Spinner } from "./kit.jsx";
 
 const MAX_BYTES = 5 * 1024 * 1024;
@@ -69,11 +70,12 @@ async function convertIfHeic(file) {
   return new File([blob], file.name.replace(/\.(heic|heif)$/i, ".jpg"), { type: "image/jpeg" });
 }
 
-/** Shared HEIC-convert + type/size validation, factored out so a single
- *  replace (one file, immediate) and the multi-file add flow (per-file,
- *  staged progress) don't drift out of sync on what counts as a valid
- *  photo. Returns the (possibly HEIC->JPEG converted) file, or an error
- *  string — never both. */
+/** Shared HEIC-convert + compress + type/size validation, factored out so a
+ *  single replace (one file, immediate) and the multi-file add flow
+ *  (per-file, staged progress) don't drift out of sync on what counts as a
+ *  valid photo. Compression runs before the size check, so a large phone
+ *  photo is shrunk rather than rejected. Returns the upload-ready file, or
+ *  an error string — never both. */
 async function validateImage(original) {
   let file;
   try {
@@ -84,8 +86,9 @@ async function validateImage(original) {
   if (!IMAGE_TYPES.has(file.type)) {
     return { file: null, error: "Not a supported image type (JPEG, PNG, WebP, AVIF, or HEIC)." };
   }
+  file = await compressImageSafe(file);
   if (file.size > MAX_BYTES) {
-    return { file: null, error: "Larger than 5 MB — please compress it first." };
+    return { file: null, error: "Still larger than 5 MB after compression — try a smaller photo." };
   }
   return { file, error: null };
 }
@@ -439,7 +442,7 @@ export default function ImageManager({ productId, images = [], onChange, disable
       <p className="mt-3 text-[11px] text-ink-soft">
         The first image ("Main") is what shoppers see in listings — use Replace on that slot to swap in a
         different one. The label under each photo shows on the storefront gallery thumbnail exactly as typed —
-        leave it blank to show nothing. JPEG, PNG, WebP, AVIF or HEIC (auto-converted), up to 5 MB each,{" "}
+        leave it blank to show nothing. JPEG, PNG, WebP, AVIF or HEIC — compressed to WebP automatically,{" "}
         {MAX_IMAGES} max.
       </p>
 
@@ -477,12 +480,13 @@ export function SingleImageField({ label, value, onChange, hint }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
 
-  async function upload(file) {
-    if (!file) return;
-    if (file.size > MAX_BYTES) return setError("Image must be under 5 MB.");
+  async function upload(picked) {
+    if (!picked) return;
     setBusy(true); setError(null);
 
     try {
+      const file = await compressImageSafe(picked);
+      if (file.size > MAX_BYTES) return setError("Image must be under 5 MB after compression.");
       const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
       const path = `content/${crypto.randomUUID()}.${ext}`;
       const { error } = await supabase.storage

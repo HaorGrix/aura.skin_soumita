@@ -2,6 +2,23 @@
 
 ## Unreleased
 ### Added
+- Track Order page in the menu: customers enter their order number and checkout phone and see the real status set in the admin (placed, processing, shipped, delivered, or cancelled/refunded), courier and tracking number, items and status history. Works for guest orders; never shows the address or email.
+- Order receipt (memo) after checkout: every item with size and quantity, subtotal, discount, delivery and total, with Print / save as PDF. The account's order details show the same saved receipt.
+- Private coupons: a 'Show to shoppers' switch per coupon. Private codes still work when typed at checkout but are never suggested on the site.
+- 'Eye & Ear Care' category right after Body Care in the menu (renamed from Eye Care, with a new Ear Care subcategory) and a matching home page tile.
+
+### Fixed
+- Shop category filter: picking a category replaces the previous one, and a category picked in the sidebar clears the one chosen from the menu, so the grid always matches the selection. Refreshing a filtered page no longer shows an empty grid.
+- Brands and categories added in the admin now appear in the shop filters and search suggestions.
+- Search: pressing Enter shows the same results as the suggestions, the search panel closes by itself after Enter or picking a result, and the separate Enter button is gone.
+- Products with a single size now show that size; product photos are shown whole instead of cropped; the product page no longer repeats the description, and the story has See more and darker text; carousel arrows are transparent.
+- Mobile checkout no longer zooms in on form fields; the floating cart button stays where it is dragged.
+- The postcode entered at checkout is now saved with the order (it was always sent empty). The checkout form is cleared after an order instead of pre-filling the next customer's checkout, and the name placeholders are neutral.
+- Order history no longer shows ৳0 totals or claims every order is Delivered after two days.
+- No more full-screen loading spinner when moving between pages; hero banners open in the same tab instead of reloading the site.
+- Visitor tracking: the site's security policy blocked the Meta Pixel, so no visits or purchases were recorded; it now loads and counts every page view. The sitemap uses the www address.
+
+### Added
 - Every image uploaded in the admin panel (product photos, hero/CMS banners, testimonials, journal images) is now compressed in the browser before upload: resized to at most 2000 px (2400 px for banners) and saved as WebP. A typical 1–2 MB photo becomes 85–150 KB; large phone photos that used to be rejected for size are now accepted.
 - A one-off script compresses the product photos already in Supabase Storage to WebP and repoints product galleries and order history at the smaller files (`scripts/compress-storage-images.mjs`, dry run by default). With `--delete-originals` it also removes each replaced original from Storage after saving a local backup, bringing product photo storage from 1.15 GB back under the free plan's 1 GB limit.
 

@@ -69,8 +69,29 @@ const BREAKPOINTS = {
 /** External links leave the SPA; internal paths are promoted to client-side
  *  navigation by the delegated interceptor in lib/navigate.js, so a plain
  *  <a> is correct for both — no router coupling needed here. */
-function isExternal(href) {
-  return /^https?:\/\//i.test(href ?? "");
+/**
+ * Resolve a CMS link (admin/schemas.js: "/shop…" or a full https:// link).
+ * A full link to this same site (with or without www) becomes a plain path,
+ * so it opens in the same tab through the in-app router instead of a new
+ * tab doing a full cold load. A path typed without its leading "/" is fixed
+ * up. Only genuinely other sites open in a new tab.
+ */
+function resolveHref(raw) {
+  const href = raw?.trim();
+  if (!href) return { href, external: false };
+  if (!/^https?:\/\//i.test(href)) {
+    return { href: href.startsWith("/") || href.startsWith("#") ? href : `/${href}`, external: false };
+  }
+  try {
+    const url = new URL(href);
+    const bare = (host) => host.replace(/^www\./i, "").toLowerCase();
+    if (bare(url.host) === bare(window.location.host)) {
+      return { href: `${url.pathname}${url.search}${url.hash}` || "/", external: false };
+    }
+  } catch {
+    /* malformed URL: treat as external, as before */
+  }
+  return { href, external: true };
 }
 
 
@@ -226,8 +247,7 @@ function SlideMedia({ slide, active }) {
 }
 
 function Slide({ slide, active, reserveCaption, tilt }) {
-  const href = slide.ctaHref?.trim();
-  const external = isExternal(href);
+  const { href, external } = resolveHref(slide.ctaHref);
   const { ref, onMove, onLeave } = useTilt(tilt && active);
 
 
@@ -399,7 +419,7 @@ export default function HeroCarousel() {
             type="button"
             aria-label="Previous banner"
             onClick={prev}
-            className={`absolute left-3 z-10 hidden -translate-y-1/2 rounded-full bg-white/90 p-3 text-ink shadow-lift backdrop-blur transition hover:bg-white active:scale-95 sm:block lg:left-6 ${
+            className={`absolute left-3 z-10 hidden -translate-y-1/2 rounded-full bg-transparent p-3 text-white drop-shadow-[0_1px_4px_rgba(0,0,0,0.55)] transition hover:bg-white/15 active:scale-95 sm:block lg:left-6 ${
               reserveCaption ? "top-[38%]" : "top-1/2"
             }`}
           >
@@ -409,7 +429,7 @@ export default function HeroCarousel() {
             type="button"
             aria-label="Next banner"
             onClick={next}
-            className={`absolute right-3 z-10 hidden -translate-y-1/2 rounded-full bg-white/90 p-3 text-ink shadow-lift backdrop-blur transition hover:bg-white active:scale-95 sm:block lg:right-6 ${
+            className={`absolute right-3 z-10 hidden -translate-y-1/2 rounded-full bg-transparent p-3 text-white drop-shadow-[0_1px_4px_rgba(0,0,0,0.55)] transition hover:bg-white/15 active:scale-95 sm:block lg:right-6 ${
               reserveCaption ? "top-[38%]" : "top-1/2"
             }`}
           >

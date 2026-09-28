@@ -85,7 +85,7 @@ export default function ProductCard({ product, onQuickView }) {
             height="500"
             loading="lazy"
             decoding="async"
-            className={`absolute inset-0 h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105 ${
+            className={`absolute inset-0 h-full w-full object-contain transition-transform duration-700 ease-out group-hover:scale-105 ${
               !inStock ? "grayscale" : ""
             }`}
           />

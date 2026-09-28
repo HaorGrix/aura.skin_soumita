@@ -3,8 +3,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ChevronDown, Check, X } from "lucide-react";
 import {
   SKIN_TYPES,
-  BRANDS,
-  CATEGORIES,
   PRICE_RANGES,
   DISCOUNT_TIERS,
   AVAILABILITY,
@@ -14,17 +12,17 @@ import { useConcerns, concernNameFor } from "../../lib/api/concerns.js";
 
 /* The filter groups, in display order. `concern`'s options come from the
  * live `concerns` table (0059_concerns_table.sql) — id = stable slug,
- * label = current, admin-editable name — so renaming a concern updates
- * this list with no code change. Every other facet is still the static
- * catalog list; only concern moved off it. */
-function buildGroups(concerns) {
+ * label = current, admin-editable name. `brand` and `category` come from the
+ * live product list the caller already fetched, so a brand or category added
+ * in the admin shows up here as soon as a product uses it. */
+function buildGroups(concerns, brands, categories) {
   return [
     { key: "availability", label: "Availability", options: AVAILABILITY },
     { key: "discount", label: "Discount", options: DISCOUNT_TIERS.map((t) => ({ id: t.id, label: t.label })) },
     { key: "skinType", label: "Skin Type", options: SKIN_TYPES },
     { key: "concern", label: "Concern", options: concerns.map((c) => ({ id: c.slug, label: c.name })) },
-    { key: "brand", label: "Brand", options: BRANDS },
-    { key: "category", label: "Category", options: CATEGORIES },
+    { key: "brand", label: "Brand", options: brands },
+    { key: "category", label: "Category", options: categories },
     { key: "price", label: "Price", options: PRICE_RANGES.map((r) => ({ id: r.id, label: r.label })) },
   ];
 }
@@ -196,10 +194,10 @@ function SortFacet({ value, onChange }) {
  * picker at the top (used by the mobile drawer; desktop has its own toolbar
  * SortMenu and omits these props).
  */
-export function FilterPanel({ filters, onToggle, onClear, sort, onSortChange, hiddenGroups = [] }) {
+export function FilterPanel({ filters, onToggle, onClear, sort, onSortChange, hiddenGroups = [], brands = [], categories = [] }) {
   const concerns = useConcerns();
   const active = countActive(filters);
-  const groups = buildGroups(concerns).filter((g) => !hiddenGroups.includes(g.key));
+  const groups = buildGroups(concerns, brands, categories).filter((g) => !hiddenGroups.includes(g.key));
   return (
     <div>
       <div className="flex items-center justify-between pb-2">

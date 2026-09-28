@@ -1,5 +1,5 @@
 # skin.theory — robots policy
-# Production domain: skintheorybd.shop
+# Production domain: www.skintheorybd.shop
 
 User-agent: *
 Allow: /
@@ -10,4 +10,4 @@ Disallow: /checkout
 Disallow: /account
 Disallow: /wishlist
 
-Sitemap: https://skintheorybd.shop/sitemap.xml
+Sitemap: https://www.skintheorybd.shop/sitemap.xml

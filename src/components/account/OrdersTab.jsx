@@ -5,14 +5,12 @@ import { Check, PenLine, Truck } from "lucide-react";
 import { useUser } from "../../context/UserContext.jsx";
 import { productById } from "../../data/reviews.js";
 import { useStoreSettings } from "../../lib/api/settings.js";
-import { orderStatusLabel } from "../../lib/order-status.js";
 import { formatPrice } from "../../lib/format.js";
 import { getProductsByIds } from "../../lib/api/products.js";
 import EmptyState from "../../components/ui/EmptyState.jsx";
 import Button from "../../components/ui/Button.jsx";
 import WriteReviewModal from "../../components/reviews/WriteReviewModal.jsx";
 import OrderDetailsModal from "./OrderDetailsModal.jsx";
-import TrackingModal from "../TrackingModal.jsx";
 
 export default function OrdersTab() {
   // Orders placed from this browser (UserContext.addOrder). There is no
@@ -23,7 +21,6 @@ export default function OrdersTab() {
   const { pointsPerReview } = useStoreSettings();
   const [review, setReview] = useState(null); // product being reviewed
   const [activeOrder, setActiveOrder] = useState(null); // order details modal
-  const [trackingOrder, setTrackingOrder] = useState(null); // order for tracking modal
   const [liveProducts, setLiveProducts] = useState({});
 
   // Orders store product slugs; the live catalog lives in the database, so
@@ -74,7 +71,7 @@ export default function OrdersTab() {
                   <div className="flex items-center gap-3 text-sm">
                     <span className="font-semibold text-ink">#{order.orderId}</span>
                     <span className="inline-flex items-center gap-1 rounded-full bg-success/10 px-2 py-0.5 text-[11px] font-semibold text-success">
-                      <Check className="h-3 w-3" strokeWidth={3} /> {orderStatusLabel(order.timestamp)}
+                      <Check className="h-3 w-3" strokeWidth={3} /> Order placed
                     </span>
                   </div>
                   <span className="mt-1 block text-xs text-ink-soft">
@@ -90,7 +87,7 @@ export default function OrdersTab() {
                   <Button
                     variant="ghost"
                     className="text-xs inline-flex items-center gap-1.5"
-                    onClick={() => setTrackingOrder(order)}
+                    onClick={() => navigate(`/track?order=${encodeURIComponent(order.orderId)}`)}
                   >
                     <Truck className="h-3.5 w-3.5" strokeWidth={2} />
                     <span className="hidden sm:inline">Track</span>
@@ -120,7 +117,7 @@ export default function OrdersTab() {
                         }}
                       >
                         {p.image && (
-                          <img src={p.image} alt={p.name} loading="lazy" className="absolute inset-0 h-full w-full object-cover" />
+                          <img src={p.image} alt={p.name} loading="lazy" className="absolute inset-0 h-full w-full object-contain" />
                         )}
                       </a>
                       <div className="min-w-0 flex-1">
@@ -156,20 +153,6 @@ export default function OrdersTab() {
 
       <WriteReviewModal product={review} open={!!review} onClose={() => setReview(null)} />
       {activeOrder && <OrderDetailsModal order={activeOrder} onClose={() => setActiveOrder(null)} />}
-      {trackingOrder && (
-        <TrackingModal
-          isOpen={!!trackingOrder}
-          onClose={() => setTrackingOrder(null)}
-          orderData={{
-            number: trackingOrder.orderId,
-            count: trackingOrder.items.length,
-            total: trackingOrder.total,
-            date: trackingOrder.date,
-            timestamp: trackingOrder.timestamp,
-            trackingNumber: trackingOrder.trackingNumber,
-          }}
-        />
-      )}
     </motion.div>
   );
 }

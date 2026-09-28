@@ -162,7 +162,7 @@ export default function Testimonials() {
               type="button"
               aria-label="Previous testimonial"
               onClick={() => scrollByCard(-1)}
-              className="absolute left-0 top-1/2 z-10 hidden -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/90 p-3 text-ink shadow-lift backdrop-blur transition hover:bg-white active:scale-95 sm:block"
+              className="absolute left-0 top-1/2 z-10 hidden -translate-x-1/2 -translate-y-1/2 rounded-full bg-transparent p-3 text-ink ring-1 ring-ink/20 transition hover:bg-ink/5 active:scale-95 sm:block"
             >
               <ChevronLeft className="h-5 w-5" strokeWidth={2} />
             </button>
@@ -170,7 +170,7 @@ export default function Testimonials() {
               type="button"
               aria-label="Next testimonial"
               onClick={() => scrollByCard(1)}
-              className="absolute right-0 top-1/2 z-10 hidden -translate-y-1/2 translate-x-1/2 rounded-full bg-white/90 p-3 text-ink shadow-lift backdrop-blur transition hover:bg-white active:scale-95 sm:block"
+              className="absolute right-0 top-1/2 z-10 hidden -translate-y-1/2 translate-x-1/2 rounded-full bg-transparent p-3 text-ink ring-1 ring-ink/20 transition hover:bg-ink/5 active:scale-95 sm:block"
             >
               <ChevronRight className="h-5 w-5" strokeWidth={2} />
             </button>

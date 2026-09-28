@@ -177,8 +177,8 @@ export default function ShopByConcern() {
   };
 
   const arrowBtn =
-    "grid h-10 w-10 place-items-center rounded-full bg-white text-ink ring-1 ring-line " +
-    "transition-colors hover:bg-petal hover:text-magenta active:scale-95";
+    "grid h-10 w-10 place-items-center rounded-full bg-transparent text-ink ring-1 ring-ink/20 " +
+    "transition-colors hover:bg-ink/5 hover:text-magenta active:scale-95";
 
   return (
     <section className="py-10 sm:py-14">

@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Truck, RotateCcw, PackageCheck } from "lucide-react";
 import ReviewsSection from "../reviews/ReviewsSection.jsx";
@@ -62,16 +63,33 @@ export default function ProductTabs({ product, active, onChange, onWriteReview }
   );
 }
 
+// Stories longer than this collapse behind "See more" so the tab opens on a
+// short, readable intro instead of a wall of text.
+const STORY_PREVIEW_CHARS = 320;
+
 function Description({ product }) {
+  const story = product.longDescription ?? "";
+  const long = story.length > STORY_PREVIEW_CHARS;
+  const [expanded, setExpanded] = useState(false);
   return (
     <div className="grid gap-8 lg:grid-cols-[1.4fr_1fr]">
       <div className="max-w-2xl">
         <h3 className="font-display text-2xl text-ink">The story</h3>
-        <p className="mt-3 leading-relaxed text-ink-soft">
-          {product.longDescription}
+        <p className={`mt-3 whitespace-pre-line leading-relaxed text-ink-lift ${long && !expanded ? "line-clamp-5" : ""}`}>
+          {story}
         </p>
+        {long && (
+          <button
+            type="button"
+            onClick={() => setExpanded((v) => !v)}
+            aria-expanded={expanded}
+            className="mt-2 text-sm font-semibold text-magenta hover:underline"
+          >
+            {expanded ? "See less" : "See more"}
+          </button>
+        )}
         <h4 className="mt-6 font-display text-xl text-ink">Our philosophy 🌸</h4>
-        <p className="mt-2 leading-relaxed text-ink-soft">{product.philosophy}</p>
+        <p className="mt-2 leading-relaxed text-ink-lift">{product.philosophy}</p>
       </div>
       <div className="rounded-[1.25rem] bg-snow p-6 ring-1 ring-line">
         <h4 className="font-display text-sm text-ink">At a glance</h4>

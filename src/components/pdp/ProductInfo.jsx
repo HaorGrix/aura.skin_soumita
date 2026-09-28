@@ -61,6 +61,7 @@ export default function ProductInfo({ product, onWriteReview }) {
     () => variants.find((v) => v.isDefault)?.id ?? variants[0]?.id ?? null
   );
   const selectedVariant = variants.find((v) => v.id === variantId) ?? variants[0] ?? null;
+  const hasRealSize = variants.some((v) => v.sizeLabel && v.sizeLabel !== "Standard");
 
   const [qty, setQty] = useState(1);
   // Order-size cap is public (products_public.max_per_order); exact stock
@@ -222,17 +223,12 @@ export default function ProductInfo({ product, onWriteReview }) {
         </div>
       )}
 
-      {/* Short description */}
-      <p className="mt-5 text-pretty leading-relaxed text-ink-soft">
-        {product.longDescription}
-      </p>
-
-      {/* Size — always shown when the product carries a real size label, so
-          a single-size product (e.g. "100ml") is just as clear about its
-          volume as a multi-size one. The clickable picker only renders once
-          there's an actual choice to make; a single variant just shows its
-          label as plain text. */}
-      {selectedVariant?.sizeLabel && (
+      {/* Size — every real size is a pill, including a product's only size
+          (e.g. "100ml"), so shoppers always see what they are buying. The
+          "Standard" placeholder that migration 0016 gave size-less products
+          is not a real size and stays hidden. The full description lives in
+          the Description tab below, not here. */}
+      {hasRealSize && (
         <div className="mt-6">
           <p className="mb-2 text-sm font-semibold text-ink">
             Size:{" "}
@@ -240,8 +236,7 @@ export default function ProductInfo({ product, onWriteReview }) {
               {selectedVariant.sizeLabel}
             </span>
           </p>
-          {variants.length > 1 && (
-            <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2">
               {variants.map((v) => {
                 const on = v.id === variantId;
                 // Out-of-stock variants stay clickable — selecting one must
@@ -267,8 +262,7 @@ export default function ProductInfo({ product, onWriteReview }) {
                   </button>
                 );
               })}
-            </div>
-          )}
+          </div>
         </div>
       )}
 

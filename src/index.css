@@ -313,6 +313,12 @@
   }
 }
 
+/* RouteFallback's thin top bar (App.jsx) — a sliding segment. */
+@keyframes route-progress {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(300%); }
+}
+
 @keyframes skinscript-shimmer {
   100% {
     transform: translateX(100%);

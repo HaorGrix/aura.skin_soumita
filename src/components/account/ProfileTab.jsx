@@ -126,7 +126,7 @@ export default function ProfileTab() {
               rows={3}
               value={formData.address}
               onChange={handleChange}
-              className="w-full resize-none rounded-xl border border-line bg-snow py-3 pl-11 pr-4 text-sm text-ink outline-none transition-colors focus:border-magenta focus:ring-1 focus:ring-magenta"
+              className="w-full resize-none rounded-xl border border-line bg-snow py-3 pl-11 pr-4 text-base sm:text-sm text-ink outline-none transition-colors focus:border-magenta focus:ring-1 focus:ring-magenta"
             />
           </div>
         </div>

@@ -179,7 +179,7 @@ export default function ReviewsSection({ product }) {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search reviews (e.g. “oily”, “sticky”, “delivery”)"
-              className="w-full rounded-full bg-white py-2.5 pl-10 pr-9 text-sm text-ink ring-1 ring-line outline-none transition-shadow placeholder:text-ink-soft/70 focus:ring-2 focus:ring-magenta/50"
+              className="w-full rounded-full bg-white py-2.5 pl-10 pr-9 text-base sm:text-sm text-ink ring-1 ring-line outline-none transition-shadow placeholder:text-ink-soft/70 focus:ring-2 focus:ring-magenta/50"
             />
             {query && (
               <button

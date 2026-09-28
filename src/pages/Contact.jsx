@@ -179,7 +179,7 @@ export default function Contact() {
               <select
                 value={form.topic}
                 onChange={(e) => update("topic", e.target.value)}
-                className="mt-1 w-full rounded-xl bg-snow px-4 py-3 text-sm text-ink ring-1 ring-line outline-none transition-shadow focus:ring-2 focus:ring-magenta/50"
+                className="mt-1 w-full rounded-xl bg-snow px-4 py-3 text-base sm:text-sm text-ink ring-1 ring-line outline-none transition-shadow focus:ring-2 focus:ring-magenta/50"
               >
                 <option>Routine help</option>
                 <option>Order support</option>
@@ -192,7 +192,7 @@ export default function Contact() {
               <textarea
                 value={form.message}
                 onChange={(e) => update("message", e.target.value)}
-                className={`w-full rounded-xl bg-snow px-4 py-3 text-sm text-ink ring-1 outline-none transition-shadow focus:ring-2 focus:ring-magenta/50 min-h-40 resize-y ${errors.message ? "ring-magenta" : "ring-line"}`}
+                className={`w-full rounded-xl bg-snow px-4 py-3 text-base sm:text-sm text-ink ring-1 outline-none transition-shadow focus:ring-2 focus:ring-magenta/50 min-h-40 resize-y ${errors.message ? "ring-magenta" : "ring-line"}`}
                 placeholder="Tell us your skin type, concern, order number, or question."
               />
             </Field>

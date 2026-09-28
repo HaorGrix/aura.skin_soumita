@@ -145,7 +145,7 @@ export default function WriteReviewModal({ product, open, onClose }) {
                 rows={4}
                 maxLength={600}
                 placeholder="How did it work for your skin? Texture, results, delivery…"
-                className="mt-2 w-full resize-none rounded-xl bg-snow px-4 py-3 text-sm leading-relaxed text-ink ring-1 ring-line outline-none focus:ring-2 focus:ring-magenta/50"
+                className="mt-2 w-full resize-none rounded-xl bg-snow px-4 py-3 text-base sm:text-sm leading-relaxed text-ink ring-1 ring-line outline-none focus:ring-2 focus:ring-magenta/50"
               />
             </div>
 

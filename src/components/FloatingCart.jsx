@@ -1,5 +1,5 @@
 import { useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, motionValue } from "framer-motion";
 import { ShoppingBag } from "lucide-react";
 import { useCart } from "../context/CartContext.jsx";
 
@@ -18,7 +18,15 @@ import { useCart } from "../context/CartContext.jsx";
  *    over. Dragging is constrained to `constraintsRef` — a full-viewport
  *    layer that's `pointer-events-none` itself, so it never traps clicks;
  *    only the button (`pointer-events-auto`) is ever actually clickable.
+ *  - The dragged position lives in module-level motion values, so it
+ *    survives the button hiding (drawer open, cart/checkout pages) and
+ *    coming back. The slide-in/out animates a wrapper, never the button's
+ *    own x/y: framer-motion returns to `animate` values when a hover or tap
+ *    ends, which used to snap a dragged button straight back to x: 0.
  */
+const dragX = motionValue(0);
+const dragY = motionValue(0);
+
 export default function FloatingCart() {
   const { count, isOpen, openCart } = useCart();
 
@@ -40,8 +48,21 @@ export default function FloatingCart() {
     <div ref={constraintsRef} className="pointer-events-none fixed inset-0 z-[140]">
       <AnimatePresence>
         {visible && (
-          <motion.button
+          <motion.div
             key="floating-cart"
+            // Enter from right, exit to right — drawer slides in from the same side
+            // so the motion reads as a single continuous gesture.
+            initial={{ x: 80, opacity: 0, scale: 0.85 }}
+            animate={{ x: 0, opacity: 1, scale: 1 }}
+            exit={{ x: 80, opacity: 0, scale: 0.85 }}
+            transition={{ type: "spring", stiffness: 380, damping: 30 }}
+            // Fixed at vertical center-ish (45 vh) so it floats in the middle of
+            // the viewport rather than clashing with bottom UI chrome on mobile.
+            // `absolute` (not `fixed`) because it's positioned relative to the
+            // full-viewport `constraintsRef` layer above, not the document.
+            className="pointer-events-none absolute right-4 top-[45vh] -translate-y-1/2 sm:right-6"
+          >
+          <motion.button
             onPointerDown={() => { dragDistance.current = 0; }}
             onDrag={(_e, info) => {
               dragDistance.current = Math.hypot(info.offset.x, info.offset.y);
@@ -60,20 +81,10 @@ export default function FloatingCart() {
             dragMomentum={false}
             dragTransition={{ bounceStiffness: 420, bounceDamping: 32 }}
             whileDrag={{ scale: 1.08, cursor: "grabbing" }}
-            // Enter from right, exit to right — drawer slides in from the same side
-            // so the motion reads as a single continuous gesture.
-            initial={{ x: 80, opacity: 0, scale: 0.85 }}
-            animate={{ x: 0, opacity: 1, scale: 1 }}
-            exit={{ x: 80, opacity: 0, scale: 0.85 }}
-            transition={{ type: "spring", stiffness: 380, damping: 30 }}
             whileHover={{ scale: 1.1, boxShadow: "0 0 32px 8px rgba(225,48,108,0.55)" }}
             whileTap={{ scale: 0.92 }}
-            // Fixed at vertical center-ish (45 vh) so it floats in the middle of
-            // the viewport rather than clashing with bottom UI chrome on mobile.
-            // `absolute` (not `fixed`) because it's positioned relative to the
-            // full-viewport `constraintsRef` layer above, not the document.
-            className="pointer-events-auto absolute right-4 top-[45vh] flex h-14 w-14 -translate-y-1/2 cursor-grab touch-none items-center justify-center rounded-full bg-gradient-to-br from-magenta to-magenta-deep shadow-[0_0_28px_4px_rgba(225,48,108,0.5)] sm:right-6"
-            style={{ WebkitTapHighlightColor: "transparent" }}
+            className="pointer-events-auto relative flex h-14 w-14 cursor-grab touch-none items-center justify-center rounded-full bg-gradient-to-br from-magenta to-magenta-deep shadow-[0_0_28px_4px_rgba(225,48,108,0.5)]"
+            style={{ x: dragX, y: dragY, WebkitTapHighlightColor: "transparent" }}
           >
             {/* Bag icon */}
             <ShoppingBag className="h-6 w-6 text-white drop-shadow-sm" strokeWidth={1.9} />
@@ -108,6 +119,7 @@ export default function FloatingCart() {
               className="pointer-events-none absolute inset-0 rounded-full bg-gradient-to-t from-transparent to-white/20"
             />
           </motion.button>
+          </motion.div>
         )}
       </AnimatePresence>
     </div>

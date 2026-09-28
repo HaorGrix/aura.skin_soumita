@@ -11,6 +11,7 @@ import {
   PartyPopper,
   Tag,
   Truck as TrackIcon,
+  Printer,
 } from "lucide-react";
 import { findSoldOutItems } from "../lib/api/products.js";
 import { isValidEmail } from "../lib/email-validation.js";
@@ -23,6 +24,7 @@ import { useStoreSettings } from "../lib/api/settings.js";
 import { useShippingMethods, resolveShippingZone } from "../lib/api/shipping.js";
 import { formatPrice, CONVERSION_RATE, CURRENCY } from "../lib/format.js";
 import { trackEvent } from "../lib/analytics.js";
+import { receiptLines, receiptTotals, printReceipt } from "../lib/order-receipt.js";
 // Aliased: this module already has a local `placeOrder()` (the pre-flight
 // stock guard). Importing under the same name would shadow it and make the
 // guard call itself instead of the API.
@@ -32,7 +34,6 @@ import { surface } from "../lib/design-system.js";
 import LineItem from "../components/cart/LineItem.jsx";
 import OrderSummary from "../components/cart/OrderSummary.jsx";
 import EmptyState from "../components/ui/EmptyState.jsx";
-import TrackingModal from "../components/TrackingModal.jsx";
 import PromoHint from "../components/ui/PromoHint.jsx";
 import PhoneInput from "../components/ui/PhoneInput.jsx";
 
@@ -117,6 +118,10 @@ export default function Checkout() {
     }
   }, [authed, userEmail, userName]);
   useEffect(() => {
+    // Once the order is placed the saved form is cleared (submitOrder) and
+    // must stay cleared, or the buyer's name, address and phone would
+    // pre-fill the next checkout on this device.
+    if (order) return;
     const snapshot = {
       step,
       form,
@@ -126,7 +131,7 @@ export default function Checkout() {
     };
     saveCheckoutState(snapshot);
     setResumeSnapshot(snapshot);
-  }, [step, form, shippingMethodId, manualZoneId, guest]);
+  }, [step, form, shippingMethodId, manualZoneId, guest, order]);
 
   const set = (k) => (e) => {
     setForm((f) => ({ ...f, [k]: e.target.value }));
@@ -298,6 +303,17 @@ export default function Checkout() {
   async function submitOrder() {
     setProcessing(true);
 
+    // Keys match what place_order() stores and validates (0048): the form's
+    // `postal` field is sent as `postcode`.
+    const shippingAddress = {
+      name: `${form.firstName ?? ""} ${form.lastName ?? ""}`.trim(),
+      line1: form.address ?? "",
+      city: form.city ?? "",
+      postcode: form.postal ?? "",
+      country: form.country ?? "Bangladesh",
+      phone: form.phone ?? "",
+    };
+
     const { data, error } = await placeOrderRpc({
       email: form.email,
       items,
@@ -305,16 +321,7 @@ export default function Checkout() {
       shippingMethodId: selectedMethod?.id ?? null,
       shippingZoneId: effectiveZone?.id ?? null,
       couponCode: appliedCoupon?.code ?? null,
-      shippingAddress: {
-        name: `${form.firstName ?? ""} ${form.lastName ?? ""}`.trim() || form.name || "",
-        line1: form.address ?? "",
-        line2: form.apartment ?? "",
-        city: form.city ?? "",
-        area: form.area ?? "",
-        postcode: form.postcode ?? "",
-        country: form.country ?? "Bangladesh",
-        phone: form.phone ?? "",
-      },
+      shippingAddress,
     });
 
     setProcessing(false);
@@ -328,7 +335,10 @@ export default function Checkout() {
       return;
     }
 
-    setOrder({ ...data, count });
+    // Receipt snapshot: the lines as bought plus the server's own totals.
+    const lines = receiptLines(items);
+    const totals = receiptTotals(data);
+    setOrder({ ...data, count, lines, totals, address: shippingAddress });
 
     // Fired only here, after placeOrderRpc() has come back with no error —
     // never optimistically before the server confirms the order. `data`
@@ -354,9 +364,16 @@ export default function Checkout() {
       itemIds: items.map((i) => i.id),
       couponCode: data.couponCode,
       timestamp: data.timestamp,
+      lines,
+      totals,
+      address: shippingAddress,
     });
 
-    sessionStorage.removeItem("skinscript_checkout_form");
+    try {
+      localStorage.removeItem(CHECKOUT_KEY);
+    } catch {
+      /* non-fatal: storage unavailable */
+    }
     clear();
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
@@ -565,10 +582,10 @@ function InfoStep({ form, set, setForm, setIsPhoneValid, errors }) {
           <Input type="email" value={form.email} onChange={set("email")} placeholder="you@email.com" />
         </Field>
         <Field label="First name" error={errors.firstName}>
-          <Input value={form.firstName} onChange={set("firstName")} placeholder="Soumita" />
+          <Input value={form.firstName} onChange={set("firstName")} placeholder="First name" />
         </Field>
         <Field label="Last name" error={errors.lastName}>
-          <Input value={form.lastName} onChange={set("lastName")} placeholder="Paul" />
+          <Input value={form.lastName} onChange={set("lastName")} placeholder="Last name" />
         </Field>
         <Field label="Address" full error={errors.address}>
           <Input value={form.address} onChange={set("address")} placeholder="House, road, area" />
@@ -696,7 +713,7 @@ function SelectZoneField({ zones, value, onChange, hint }) {
       <select
         value={value}
         onChange={(e) => onChange(e.target.value || null)}
-        className="w-full rounded-xl border border-line bg-white px-4 py-3 text-sm text-ink outline-none transition-colors focus:border-magenta"
+        className="w-full rounded-xl border border-line bg-white px-4 py-3 text-base sm:text-sm text-ink outline-none transition-colors focus:border-magenta"
       >
         <option value="" disabled>Choose your zone…</option>
         {zones.map((z) => (
@@ -773,14 +790,23 @@ function SummaryPanel({ items, subtotal, shipping, total, discountAmount, applie
 
 /* ---------- Success ---------- */
 function Success({ order }) {
-  const [trackingOpen, setTrackingOpen] = useState(false);
-  const SPARKLES = ["🌸", "✨", "💖", "🌟", "🌺", "💗"];
+  const { toast } = useToast();
+  const lines = order.lines ?? [];
+  const totals = order.totals ?? receiptTotals(order);
 
-  // Add timestamp to order for tracking status calculation
-  const orderWithTimestamp = {
-    ...order,
-    timestamp: order.timestamp || new Date().toISOString(),
-  };
+  function onPrint() {
+    const opened = printReceipt({
+      number: order.number,
+      placedAt: order.timestamp,
+      payMethod: order.payMethod,
+      lines,
+      totals,
+      address: order.address,
+      email: order.email,
+    });
+    if (!opened) toast.error("Allow pop-ups for this site to print the memo.", "Couldn't open the memo");
+  }
+  const SPARKLES = ["🌸", "✨", "💖", "🌟", "🌺", "💗"];
 
   return (
     <div className="relative flex min-h-screen items-center justify-center overflow-hidden px-5">
@@ -816,36 +842,76 @@ function Success({ order }) {
           Your ritual is on its way! <PartyPopper className="inline h-6 w-6 text-magenta" />
         </h1>
         <p className="mt-3 text-ink-soft">
-          Thank you for glowing with us. A confirmation has been sent to{" "}
-          <span className="font-medium text-ink">{order.email}</span>.
+          Thank you for glowing with us. Keep your order number{" "}
+          <span className="font-medium text-ink">{order.number}</span> for tracking and any questions.
         </p>
 
-        <div className="mt-6 rounded-2xl bg-snow p-4 text-left ring-1 ring-line">
-          <div className="flex justify-between text-sm">
+        {/* Memo: the lines as bought and the server's own totals. */}
+        <div className="mt-6 rounded-2xl bg-snow p-4 text-left text-sm ring-1 ring-line">
+          <div className="flex justify-between">
             <span className="text-ink-soft">Order number</span>
             <span className="font-semibold text-ink">{order.number}</span>
           </div>
-          <div className="mt-2 flex justify-between text-sm">
-            <span className="text-ink-soft">Items</span>
-            <span className="font-semibold text-ink">{order.count}</span>
-          </div>
-          <div className="mt-2 flex justify-between text-sm">
+          <div className="mt-2 flex justify-between">
             <span className="text-ink-soft">Payment</span>
             <span className="font-semibold text-ink">
               {order.payMethod === "cod" ? "Cash on Delivery" : "Card"}
             </span>
           </div>
-          <div className="mt-2 flex justify-between text-sm">
-            <span className="text-ink-soft">
-              {order.payMethod === "cod" ? "Amount due" : "Total paid"}
-            </span>
-            <span className="font-semibold text-ink">{formatPrice(order.total)}</span>
+
+          {lines.length > 0 && (
+            <ul className="mt-4 space-y-2 border-t border-line pt-3">
+              {lines.map((l) => (
+                <li key={`${l.id}-${l.size ?? ""}`} className="flex justify-between gap-3">
+                  <span className="min-w-0 text-ink">
+                    <span className="line-clamp-2">{l.name}</span>
+                    <span className="text-xs text-ink-soft">
+                      {l.size ? `${l.size} · ` : ""}{l.qty} × {formatPrice(l.price)}
+                    </span>
+                  </span>
+                  <span className="shrink-0 font-medium text-ink">{formatPrice(l.price * l.qty)}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+
+          <div className="mt-3 space-y-1.5 border-t border-line pt-3">
+            <div className="flex justify-between text-ink-soft">
+              <span>Subtotal</span><span>{formatPrice(totals.subtotal)}</span>
+            </div>
+            {totals.discount > 0 && (
+              <div className="flex justify-between text-success">
+                <span>Discount{totals.couponCode ? ` (${totals.couponCode})` : ""}</span>
+                <span>−{formatPrice(totals.discount)}</span>
+              </div>
+            )}
+            <div className="flex justify-between text-ink-soft">
+              <span>Delivery</span><span>{totals.shipping > 0 ? formatPrice(totals.shipping) : "Free"}</span>
+            </div>
+            {totals.tax > 0 && (
+              <div className="flex justify-between text-ink-soft">
+                <span>Tax</span><span>{formatPrice(totals.tax)}</span>
+              </div>
+            )}
+            <div className="flex justify-between pt-1 font-semibold text-ink">
+              <span>{order.payMethod === "cod" ? "Amount due" : "Total paid"}</span>
+              <span>{formatPrice(totals.total)}</span>
+            </div>
           </div>
         </div>
 
+        <button
+          type="button"
+          onClick={onPrint}
+          className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-magenta hover:underline"
+        >
+          <Printer className="h-4 w-4" strokeWidth={2} />
+          Print / save memo
+        </button>
+
         <div className="mt-7 flex flex-col gap-3 sm:flex-row">
           <button
-            onClick={() => setTrackingOpen(true)}
+            onClick={() => navigate(`/track?order=${encodeURIComponent(order.number)}`)}
             className="flex-1 inline-flex items-center justify-center gap-2 rounded-full bg-magenta py-3.5 text-sm font-semibold text-white shadow-soft transition-shadow hover:shadow-[var(--shadow-glow-pink)]"
           >
             <TrackIcon className="h-4 w-4" strokeWidth={2} />
@@ -865,12 +931,6 @@ function Success({ order }) {
           </a>
         </div>
 
-        {/* Tracking Modal */}
-        <TrackingModal
-          isOpen={trackingOpen}
-          onClose={() => setTrackingOpen(false)}
-          orderData={orderWithTimestamp}
-        />
       </motion.div>
     </div>
   );

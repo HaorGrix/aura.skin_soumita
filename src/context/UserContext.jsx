@@ -209,14 +209,19 @@ export function UserProvider({ children }) {
         const newOrder = {
           orderId: orderData.number,
           date: new Date().toISOString().split('T')[0],
-          // No stored `status` — it's derived from `timestamp` via
-          // lib/order-status.js. A stored value goes stale as time passes.
+          // No stored `status`: the real one lives on the server and is shown
+          // on /track (track_order(), 0061), so a local copy would go stale.
           items: orderData.itemIds || [],
           total: orderData.total,
           email: orderData.email,
           payMethod: orderData.payMethod,
           pointsEarned: earned,
           timestamp: new Date().toISOString(),
+          // Receipt snapshot (lib/order-receipt.js) so order details show
+          // the lines and totals as bought, not today's catalog.
+          lines: orderData.lines ?? null,
+          totals: orderData.totals ?? null,
+          address: orderData.address ?? null,
         };
         setOrders((prev) => [newOrder, ...prev]);
         // Purchases are the primary earn path — see the loyalty economy note

@@ -2,10 +2,22 @@ import { motion, AnimatePresence } from "framer-motion";
 import { X, Check } from "lucide-react";
 import { productById } from "../../data/reviews.js";
 import { formatPrice } from "../../lib/format.js";
-import { orderStatusLabel } from "../../lib/order-status.js";
+
+/* Lines and totals come from the receipt snapshot saved at checkout
+ * (lib/order-receipt.js). Orders placed before snapshots existed fall back
+ * to the bundled catalog for their items and to the order's saved total. */
+function legacyLines(order) {
+  return (order.items ?? []).flatMap((id) => {
+    const p = productById[id];
+    return p ? [{ id, name: p.name, brand: p.brand, size: null, qty: 1, price: p.price, image: p.image }] : [];
+  });
+}
 
 export default function OrderDetailsModal({ order, onClose }) {
   if (!order) return null;
+  const lines = order.lines ?? legacyLines(order);
+  const itemsTotal = lines.reduce((sum, l) => sum + l.price * l.qty, 0);
+  const totals = order.totals ?? { subtotal: itemsTotal, discount: 0, shipping: 0, tax: 0, total: order.total ?? itemsTotal };
 
   return (
     <AnimatePresence>
@@ -32,7 +44,7 @@ export default function OrderDetailsModal({ order, onClose }) {
                 <span>{new Date(order.date).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}</span>
                 <span>•</span>
                 <span className="inline-flex items-center gap-1 font-semibold text-success">
-                  <Check className="h-3.5 w-3.5" /> {orderStatusLabel(order.timestamp)}
+                  <Check className="h-3.5 w-3.5" /> Order placed
                 </span>
               </div>
             </div>
@@ -48,27 +60,19 @@ export default function OrderDetailsModal({ order, onClose }) {
           <div className="overflow-y-auto px-6 py-5 scrollbar-thin">
             <h3 className="mb-4 font-display text-sm text-ink">Items in your order</h3>
             <ul className="space-y-4">
-              {order.items.map((id, index) => {
-                const p = productById[id];
-                if (!p) return null;
-                // Assuming qty is 1 for seed orders as they don't specify qty
-                return (
-                  <li key={`${id}-${index}`} className="flex items-center gap-4">
-                    <div
-                      className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl ring-1 ring-line"
-                      style={{ background: `radial-gradient(120% 100% at 50% 0%, var(--color-white) 0%, ${p.tone} 75%, var(--color-petal-deep) 100%)` }}
-                    >
-                      {p.image && <img src={p.image} alt={p.name} className="absolute inset-0 h-full w-full object-contain" />}
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-magenta">{p.brand}</p>
-                      <p className="line-clamp-1 text-sm font-medium text-ink">{p.name}</p>
-                      <p className="text-sm text-ink-soft">Qty: 1</p>
-                    </div>
-                    <p className="font-medium text-ink">{formatPrice(p.price)}</p>
-                  </li>
-                );
-              })}
+              {lines.map((l, index) => (
+                <li key={`${l.id}-${index}`} className="flex items-center gap-4">
+                  <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-snow ring-1 ring-line">
+                    {l.image && <img src={l.image} alt={l.name} className="absolute inset-0 h-full w-full object-contain" />}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    {l.brand && <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-magenta">{l.brand}</p>}
+                    <p className="line-clamp-1 text-sm font-medium text-ink">{l.name}</p>
+                    <p className="text-sm text-ink-soft">{l.size ? `${l.size} · ` : ""}Qty: {l.qty}</p>
+                  </div>
+                  <p className="font-medium text-ink">{formatPrice(l.price * l.qty)}</p>
+                </li>
+              ))}
             </ul>
 
             <div className="my-6 border-t border-line" />
@@ -77,19 +81,21 @@ export default function OrderDetailsModal({ order, onClose }) {
             <div className="space-y-2 text-sm">
               <div className="flex justify-between text-ink-soft">
                 <span>Subtotal</span>
-                <span>
-                  {formatPrice(order.items.reduce((sum, id) => sum + (productById[id]?.price || 0), 0))}
-                </span>
+                <span>{formatPrice(totals.subtotal)}</span>
               </div>
+              {totals.discount > 0 && (
+                <div className="flex justify-between text-success">
+                  <span>Discount{totals.couponCode ? ` (${totals.couponCode})` : ""}</span>
+                  <span>−{formatPrice(totals.discount)}</span>
+                </div>
+              )}
               <div className="flex justify-between text-ink-soft">
-                <span>Shipping</span>
-                <span>Free</span>
+                <span>Delivery</span>
+                <span>{totals.shipping > 0 ? formatPrice(totals.shipping) : "Free"}</span>
               </div>
               <div className="flex justify-between pt-2 font-medium text-ink">
                 <span>Total</span>
-                <span>
-                  {formatPrice(order.items.reduce((sum, id) => sum + (productById[id]?.price || 0), 0))}
-                </span>
+                <span>{formatPrice(totals.total)}</span>
               </div>
             </div>
           </div>

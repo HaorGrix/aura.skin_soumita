@@ -2,8 +2,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { SlidersHorizontal, Loader2 } from "lucide-react";
 import {
-  BRANDS,
-  CATEGORIES,
   SKIN_TYPES,
   PRICE_RANGES,
   DISCOUNT_TIERS,
@@ -33,7 +31,7 @@ import { useBodyScrollLock } from "../lib/scrollLock.js";
 import { onRouteChange } from "../lib/navigate.js";
 import {
   useCategoryTree, useProductCategoryMap,
-  categoryNamesFor, categorySlugsFor, findBySlug,
+  categoryNamesFor, categorySlugsFor, findBySlug, flattenTree,
 } from "../lib/api/categories.js";
 
 const PAGE = 12;
@@ -43,17 +41,14 @@ const PAGE = 12;
  * misspelled, or renamed param (e.g. an old "Acne" link vs "Acne & Blemishes")
  * is dropped instead of silently producing an empty grid.
  *
- * `concern` is deliberately absent here — unlike the other facets it's no
- * longer a static list (0059_concerns_table.sql), so it can't be
- * pre-validated at module load. It's handled like `category`: accepted
- * optimistically at parse time (URLs already carry the concern's stable
- * slug, same value products.concern stores — see ShopByConcern.jsx), then
- * pruned once the live concern list has actually loaded (the effect below
- * results memo's dependency on `concerns`). */
+ * `concern`, `brand` and `category` are deliberately absent: they are live
+ * lists (concerns table, and the brands/categories the fetched products
+ * actually use), so they can't be pre-validated at module load. Concern and
+ * brand are accepted optimistically at parse time and pruned once the live
+ * data arrives; category is resolved by resolveCategoryFromUrl() below,
+ * which understands both menu slugs and sidebar names. */
 const FACET_VALUES = {
   skinType: new Set(SKIN_TYPES),
-  brand: new Set(BRANDS),
-  category: new Set(CATEGORIES),
   price: new Set(PRICE_RANGES.map((r) => r.id)),
   discount: new Set(DISCOUNT_TIERS.map((t) => t.id)),
   availability: new Set(AVAILABILITY.map((a) => a.id)),
@@ -64,39 +59,7 @@ const FACET_VALUES = {
  * filter" (full catalog) rather than an empty result set. Multiple values per
  * facet (comma-separated) combine, and different facets combine too — so
  * concern + skinType logically AND together in the query engine. */
-/**
- * Turn a `?category=` value into the category NAMES the grid filters on.
- *
- * The mega menu links by SLUG (`skin-care-facewash`), because a slug is
- * unique and a name is not — "Facewash" exists under both Skin Care and
- * K-Beauty. Products, however, carry a category NAME, so slugs have to be
- * resolved before they can match anything.
- *
- * A parent slug expands to its children's names: no product is literally
- * categorised "Skin Care", so without expansion that link would return an
- * empty grid.
- *
- * Plain names are still accepted, so the sidebar's own filter chips and any
- * older `?category=Serum` link keep working.
- */
-function resolveCategoryTokens(raw, tree) {
-  const known = new Set(CATEGORIES);
-  for (const parent of tree ?? []) {
-    known.add(parent.name);
-    for (const child of parent.children ?? []) known.add(child.name);
-  }
-
-  const out = [];
-  for (const token of String(raw).split(",").map((v) => v.trim()).filter(Boolean)) {
-    const viaSlug = categoryNamesFor(tree, token);
-    if (viaSlug.length) out.push(...viaSlug);
-    else if (known.has(token)) out.push(token);
-    // else: stale or misspelled → dropped, same as every other facet
-  }
-  return [...new Set(out)];
-}
-
-function parseUrlQuery(tree) {
+function parseUrlQuery() {
   const filters = structuredClone(EMPTY_FILTERS);
   let search = "";
   // Clean-URL routing: the query lives in location.search, not the hash.
@@ -104,25 +67,17 @@ function parseUrlQuery(tree) {
   for (const key of Object.keys(FACET_VALUES)) {
     const raw = params.get(key);
     if (!raw) continue;
-
-    if (key === "category") {
-      const names = resolveCategoryTokens(raw, tree);
-      if (names.length) filters.category = names;
-      continue;
-    }
-
     // Split, decode-safe (URLSearchParams already decoded), keep only known values.
     const valid = raw.split(",").map((v) => v.trim()).filter((v) => FACET_VALUES[key].has(v));
     if (valid.length) filters[key] = valid;
   }
 
-  // `concern` isn't in FACET_VALUES (see the comment above it) — accepted
-  // optimistically here (already the stable slug), pruned once the live
-  // concern list loads (see the effect keyed on `concerns` below).
-  const rawConcern = params.get("concern");
-  if (rawConcern) {
-    const tokens = rawConcern.split(",").map((v) => v.trim()).filter(Boolean);
-    if (tokens.length) filters.concern = tokens;
+  // `concern` and `brand` aren't in FACET_VALUES (see the comment above it):
+  // accepted optimistically here, pruned once the live lists load (see the
+  // effects keyed on `concerns` and `products` below).
+  for (const key of ["concern", "brand"]) {
+    const tokens = (params.get(key) ?? "").split(",").map((v) => v.trim()).filter(Boolean);
+    if (tokens.length) filters[key] = tokens;
   }
 
   search = params.get("q") || "";
@@ -242,23 +197,24 @@ export default function Shop() {
     }
     if (!tree.length) return; // tree not loaded yet — the [categoryTree] effect will resolve it
 
-    // Slugs, not names: after the hierarchy landed, "Serum" exists under both
-    // Skin Care and K-Beauty, so a name can no longer identify one column.
-    const slugs = [...new Set(
-      raw.split(",").map((t) => t.trim()).filter(Boolean)
-        .flatMap((token) => categorySlugsFor(tree, token))
-    )];
+    const tokens = raw.split(",").map((t) => t.trim()).filter(Boolean);
+    // Slugs (menu and tile links) select one specific column of the tree;
+    // "Serum" exists under both Skin Care and K-Beauty, so a name can't.
+    const slugs = [...new Set(tokens.flatMap((token) => categorySlugsFor(tree, token)))];
+    // Plain names are what the sidebar writes (?category=Moisturizer), so a
+    // refreshed or shared sidebar URL keeps working. They drive the name
+    // facet in `filters.category`, same as ticking the box.
+    const treeNames = new Set(flattenTree(tree).map((n) => n.name));
+    const names = tokens.filter((t) => !categorySlugsFor(tree, t).length && treeNames.has(t));
 
-    // Release the URL guard either way: an unresolvable slug is a dead link,
+    // Release the URL guard either way: an unresolvable token is a dead link,
     // and holding the guard forever would freeze the URL for the whole visit.
     pendingCategoryRef.current = false;
     setCategorySlugs(slugs);
-    setCategoryUnresolved(slugs.length === 0);
-    setCategoryNames([...new Set(
-      raw.split(",").map((t) => t.trim()).filter(Boolean)
-        .flatMap((token) => categoryNamesFor(tree, token))
-    )]);
-    setActiveCategoryName(findBySlug(tree, raw.split(",")[0].trim())?.name ?? null);
+    setCategoryUnresolved(slugs.length === 0 && names.length === 0);
+    setCategoryNames([...new Set(tokens.flatMap((token) => categoryNamesFor(tree, token)))]);
+    setActiveCategoryName(slugs.length ? findBySlug(tree, tokens[0])?.name ?? null : null);
+    setFilters((f) => ({ ...f, category: names.slice(0, 1) }));
   }, []);
 
   // Re-sync on REAL navigation only — browser back/forward, clicking another
@@ -266,7 +222,7 @@ export default function Shop() {
   // history.replaceState (see syncUrl), which emits no route event, so they
   // never round-trip through here and can't clobber React state.
   useEffect(() => onRouteChange(() => {
-    const { filters: parsedFilters, search: parsedSearch } = parseUrlQuery(treeRef.current);
+    const { filters: parsedFilters, search: parsedSearch } = parseUrlQuery();
     setFilters(parsedFilters);
     setSearch(parsedSearch);
     resolveCategoryFromUrl();
@@ -365,6 +321,28 @@ export default function Shop() {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- fetch once on mount only
   }, []);
 
+  // Brands and categories the live catalog actually uses — the sidebar facets
+  // and search hints are built from these, so anything added in the admin
+  // appears once a product carries it.
+  const liveBrands = useMemo(
+    () => [...new Set(products.map((p) => p.brand).filter(Boolean))].sort((a, b) => a.localeCompare(b)),
+    [products]
+  );
+  const liveCategories = useMemo(
+    () => [...new Set(products.map((p) => p.category).filter(Boolean))].sort((a, b) => a.localeCompare(b)),
+    [products]
+  );
+
+  // A ?brand= that no live product carries is a stale link: drop it once the
+  // catalog has loaded, same "accept then prune" as concerns above.
+  useEffect(() => {
+    if (!liveBrands.length || !filters.brand.length) return;
+    const known = new Set(liveBrands);
+    const pruned = filters.brand.filter((b) => known.has(b));
+    if (pruned.length !== filters.brand.length) setFilters((f) => ({ ...f, brand: pruned }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [liveBrands]);
+
   // Query/filter/sort changes only reset paging; results re-render immediately.
   useEffect(() => {
     setVisible(PAGE);
@@ -443,16 +421,31 @@ export default function Shop() {
     window.history.replaceState(null, "", qs ? `/shop?${qs}` : "/shop");
   };
 
+  // Drop a category chosen from the mega menu / home tiles. Called as soon as
+  // the shopper picks a category (or clears filters) in the sidebar, so the
+  // two selections can never combine into an empty or stale grid.
+  const clearMenuCategory = () => {
+    setCategorySlugs([]); setCategoryNames([]); setActiveCategoryName(null);
+    setCategoryUnresolved(false);
+  };
+
   const toggleFilter = (key, id) => {
+    if (key === "category") clearMenuCategory();
     setFilters((f) => {
       const has = f[key].includes(id);
-      const next = { ...f, [key]: has ? f[key].filter((x) => x !== id) : [...f[key], id] };
+      // Category is single-choice: picking Moisturizer after Facewash shows
+      // moisturizers, not both. Other facets stay multi-select.
+      const value = key === "category"
+        ? (has ? [] : [id])
+        : (has ? f[key].filter((x) => x !== id) : [...f[key], id]);
+      const next = { ...f, [key]: value };
       syncUrl(next, search);
       return next;
     });
   };
 
   const clearFilters = () => {
+    clearMenuCategory();
     setFilters(EMPTY_FILTERS);
     syncUrl(EMPTY_FILTERS, search);
   };
@@ -513,11 +506,12 @@ export default function Shop() {
                 so clicking a "Brand · Anua" hint just toggles that filter. */}
             <PredictiveSearch
               products={products}
-              brands={BRANDS}
-              categories={CATEGORIES}
+              brands={liveBrands}
+              categories={liveCategories}
               trending={trending}
               onQueryChange={handleQueryChange}
               onApplyFilter={toggleFilter}
+              initialQuery={search}
             />
 
             <div className="flex items-center gap-2">
@@ -576,6 +570,7 @@ export default function Shop() {
             className="relative hidden lg:flex lg:h-full lg:min-h-0 lg:flex-col lg:overflow-y-auto lg:overscroll-contain lg:rounded-2xl lg:bg-snow lg:p-4 lg:ring-1 lg:ring-line scrollbar-thin"
           >
             <FilterPanel filters={filters} onToggle={toggleFilter} onClear={clearFilters}
+              brands={liveBrands} categories={liveCategories}
               hiddenGroups={saleId ? ["discount"] : []} />
           </aside>
 
@@ -741,6 +736,8 @@ export default function Shop() {
                   filters={filters}
                   onToggle={toggleFilter}
                   onClear={clearFilters}
+                  brands={liveBrands}
+                  categories={liveCategories}
                   sort={sort}
                   onSortChange={setSort}
                   hiddenGroups={saleId ? ["discount"] : []}

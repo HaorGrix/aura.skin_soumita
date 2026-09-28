@@ -41,12 +41,25 @@ export default function PredictiveSearch({
   onSubmit,
   variant = "default",
   onClose,
+  initialQuery = "",
 }) {
-  const [input, setInput] = useState("");
-  const [debounced, setDebounced] = useState("");
+  // Seeded from the caller (Shop's ?q=) so the first debounce sync reports
+  // the real query instead of "", which used to wipe the search on arrival.
+  const [input, setInput] = useState(initialQuery);
+  const [debounced, setDebounced] = useState(initialQuery);
   const [open, setOpen] = useState(false);
   const [activeIdx, setActiveIdx] = useState(-1);
+  // Enter opens the highlighted card only when the highlight came from the
+  // arrow keys; a mouse merely resting on a card must not hijack Enter.
+  const keyboardPickRef = useRef(false);
   const rootRef = useRef(null);
+
+  // A new query arriving from outside (another search submitted while this
+  // page is open) replaces what the box shows.
+  useEffect(() => {
+    setInput(initialQuery);
+    setDebounced(initialQuery);
+  }, [initialQuery]);
 
   // 300ms debounce — keeps typing snappy + batches the heavy filter work
   useEffect(() => {
@@ -82,22 +95,15 @@ export default function PredictiveSearch({
   }, []);
 
   // Reset highlighted row whenever results change
-  useEffect(() => setActiveIdx(-1), [debounced]);
-
-  function commit(text) {
-    setInput(text);
-    setDebounced(text);
-    onQueryChange?.(text);
-    if (onSubmit) {
-      onSubmit(text);
-    } else {
-      setOpen(true);
-    }
-  }
+  useEffect(() => {
+    setActiveIdx(-1);
+    keyboardPickRef.current = false;
+  }, [debounced]);
 
   function pickProduct(p) {
     navigate(`/product/${p.slug}`);
     setOpen(false);
+    onClose?.();
   }
 
   function pickFacet(f) {
@@ -106,17 +112,12 @@ export default function PredictiveSearch({
   }
 
   function handleKey(e) {
-    if (!open) return;
     const results = suggestion?.products ?? [];
-    if (e.key === "ArrowDown") {
+    // Enter is handled even when the dropdown was dismissed (Esc, outside
+    // click): submitting a typed query must always work.
+    if (e.key === "Enter") {
       e.preventDefault();
-      setActiveIdx((i) => Math.min(results.length - 1, i + 1));
-    } else if (e.key === "ArrowUp") {
-      e.preventDefault();
-      setActiveIdx((i) => Math.max(0, i - 1));
-    } else if (e.key === "Enter") {
-      e.preventDefault();
-      if (activeIdx >= 0 && results[activeIdx]) {
+      if (open && keyboardPickRef.current && activeIdx >= 0 && results[activeIdx]) {
         pickProduct(results[activeIdx]);
       } else if (input.trim()) {
         if (onSubmit) {
@@ -128,6 +129,17 @@ export default function PredictiveSearch({
           e.target.blur();
         }
       }
+      return;
+    }
+    if (!open) return;
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      keyboardPickRef.current = true;
+      setActiveIdx((i) => Math.min(results.length - 1, i + 1));
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      keyboardPickRef.current = true;
+      setActiveIdx((i) => Math.max(0, i - 1));
     }
   }
 
@@ -158,7 +170,7 @@ export default function PredictiveSearch({
             aria-controls="search-results-listbox"
             className={
               variant === "megamenu"
-                ? "w-full rounded-md bg-snow py-3 pl-11 pr-24 text-base text-ink ring-1 ring-line outline-none transition-shadow placeholder:text-ink-soft/70 focus:ring-2 focus:ring-magenta/50"
+                ? "w-full rounded-md bg-snow py-3 pl-11 pr-4 text-base text-ink ring-1 ring-line outline-none transition-shadow placeholder:text-ink-soft/70 focus:ring-2 focus:ring-magenta/50"
                 : "w-full rounded-full bg-white py-3 pl-11 pr-10 text-base text-ink ring-1 ring-line outline-none transition-shadow placeholder:text-ink-soft/70 focus:ring-2 focus:ring-magenta/50 sm:py-2.5 sm:text-sm"
             }
           />
@@ -173,14 +185,6 @@ export default function PredictiveSearch({
               className="absolute right-3 top-1/2 grid h-6 w-6 -translate-y-1/2 place-items-center rounded-full text-ink-soft hover:text-magenta"
             >
               <X className="h-3.5 w-3.5" strokeWidth={2.2} />
-            </button>
-          )}
-          {variant === "megamenu" && (
-            <button 
-              onClick={() => commit(input.trim())} 
-              className="absolute right-2 top-1/2 -translate-y-1/2 rounded bg-line/50 px-4 py-1.5 text-xs font-semibold text-ink hover:bg-line transition-colors"
-            >
-              Enter
             </button>
           )}
         </div>
@@ -243,7 +247,7 @@ export default function PredictiveSearch({
                     key={p.id}
                     product={p}
                     active={activeIdx === i}
-                    onHover={() => setActiveIdx(i)}
+                    onHover={() => { keyboardPickRef.current = false; setActiveIdx(i); }}
                     onPick={() => pickProduct(p)}
                   />
                 ))}
@@ -262,7 +266,7 @@ export default function PredictiveSearch({
                     key={p.id}
                     product={p}
                     active={activeIdx === i}
-                    onHover={() => setActiveIdx(i)}
+                    onHover={() => { keyboardPickRef.current = false; setActiveIdx(i); }}
                     onPick={() => pickProduct(p)}
                   />
                 ))}
@@ -324,7 +328,7 @@ function ProductRow({ product: p, active, onHover, onPick, compact = false }) {
               src={p.image}
               alt=""
               loading="lazy"
-              className="absolute inset-0 h-full w-full object-cover"
+              className="absolute inset-0 h-full w-full object-contain"
             />
           )}
         </span>

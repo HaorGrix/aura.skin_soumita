@@ -2,7 +2,7 @@ import { lazy, Suspense, useEffect, useState, useMemo, useCallback } from "react
 import { ReactLenis } from "lenis/react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X } from "lucide-react";
-import { PRODUCTS, BRANDS, CATEGORIES } from "./data/products.js";
+import { PRODUCTS } from "./data/products.js";
 import { listProducts } from "./lib/api/products.js";
 import PredictiveSearch from "./components/shop/PredictiveSearch.jsx";
 import { CartProvider } from "./context/CartContext.jsx";
@@ -117,6 +117,16 @@ export default function App() {
   }, []);
 
   const trending = useMemo(() => [...liveProducts].sort((a, b) => b.popularity - a.popularity).slice(0, 3), [liveProducts]);
+  // Search hints ("Brand · Anua", "Category · Serum") from the live catalog,
+  // so brands and categories added in the admin are suggested too.
+  const searchBrands = useMemo(
+    () => [...new Set(liveProducts.map((p) => p.brand).filter(Boolean))].sort((a, b) => a.localeCompare(b)),
+    [liveProducts]
+  );
+  const searchCategories = useMemo(
+    () => [...new Set(liveProducts.map((p) => p.category).filter(Boolean))].sort((a, b) => a.localeCompare(b)),
+    [liveProducts]
+  );
 
   // Same "full-bleed, owns its own top spacing" set the padding logic below
   // already uses — these are the only routes with a hero/banner directly
@@ -209,7 +219,7 @@ export default function App() {
                   <div className="max-w-6xl mx-auto flex items-start gap-4">
                     <div className="w-full relative z-[var(--z-dropdown)] flex-1">
                       <PredictiveSearch 
-                        products={liveProducts} brands={BRANDS} categories={CATEGORIES} trending={trending}
+                        products={liveProducts} brands={searchBrands} categories={searchCategories} trending={trending}
                         onQueryChange={() => {}} 
                         onSubmit={(q) => {
                           navigate(`/shop?q=${encodeURIComponent(q)}`);

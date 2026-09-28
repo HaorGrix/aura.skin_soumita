@@ -29,17 +29,6 @@ const LINKS = [
   { label: "Contact", href: "/contact" },
 ];
 
-// Authorized brands — shown as a quiet marquee strip on desktop.
-const BRANDS = [
-  "Beauty of Joseon",
-  "COSRX",
-  "Anua",
-  "The Ordinary",
-  "The Body Shop",
-  "Centella",
-  "Simple",
-];
-
 const MOBILE_QUOTE = "Glass skin is a daily ritual — and you’re already glowing. 🌸";
 
 // Past this scroll depth the header switches from transparent (overlaying a

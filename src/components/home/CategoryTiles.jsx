@@ -19,6 +19,7 @@ import { motion, useReducedMotion } from "framer-motion";
 import SKIN_CARE from "../../../assests/cate/skin-care.png";
 import HAIR_CARE from "../../../assests/cate/hair-care.png";
 import BODY_CARE from "../../../assests/cate/body-care.png";
+import EYE_EAR from "../../../assests/cate/eye-ear.png";
 import OFFER from "../../../assests/cate/offer.png";
 import COMBO from "../../../assests/cate/combo.png";
 
@@ -34,6 +35,8 @@ const TILES = [
   { label: "Skin Care", href: "/shop?category=skin-care",       img: SKIN_CARE },
   { label: "Hair Care", href: "/shop?category=hair-care",       img: HAIR_CARE },
   { label: "Body Care", href: "/shop?category=body-care",       img: BODY_CARE },
+  // "Eye & Ear Care" (0063) keeps the old Eye Care slug so existing links work.
+  { label: "Eye & Ear", href: "/shop?category=eye-care",        img: EYE_EAR },
   { label: "Offer",     href: "/offers",                        img: OFFER },
   { label: "Combo",     href: "/shop?category=skin-care-combo", img: COMBO },
 ];
@@ -48,7 +51,7 @@ export default function CategoryTiles() {
        spacing stays predictable instead of compounding. */
     <section aria-label="Shop by category" className="relative mt-5 pb-12 sm:mt-7 sm:pb-16">
       <div className="mx-auto max-w-7xl px-5 sm:px-8">
-        <ul className="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 sm:gap-x-6 lg:grid-cols-5">
+        <ul className="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 sm:gap-x-6 lg:grid-cols-6">
           {TILES.map((tile, i) => (
             <motion.li
               key={tile.label}

@@ -21,7 +21,7 @@ const BLANK = {
   code: "", kind: "percent", value_percent: 10, value_minor: null,
   also_free_shipping: false, min_subtotal_minor: 0, max_discount_minor: null,
   starts_at: "", ends_at: "", usage_limit: null, usage_limit_per_customer: 1,
-  first_order_only: false, is_active: true, required_points: null,
+  first_order_only: false, is_active: true, is_public: true, required_points: null,
 };
 
 export default function Coupons() {
@@ -90,6 +90,7 @@ export default function Coupons() {
               !c.is_active ? <Pill tone="grey">Off</Pill>
               : isExpired(c) ? <Pill tone="red">Expired</Pill>
               : isExhausted(c) ? <Pill tone="amber">Fully used</Pill>
+              : c.is_public === false ? <Pill tone="violet">Active · Private</Pill>
               : <Pill tone="green">Active</Pill> },
         ]}
       />
@@ -234,6 +235,9 @@ function CouponModal({ coupon, onClose, onSaved, onDeactivate, onDelete, readOnl
             checked={form.first_order_only} onChange={set("first_order_only")} disabled={readOnly || isLoyalty} />
           <Toggle label="Active" hint="Turn off to stop the code working without deleting it."
             checked={form.is_active} onChange={set("is_active")} disabled={readOnly} />
+          <Toggle label="Show to shoppers"
+            hint="Off = private code: it still works when typed at checkout, but is never suggested in the cart or checkout."
+            checked={form.is_public ?? true} onChange={set("is_public")} disabled={readOnly} />
         </div>
       </div>
 

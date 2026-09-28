@@ -32,7 +32,7 @@ const COUPON_FIELDS = [
   "code", "kind", "value_minor", "value_percent", "also_free_shipping",
   "min_subtotal_minor", "max_discount_minor", "starts_at", "ends_at",
   "usage_limit", "usage_limit_per_customer", "first_order_only",
-  "required_points", "applies_to", "is_active",
+  "required_points", "applies_to", "is_active", "is_public",
 ];
 
 function pick(input) {

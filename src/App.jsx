@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useState, useMemo, useCallback } from "react";
+import { lazy, Suspense, useEffect, useRef, useState, useMemo, useCallback } from "react";
 import { ReactLenis } from "lenis/react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X } from "lucide-react";
@@ -19,7 +19,7 @@ import { navigate, onRouteChange } from "./lib/navigate.js";
 import { isAdminPath } from "./lib/adminPath.js";
 import { applySeo } from "./lib/seo.js";
 import { useStoreSettings } from "./lib/api/settings.js";
-import { injectMetaPixel } from "./lib/analytics.js";
+import { injectMetaPixel, trackEvent } from "./lib/analytics.js";
 
 // Route-level code splitting — the home page loads eagerly; the rest lazy-load.
 const Shop = lazy(() => import("./pages/Shop.jsx"));
@@ -141,6 +141,19 @@ export default function App() {
   useEffect(() => {
     recordRoute(route.name);
   }, [route.name]);
+
+  // Meta Pixel PageView for in-app navigation. The pixel's own PageView only
+  // covers the first page load; every later page is a client-side route
+  // change. trackEvent() is a no-op until the pixel has loaded, and the
+  // first run is skipped because injectMetaPixel() already counted it.
+  const firstRouteRef = useRef(true);
+  useEffect(() => {
+    if (firstRouteRef.current) {
+      firstRouteRef.current = false;
+      return;
+    }
+    trackEvent("PageView");
+  }, [route]);
 
   // Per-route SEO: title, description, canonical, OG tags + robots noindex.
   // Re-runs when the live store name changes too, so a rebrand from

@@ -11,7 +11,7 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 
-const SITE_ORIGIN = "https://skintheorybd.shop";
+const SITE_ORIGIN = "https://www.skintheorybd.shop";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, "..");

@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useRef, useState, useMemo, useCallback } from "react";
+import { lazy, startTransition, Suspense, useEffect, useRef, useState, useMemo, useCallback } from "react";
 import { ReactLenis } from "lenis/react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X } from "lucide-react";
@@ -22,16 +22,24 @@ import { useStoreSettings } from "./lib/api/settings.js";
 import { injectMetaPixel, trackEvent } from "./lib/analytics.js";
 
 // Route-level code splitting — the home page loads eagerly; the rest lazy-load.
-const Shop = lazy(() => import("./pages/Shop.jsx"));
-const Product = lazy(() => import("./pages/Product.jsx"));
-const Cart = lazy(() => import("./pages/Cart.jsx"));
-const Checkout = lazy(() => import("./pages/Checkout.jsx"));
+// The loaders for the pages a shopper reaches first are kept as functions so
+// they can also be fetched in the background right after the home page
+// renders (see the preload effect in App), before anyone taps a link.
+const loadShop = () => import("./pages/Shop.jsx");
+const loadProduct = () => import("./pages/Product.jsx");
+const loadCart = () => import("./pages/Cart.jsx");
+const loadCheckout = () => import("./pages/Checkout.jsx");
+const loadOffers = () => import("./pages/Offers.jsx");
+const Shop = lazy(loadShop);
+const Product = lazy(loadProduct);
+const Cart = lazy(loadCart);
+const Checkout = lazy(loadCheckout);
 const Account = lazy(() => import("./pages/Account.jsx"));
 const Wishlist = lazy(() => import("./pages/Wishlist.jsx"));
 const Contact = lazy(() => import("./pages/Contact.jsx"));
 const About = lazy(() => import("./pages/About.jsx"));
 const Rewards = lazy(() => import("./pages/Rewards.jsx"));
-const Offers = lazy(() => import("./pages/Offers.jsx"));
+const Offers = lazy(loadOffers);
 const Journal = lazy(() => import("./pages/Articles.jsx"));
 const JournalArticle = lazy(() => import("./pages/JournalArticle.jsx"));
 const ShippingReturns = lazy(() => import("./pages/ShippingReturns.jsx"));
@@ -45,10 +53,16 @@ const NotFound = lazy(() => import("./pages/NotFound.jsx"));
 const AdminApp = lazy(() => import("./admin/AdminApp.jsx"));
 import ErrorBoundary from "./components/ui/ErrorBoundary.jsx";
 
+// Shown only when a page is opened directly (first load or refresh) before
+// its code has arrived. In-app navigation never reaches it: route changes run
+// in a transition, so the current page stays until the next one is ready.
+// A thin bar at the top instead of a full-screen spinner.
 function RouteFallback() {
   return (
-    <div className="grid min-h-[60vh] place-items-center pt-32">
-      <div className="h-10 w-10 animate-spin rounded-full border-2 border-magenta border-t-transparent" />
+    <div className="min-h-[60vh]" aria-busy="true" aria-label="Loading">
+      <div className="fixed inset-x-0 top-0 z-[200] h-0.5 overflow-hidden bg-magenta/15">
+        <div className="h-full w-1/3 animate-[route-progress_1.1s_ease-in-out_infinite] bg-magenta" />
+      </div>
     </div>
   );
 }
@@ -99,7 +113,10 @@ function useRoute() {
   const [route, setRoute] = useState(parse);
   // onRouteChange listens on popstate (browser back/forward) + our synthetic
   // navigate() event; it returns the matching cleanup fn for the effect.
-  useEffect(() => onRouteChange(() => setRoute(parse())), [parse]);
+  //
+  // startTransition: React keeps the current page on screen while a lazy
+  // page's code downloads, instead of swapping it for the Suspense fallback.
+  useEffect(() => onRouteChange(() => startTransition(() => setRoute(parse()))), [parse]);
   return route;
 }
 
@@ -109,6 +126,36 @@ export default function App() {
   const storeSettings = useStoreSettings();
 
   const [liveProducts, setLiveProducts] = useState(PRODUCTS);
+
+  // Fetch the most-visited pages' code once the browser is idle, so the first
+  // tap on Shop, a product, an offer or the cart opens instantly.
+  useEffect(() => {
+    const preload = () => [loadShop, loadProduct, loadOffers, loadCart, loadCheckout].forEach((load) => load());
+    if ("requestIdleCallback" in window) {
+      const id = window.requestIdleCallback(preload, { timeout: 4000 });
+      return () => window.cancelIdleCallback(id);
+    }
+    const t = setTimeout(preload, 2500);
+    return () => clearTimeout(t);
+  }, []);
+
+  // After a deploy, a tab opened earlier asks for page code that no longer
+  // exists. Reload once to pick up the new build instead of showing the
+  // error screen; the session flag stops a reload loop if it keeps failing.
+  useEffect(() => {
+    const onPreloadError = (event) => {
+      try {
+        if (sessionStorage.getItem("skinscript_chunk_reload")) return;
+        sessionStorage.setItem("skinscript_chunk_reload", "1");
+      } catch {
+        return;
+      }
+      event.preventDefault();
+      window.location.reload();
+    };
+    window.addEventListener("vite:preloadError", onPreloadError);
+    return () => window.removeEventListener("vite:preloadError", onPreloadError);
+  }, []);
 
   useEffect(() => {
     let alive = true;

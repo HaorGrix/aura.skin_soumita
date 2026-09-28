@@ -69,8 +69,29 @@ const BREAKPOINTS = {
 /** External links leave the SPA; internal paths are promoted to client-side
  *  navigation by the delegated interceptor in lib/navigate.js, so a plain
  *  <a> is correct for both — no router coupling needed here. */
-function isExternal(href) {
-  return /^https?:\/\//i.test(href ?? "");
+/**
+ * Resolve a CMS link (admin/schemas.js: "/shop…" or a full https:// link).
+ * A full link to this same site (with or without www) becomes a plain path,
+ * so it opens in the same tab through the in-app router instead of a new
+ * tab doing a full cold load. A path typed without its leading "/" is fixed
+ * up. Only genuinely other sites open in a new tab.
+ */
+function resolveHref(raw) {
+  const href = raw?.trim();
+  if (!href) return { href, external: false };
+  if (!/^https?:\/\//i.test(href)) {
+    return { href: href.startsWith("/") || href.startsWith("#") ? href : `/${href}`, external: false };
+  }
+  try {
+    const url = new URL(href);
+    const bare = (host) => host.replace(/^www\./i, "").toLowerCase();
+    if (bare(url.host) === bare(window.location.host)) {
+      return { href: `${url.pathname}${url.search}${url.hash}` || "/", external: false };
+    }
+  } catch {
+    /* malformed URL: treat as external, as before */
+  }
+  return { href, external: true };
 }
 
 
@@ -226,8 +247,7 @@ function SlideMedia({ slide, active }) {
 }
 
 function Slide({ slide, active, reserveCaption, tilt }) {
-  const href = slide.ctaHref?.trim();
-  const external = isExternal(href);
+  const { href, external } = resolveHref(slide.ctaHref);
   const { ref, onMove, onLeave } = useTilt(tilt && active);
 
 

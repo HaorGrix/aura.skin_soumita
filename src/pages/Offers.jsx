@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { navigate } from "../lib/navigate.js";
 import { motion } from "framer-motion";
 import { ArrowRight, Flame, Home } from "lucide-react";
 import BackButton from "../components/ui/BackButton.jsx";
@@ -141,7 +142,7 @@ export default function Offers() {
               title="No live deals right now"
               message="Check back soon — new drops appear here the moment a campaign goes live."
               actionLabel="Browse the shop"
-              onAction={() => (window.location.href = "/shop")}
+              onAction={() => navigate("/shop")}
             />
           </div>
         ) : (

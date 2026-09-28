@@ -100,6 +100,19 @@ export default function PredictiveSearch({
     keyboardPickRef.current = false;
   }, [debounced]);
 
+  // A popular-search pill: search that term exactly as if it had been typed
+  // and submitted.
+  function commit(text) {
+    setInput(text);
+    setDebounced(text);
+    onQueryChange?.(text);
+    if (onSubmit) {
+      onSubmit(text);
+    } else {
+      setOpen(true);
+    }
+  }
+
   function pickProduct(p) {
     navigate(`/product/${p.slug}`);
     setOpen(false);

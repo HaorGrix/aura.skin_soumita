@@ -1,0 +1,9 @@
+# skintheorybd.shop: nothing listens publicly; nginx on the host is the only
+# public entry point and proxies /rest, /auth, /storage, /functions here.
+services:
+  api-gw:
+    ports: !override
+      - "127.0.0.1:8000:8000"
+  functions:
+    environment:
+      INVITE_REDIRECT_URL: https://www.skintheorybd.shop/admin

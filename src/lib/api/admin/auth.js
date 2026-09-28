@@ -96,10 +96,9 @@ export async function acceptInvite() {
  * Email a password-reset link — but ONLY if the address genuinely has a
  * staff role (0040_is_staff_email_rpc.sql). Supabase's own
  * resetPasswordForEmail() would happily email ANY real auth user,
- * including a customer who only ever verified via magic link
- * (customerAuth.js's signInWithOtp auto-provisions one) — this is the
- * admin panel, so a customer-only account must never receive an admin
- * password-reset email.
+ * including a leftover customer account from the retired magic-link
+ * sign-in — this is the admin panel, so a customer-only account must
+ * never receive an admin password-reset email.
  *
  * Always resolves without an error for a non-staff or non-existent
  * email — the caller (Login.jsx) shows the SAME generic message in

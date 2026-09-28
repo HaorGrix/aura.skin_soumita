@@ -17,51 +17,6 @@ import { fromMinor as toLegacyAmount } from "../format.js";
 export { toLegacyAmount };
 
 /**
- * Real order history for the CURRENT verified session (see
- * lib/api/customerAuth.js). Returns [] — never an error the UI has to
- * handle specially — for "not verified" or "verified but no orders yet";
- * callers can't tell those apart from this response alone, which is
- * intentional: the RLS policy (0029_magic_link_order_access.sql) is what
- * actually decides visibility, this just reflects whatever it allowed.
- *
- * Shape matches what components/account/OrdersTab.jsx (and the modals it
- * opens) already expect from the old localStorage mock, so those
- * components didn't need a rewrite — only their DATA SOURCE changed.
- * `items` stays an array of product slugs for that reason; a real order
- * referencing a product since removed from the trimmed sample catalog
- * will silently skip that line in the UI, same as the mock system's own
- * `if (!p) return null` already did for any unknown id.
- */
-export async function listMyOrders() {
-  const { data, error } = await supabase
-    .from("orders")
-    .select("id, number, status, total_minor, placed_at, tracking_number, order_items(id, product_slug)")
-    .order("placed_at", { ascending: false });
-
-  if (error) return { data: null, error };
-
-  return {
-    data: (data ?? []).map((o) => ({
-      orderId: o.number,
-      timestamp: o.placed_at,
-      date: o.placed_at,
-      status: o.status,
-      total: toLegacyAmount(o.total_minor),
-      trackingNumber: o.tracking_number ?? null,
-      items: (o.order_items ?? []).map((i) => i.product_slug).filter(Boolean),
-      // Real order_items rows, kept alongside the flat `items` slug list
-      // above (which OrderDetailsModal/TrackingModal already expect) —
-      // review submission needs the actual order_item id, not just the
-      // product slug, since one review is tied to one purchased line.
-      itemDetails: (o.order_items ?? [])
-        .filter((i) => i.product_slug)
-        .map((i) => ({ orderItemId: i.id, slug: i.product_slug })),
-    })),
-    error: null,
-  };
-}
-
-/**
  * Turn a Postgres exception from place_order() into something a shopper can
  * act on. The RPC raises `CODE:arg1:arg2`; anything unrecognised falls back
  * to a neutral message rather than leaking SQL at the customer.

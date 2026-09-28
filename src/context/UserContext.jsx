@@ -1,7 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { pointsForOrder } from "../data/reviews.js";
 import { MILESTONES, couponForPoints } from "../lib/rewards-config.js";
-import { getVerifiedEmail, onVerifiedEmailChange, getMyPoints } from "../lib/api/customerAuth.js";
 import { useStoreSettings } from "../lib/api/settings.js";
 
 const UserContext = createContext(null);
@@ -41,8 +40,8 @@ export function nextMilestoneFor(points) {
 
 export function UserProvider({ children }) {
   // Live value from /admin/settings — points_per_review — so every
-  // customer-facing "+N pts" line (loyalty header, review toast, mock-login
-  // award) always matches what submit_review() actually credits.
+  // customer-facing "+N pts" line (loyalty header, review toast) matches the
+  // store's configured award.
   const { pointsPerReview } = useStoreSettings();
 
   const [initialUserState] = useState(() => {
@@ -70,46 +69,6 @@ export function UserProvider({ children }) {
   const [usedCoupons, setUsedCoupons] = useState(() => initialUserState.usedCoupons);
   const [authed, setAuthed] = useState(() => initialUserState.authed);
   const [auth, setAuth] = useState({ open: false, mode: "login", onSuccess: null });
-  // Purchased-product ids confirmed by a REAL magic-link-verified session
-  // (components/account/OrdersTab.jsx, backed by 0029's RLS policy) —
-  // additive to, and independent of, the mock `orders` array below. A
-  // shopper who verified their real email but never went through the mock
-  // login has an empty mock `orders`, so hasPurchased() would otherwise
-  // wrongly say "no" for something they genuinely bought, and addReview()
-  // would silently refuse to save the review it just showed a button for.
-  const [verifiedPurchasedIds, setVerifiedPurchasedIds] = useState([]);
-
-  // Real loyalty balance for a magic-link-verified session (0032's
-  // get_my_points(), reading the actual `customers.points` column that
-  // place_order()/submit_review() write to) — null means "no verified
-  // session, fall back to the mock `points` below", never "zero".
-  const [verifiedPoints, setVerifiedPoints] = useState(null);
-
-  const refreshVerifiedPoints = useCallback(async () => {
-    const email = await getVerifiedEmail();
-    if (!email) { setVerifiedPoints(null); return null; }
-    const fresh = await getMyPoints();
-    setVerifiedPoints(fresh);
-    return fresh;
-  }, []);
-
-  useEffect(() => {
-    let cancelled = false;
-    refreshVerifiedPoints();
-    const unsubscribe = onVerifiedEmailChange((_email, event) => {
-      // TOKEN_REFRESHED fires on every tab refocus for the SAME identity
-      // (autoRefreshToken) — refetching points then is just two wasted
-      // network calls, never a correctness issue (the balance is a
-      // primitive, so an unchanged refetch doesn't cause a re-render
-      // either way). Skipping it here is hygiene, not a fix for a bug.
-      if (!cancelled && event !== "TOKEN_REFRESHED") refreshVerifiedPoints();
-    });
-    return () => {
-      cancelled = true;
-      unsubscribe();
-    };
-  }, [refreshVerifiedPoints]);
-
   const openAuth = useCallback((mode = "login", onSuccess = null) => {
     setAuth({ open: true, mode, onSuccess });
   }, []);
@@ -175,8 +134,8 @@ export function UserProvider({ children }) {
   }, [profile.email]);
 
   const purchasedIds = useMemo(
-    () => new Set([...orders.flatMap((o) => o.items), ...verifiedPurchasedIds]),
-    [orders, verifiedPurchasedIds]
+    () => new Set(orders.flatMap((o) => o.items)),
+    [orders]
   );
 
   useEffect(() => {
@@ -186,12 +145,6 @@ export function UserProvider({ children }) {
     currentStore[emailKey] = { points, myReviews, reviewedIds, profile, orders, usedCoupons };
     saveStore(currentStore);
   }, [points, myReviews, reviewedIds, profile, authed, orders, usedCoupons]);
-
-  // The verified, real DB balance wins whenever it's known — it's the
-  // authoritative number place_order()/submit_review() actually write.
-  // The mock stays as the fallback for a shopper who's only ever used
-  // the old localStorage login and never verified a real email.
-  const displayPoints = verifiedPoints ?? points;
 
   const value = useMemo(() => {
     const hasPurchased = (id) => purchasedIds.has(id);
@@ -208,14 +161,12 @@ export function UserProvider({ children }) {
       login,
       signup,
       logout,
-      points: displayPoints,
+      points,
       pointsPerReview,
       orders,
       myReviews,
-      setVerifiedPurchasedIds,
-      refreshVerifiedPoints,
-      coupons: couponsFor(displayPoints),
-      nextMilestone: nextMilestoneFor(displayPoints),
+      coupons: couponsFor(points),
+      nextMilestone: nextMilestoneFor(points),
       milestones: MILESTONES,
       hasPurchased,
       hasReviewed,
@@ -274,7 +225,7 @@ export function UserProvider({ children }) {
         return earned;
       },
     };
-  }, [displayPoints, pointsPerReview, myReviews, reviewedIds, orders, purchasedIds, profile, authed, auth, openAuth, closeAuth, login, signup, logout, usedCoupons, refreshVerifiedPoints]);
+  }, [points, pointsPerReview, myReviews, reviewedIds, orders, purchasedIds, profile, authed, auth, openAuth, closeAuth, login, signup, logout, usedCoupons]);
 
   return <UserContext.Provider value={value}>{children}</UserContext.Provider>;
 }

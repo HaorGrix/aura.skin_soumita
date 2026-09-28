@@ -35,6 +35,7 @@ const Offers = lazy(() => import("./pages/Offers.jsx"));
 const Journal = lazy(() => import("./pages/Articles.jsx"));
 const JournalArticle = lazy(() => import("./pages/JournalArticle.jsx"));
 const ShippingReturns = lazy(() => import("./pages/ShippingReturns.jsx"));
+const TrackOrder = lazy(() => import("./pages/TrackOrder.jsx"));
 const Privacy = lazy(() => import("./pages/Privacy.jsx"));
 const Terms = lazy(() => import("./pages/Terms.jsx"));
 const Cookies = lazy(() => import("./pages/Cookies.jsx"));
@@ -89,6 +90,7 @@ function useRoute() {
       return { name: "journal-article", slug };
     }
     if (p === "/shipping") return { name: "shipping" };
+    if (p === "/track") return { name: "track" };
     if (p === "/privacy") return { name: "privacy" };
     if (p === "/terms") return { name: "terms" };
     if (p === "/cookies") return { name: "cookies" };
@@ -286,6 +288,8 @@ export default function App() {
                 <ErrorBoundary><JournalArticle slug={route.slug} /></ErrorBoundary>
               ) : route.name === "shipping" ? (
                 <ErrorBoundary><ShippingReturns /></ErrorBoundary>
+              ) : route.name === "track" ? (
+                <ErrorBoundary><TrackOrder /></ErrorBoundary>
               ) : route.name === "privacy" ? (
                 <ErrorBoundary><Privacy /></ErrorBoundary>
               ) : route.name === "terms" ? (

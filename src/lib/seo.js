@@ -29,6 +29,7 @@ function routeMeta(brand) {
     offers:   { title: `Deals & offers — ${brand}`, description: "Shop hand-picked K- & J-Beauty markdowns — up to 75% off select cult favourites while stocks last." },
     journal:  { title: `The Journal — skincare guides — ${brand}`, description: `Routines, ingredient explainers and glass-skin guides from the ${brand} Journal.` },
     shipping: { title: `Shipping & Returns — ${brand}`, description: "Delivery zones, rates, Cash on Delivery, and how to return or exchange an order." },
+    track:    { title: `Track your order — ${brand}`, description: "Check the status of your order with your order number and the phone number used at checkout.", noindex: true },
     privacy:  { title: `Privacy Policy — ${brand}`, description: `What ${brand} collects, why, and how you stay in control of your data.` },
     terms:    { title: `Terms of Service — ${brand}`, description: `The terms that apply when you shop with ${brand}.` },
     cookies:  { title: `Cookie Policy — ${brand}`, description: `What ${brand} stores in your browser, and why.` },

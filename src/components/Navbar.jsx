@@ -25,6 +25,7 @@ const LINKS = [
   { label: "Offers", href: "/offers" },
   { label: "Rewards", href: "/rewards" },
   { label: "Journal", href: "/journal" },
+  { label: "Track Order", href: "/track" },
   { label: "About", href: "/about" },
   { label: "Contact", href: "/contact" },
 ];

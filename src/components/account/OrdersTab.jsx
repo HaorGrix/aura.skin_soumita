@@ -120,7 +120,7 @@ export default function OrdersTab() {
                         }}
                       >
                         {p.image && (
-                          <img src={p.image} alt={p.name} loading="lazy" className="absolute inset-0 h-full w-full object-cover" />
+                          <img src={p.image} alt={p.name} loading="lazy" className="absolute inset-0 h-full w-full object-contain" />
                         )}
                       </a>
                       <div className="min-w-0 flex-1">

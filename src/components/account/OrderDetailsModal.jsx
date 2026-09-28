@@ -58,7 +58,7 @@ export default function OrderDetailsModal({ order, onClose }) {
                       className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl ring-1 ring-line"
                       style={{ background: `radial-gradient(120% 100% at 50% 0%, var(--color-white) 0%, ${p.tone} 75%, var(--color-petal-deep) 100%)` }}
                     >
-                      {p.image && <img src={p.image} alt={p.name} className="absolute inset-0 h-full w-full object-cover" />}
+                      {p.image && <img src={p.image} alt={p.name} className="absolute inset-0 h-full w-full object-contain" />}
                     </div>
                     <div className="min-w-0 flex-1">
                       <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-magenta">{p.brand}</p>

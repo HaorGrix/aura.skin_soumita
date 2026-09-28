@@ -83,7 +83,7 @@ export default function QuickViewModal({ product, onClose }) {
                 <img
                   src={product.image}
                   alt={`${product.brand} ${product.name}`}
-                  className="absolute inset-0 h-full w-full object-cover"
+                  className="absolute inset-0 h-full w-full object-contain"
                 />
               )}
               {/* Discount ribbon + benefit badge (stacked, matches the card) */}

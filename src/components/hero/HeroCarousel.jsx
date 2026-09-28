@@ -399,7 +399,7 @@ export default function HeroCarousel() {
             type="button"
             aria-label="Previous banner"
             onClick={prev}
-            className={`absolute left-3 z-10 hidden -translate-y-1/2 rounded-full bg-white/90 p-3 text-ink shadow-lift backdrop-blur transition hover:bg-white active:scale-95 sm:block lg:left-6 ${
+            className={`absolute left-3 z-10 hidden -translate-y-1/2 rounded-full bg-transparent p-3 text-white drop-shadow-[0_1px_4px_rgba(0,0,0,0.55)] transition hover:bg-white/15 active:scale-95 sm:block lg:left-6 ${
               reserveCaption ? "top-[38%]" : "top-1/2"
             }`}
           >
@@ -409,7 +409,7 @@ export default function HeroCarousel() {
             type="button"
             aria-label="Next banner"
             onClick={next}
-            className={`absolute right-3 z-10 hidden -translate-y-1/2 rounded-full bg-white/90 p-3 text-ink shadow-lift backdrop-blur transition hover:bg-white active:scale-95 sm:block lg:right-6 ${
+            className={`absolute right-3 z-10 hidden -translate-y-1/2 rounded-full bg-transparent p-3 text-white drop-shadow-[0_1px_4px_rgba(0,0,0,0.55)] transition hover:bg-white/15 active:scale-95 sm:block lg:right-6 ${
               reserveCaption ? "top-[38%]" : "top-1/2"
             }`}
           >

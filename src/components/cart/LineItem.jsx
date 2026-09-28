@@ -30,7 +30,7 @@ export default function LineItem({ item, compact = false, readOnly = false }) {
         aria-label={item.name}
       >
         {item.image && (
-          <img src={item.image} alt={item.name} className="h-full w-full object-cover" />
+          <img src={item.image} alt={item.name} className="h-full w-full object-contain" />
         )}
       </a>
 

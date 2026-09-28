@@ -85,7 +85,7 @@ export default function Gallery({ product }) {
                 src={g.image}
                 alt={g.label || `${brand} ${name} — photo ${i + 1}`}
                 loading="lazy"
-                className="absolute inset-0 h-full w-full object-cover"
+                className="absolute inset-0 h-full w-full object-contain"
               />
             )}
             {g.label && (
@@ -197,7 +197,7 @@ export default function Gallery({ product }) {
                   <img
                     src={current.image}
                     alt={`${brand} ${name}`}
-                    className="absolute inset-0 h-full w-full object-cover transition-transform duration-200"
+                    className="absolute inset-0 h-full w-full object-contain transition-transform duration-200"
                     style={{
                       transform: zoom.on ? "scale(1.8)" : "scale(1)",
                       transformOrigin: `${zoom.x}% ${zoom.y}%`,
@@ -249,7 +249,7 @@ export default function Gallery({ product }) {
                   go(-1);
                 }}
                 aria-label="Previous image"
-                className="absolute left-3 top-1/2 z-20 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full bg-white/85 text-ink backdrop-blur transition-colors hover:text-magenta"
+                className="absolute left-3 top-1/2 z-20 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full bg-transparent text-ink transition-colors hover:text-magenta"
               >
                 <ChevronLeft className="h-5 w-5" strokeWidth={1.8} />
               </button>
@@ -259,7 +259,7 @@ export default function Gallery({ product }) {
                   go(1);
                 }}
                 aria-label="Next image"
-                className="absolute right-3 top-1/2 z-20 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full bg-white/85 text-ink backdrop-blur transition-colors hover:text-magenta"
+                className="absolute right-3 top-1/2 z-20 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full bg-transparent text-ink transition-colors hover:text-magenta"
               >
                 <ChevronRight className="h-5 w-5" strokeWidth={1.8} />
               </button>
@@ -296,7 +296,7 @@ export default function Gallery({ product }) {
             >
               <div className="absolute inset-0" style={{ background: tile(current) }} />
               {current.image && (
-                <img src={current.image} alt="" className="absolute inset-0 h-full w-full object-cover" />
+                <img src={current.image} alt="" className="absolute inset-0 h-full w-full object-contain" />
               )}
             </motion.div>
 
@@ -310,7 +310,7 @@ export default function Gallery({ product }) {
                 >
                   <span className="absolute inset-0" style={{ background: tile(g) }} />
                   {g.image && (
-                    <img src={g.image} alt="" className="absolute inset-0 h-full w-full object-cover" />
+                    <img src={g.image} alt="" className="absolute inset-0 h-full w-full object-contain" />
                   )}
                 </button>
               ))}

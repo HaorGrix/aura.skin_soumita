@@ -117,19 +117,20 @@ export default function QuickViewModal({ product, onClose }) {
                 {product.name}
               </h2>
 
-              <div className="mt-2 flex items-center gap-2 text-sm text-ink-soft">
-                <Star className="h-4 w-4 text-gold" fill="var(--color-gold)" strokeWidth={0} />
-                <span className="font-medium text-ink">
-                  {product.rating.toFixed(1)}
-                </span>
-                <span>({product.reviews.toLocaleString()} reviews)</span>
-                {product.sizeLabel && (
-                  <>
-                    <span aria-hidden className="text-ink/20">·</span>
-                    <span>{product.sizeLabel}</span>
-                  </>
-                )}
-              </div>
+              {(product.reviews > 0 || product.sizeLabel) && (
+                <div className="mt-2 flex items-center gap-2 text-sm text-ink-soft">
+                  {/* Rating only from real customer reviews */}
+                  {product.reviews > 0 && (
+                    <>
+                      <Star className="h-4 w-4 text-gold" fill="var(--color-gold)" strokeWidth={0} />
+                      <span className="font-medium text-ink">{product.rating.toFixed(1)}</span>
+                      <span>({product.reviews.toLocaleString()} {product.reviews === 1 ? "review" : "reviews"})</span>
+                    </>
+                  )}
+                  {product.reviews > 0 && product.sizeLabel && <span aria-hidden className="text-ink/20">·</span>}
+                  {product.sizeLabel && <span>{product.sizeLabel}</span>}
+                </div>
+              )}
 
               <p className="mt-4 text-sm leading-relaxed text-ink-soft">
                 A {product.category.toLowerCase()} loved for{" "}

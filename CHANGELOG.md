@@ -17,10 +17,14 @@
 - The Our philosophy and How to use texts collapse behind See more like the story.
 - Home page banners, the sale banner, a concern tile, the journal cover and the review pictures load about 95% lighter (same size and shape), so they no longer appear cut off at the bottom while loading on mobile data; review pictures are shown whole instead of cropped.
 
+### Removed
+- The home page "What our customers are saying" section no longer shows the four demo pictures from other brands; it reappears as soon as real review pictures are added and featured in Admin → Testimonials.
+
 ### Fixed
 - Uploading product photos could reverse the photo order and swap the main photo (seen on The Ordinary Niacinamide); the order is now saved in one step, a second upload can't start mid-way, and the affected products were repaired.
 - Tapping a product in the header search could open a broken page when the search was used before the catalog loaded; it now always opens the real product.
 - The placeholder size "Standard" is no longer shown on cards, the bag or receipts.
+- Star ratings are real: products showed made-up ratings (e.g. 4.8★) with no customer reviews behind them. Stars now appear only once a product has approved customer reviews ("No reviews yet" until then), new products no longer start at 4.8, and the About page no longer claims a 4.9★ average.
 - The footer's Track Order link opens the tracking page (it opened the account page) and Shipping & Returns opens the shipping page (it opened Offers).
 - Shop category filter: picking a category replaces the previous one, and a category picked in the sidebar clears the one chosen from the menu, so the grid always matches the selection. Refreshing a filtered page no longer shows an empty grid.
 - Brands and categories added in the admin now appear in the shop filters and search suggestions.

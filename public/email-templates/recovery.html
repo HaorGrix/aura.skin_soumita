@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+<body style="margin:0;padding:0;background:#eef5f7;font-family:Arial,Helvetica,sans-serif;color:#111;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#eef5f7;padding:32px 12px;">
+    <tr><td align="center">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:480px;background:#ffffff;border-radius:16px;padding:32px 28px;">
+        <tr><td style="font-size:22px;font-weight:bold;letter-spacing:1px;color:#0b3448;">SKIN THEORY</td></tr>
+        <tr><td style="padding-top:20px;font-size:17px;font-weight:bold;">Reset your password</td></tr>
+        <tr><td style="padding-top:10px;font-size:14px;line-height:1.6;color:#333;">
+          Use this code on skintheorybd.shop to choose a new password. It works for 15 minutes.
+        </td></tr>
+        <tr><td align="center" style="padding:24px 0;">
+          <div style="display:inline-block;font-size:34px;font-weight:bold;letter-spacing:10px;color:#0b3448;background:#eef5f7;border-radius:12px;padding:14px 22px;">{{ .Token }}</div>
+        </td></tr>
+        <tr><td style="font-size:13px;line-height:1.6;color:#555;">
+          Staff using the admin panel can open this link instead:<br>
+          <a href="{{ .ConfirmationURL }}" style="color:#0b3448;">Reset my password</a>
+        </td></tr>
+        <tr><td style="padding-top:20px;font-size:12px;line-height:1.6;color:#777;">
+          Didn't ask for this? Ignore this email — your password stays the same.
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>

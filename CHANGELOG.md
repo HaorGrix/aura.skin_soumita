@@ -12,6 +12,8 @@
 - The shop's category filter lists every category from the admin, sub-categories under their parent; picking a parent shows everything inside it.
 - Combos: any product can be made a combo in Admin → Products → Combo items by picking the products inside it and how many of each. The product page shows "What's inside" and how much the shopper saves; file combos under a combo category (e.g. Skin Care Combo) so the home Combo tile lists them.
 - The shop shows 10 products per page with numbered page buttons (the page is kept in the link), instead of one endless scrolling list.
+- Forgot password for shoppers: enter the email, get a 6-digit code by email (valid 15 minutes), choose a new password and you're signed in.
+- Category tiles use one fixed design (blue arch, rays, navy name bar): the admin uploads only a cut-out "sticker" and types the name, and the tile is drawn to match the others.
 
 ### Changed
 - Coupons are private unless "Show to shoppers" is switched on for them; existing ordinary codes were made private so checkout no longer lists them automatically. Rewards codes still appear to members who have earned them.
@@ -28,7 +30,8 @@
 - Tapping a product in the header search could open a broken page when the search was used before the catalog loaded; it now always opens the real product.
 - The placeholder size "Standard" is no longer shown on cards, the bag or receipts.
 - Changing the price of many products at once in the admin did nothing (it failed silently). It now reprices every size of the selected products in one step, rounds to whole taka, clears a "compare at" price that would no longer be higher, and shows an error if anything goes wrong.
-- Product photos on the shop cards fill a square frame on white, without the pink strip that showed under square photos.
+- Product photos on the shop cards sit on white in their 4:5 frame, without the pink strip that showed under square photos.
+
 - Star ratings are real: products showed made-up ratings (e.g. 4.8★) with no customer reviews behind them. Stars now appear only once a product has approved customer reviews ("No reviews yet" until then), new products no longer start at 4.8, and the About page no longer claims a 4.9★ average.
 - The footer's Track Order link opens the tracking page (it opened the account page) and Shipping & Returns opens the shipping page (it opened Offers).
 - Shop category filter: picking a category replaces the previous one, and a category picked in the sidebar clears the one chosen from the menu, so the grid always matches the selection. Refreshing a filtered page no longer shows an empty grid.
@@ -41,6 +44,9 @@
 - No more full-screen loading spinner when moving between pages; hero banners open in the same tab instead of reloading the site.
 - Visitor tracking: the site's security policy blocked the Meta Pixel, so no visits or purchases were recorded; it now loads and counts every page view. The sitemap uses the www address.
 - The "designed & developed by HaorGrix" footer credit is now in the page's HTML itself, so search engines see it as a real followed link instead of one that only appears after JavaScript runs. The live sitemap.xml and robots.txt now list the www address (the deployed copies were stale).
+
+### Security
+- Shopper log-in is real: an email that never signed up, or a wrong password, is refused (any email used to be accepted). New accounts confirm their email once with a link, so nobody can open an account in someone else's name.
 
 ### Added
 - Every image uploaded in the admin panel (product photos, hero/CMS banners, testimonials, journal images) is now compressed in the browser before upload: resized to at most 2000 px (2400 px for banners) and saved as WebP. A typical 1–2 MB photo becomes 85–150 KB; large phone photos that used to be rejected for size are now accepted.

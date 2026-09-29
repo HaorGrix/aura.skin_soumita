@@ -46,7 +46,14 @@
     />
   </head>
   <body>
-    <div id="root"></div>
+    <!-- The footer credit is also served as plain HTML so crawlers that don't
+         run JavaScript still see a real link. React replaces #root's contents
+         on mount, and Footer.jsx renders the same credit from then on. -->
+    <div id="root">
+      <footer style="position: fixed; bottom: 0; width: 100%; padding: 12px 0; text-align: center; font: 12px/1.4 Inter, system-ui, sans-serif; color: #6b6b6b;">
+        Website designed &amp; developed by <a href="https://haorgrix.com/" rel="noopener" style="color: inherit;">HaorGrix</a>
+      </footer>
+    </div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

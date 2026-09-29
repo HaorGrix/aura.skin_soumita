@@ -197,12 +197,13 @@ export default function App() {
   // covers the first page load; every later page is a client-side route
   // change. trackEvent() is a no-op until the pixel has loaded, and the
   // first run is skipped because injectMetaPixel() already counted it.
-  const firstRouteRef = useRef(true);
+  // Keyed on the path: one page can emit several route updates (e.g. a
+  // product page settling its URL), which used to count as two PageViews.
+  const lastTrackedPath = useRef(window.location.pathname);
   useEffect(() => {
-    if (firstRouteRef.current) {
-      firstRouteRef.current = false;
-      return;
-    }
+    const path = window.location.pathname;
+    if (path === lastTrackedPath.current) return;
+    lastTrackedPath.current = path;
     trackEvent("PageView");
   }, [route]);
 

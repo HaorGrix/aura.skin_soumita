@@ -10,6 +10,11 @@
 
 const PIXEL_ID_RE = /^[0-9]{6,20}$/;
 let injectedId = null;
+// Events fired before the pixel is ready (a page opened directly: the
+// product page's ViewContent and checkout's InitiateCheckout run before the
+// store settings — and so the pixel — have loaded). Sent once it inits.
+const MAX_PENDING = 25;
+const pendingEvents = [];
 
 /** Standard Meta Pixel base code, adapted to run from a JS string instead
  *  of inline HTML — same fbq() stub, same events.js load. */
@@ -43,16 +48,19 @@ export function injectMetaPixel(pixelId) {
   window.fbq("init", pixelId);
   window.fbq("track", "PageView");
   injectedId = pixelId;
+  while (pendingEvents.length) window.fbq("track", ...pendingEvents.shift());
 }
 
 /** Fire a standard Meta Pixel event (ViewContent, AddToCart, InitiateCheckout,
- *  Purchase, …). A silent no-op until the base pixel has actually injected —
- *  callers (Product page, cart, checkout) can mount before/without a pixel
- *  being configured, and must never queue events for a script that never
- *  loads. */
+ *  Purchase, …). Before the pixel has loaded the event is held (at most
+ *  MAX_PENDING) and sent when it inits; with no pixel configured it simply
+ *  stays held and nothing is ever sent. */
 export function trackEvent(name, params) {
   if (typeof window === "undefined") return;
-  if (!injectedId || !window.fbq) return;
+  if (!injectedId || !window.fbq) {
+    if (pendingEvents.length < MAX_PENDING) pendingEvents.push([name, params]);
+    return;
+  }
   window.fbq("track", name, params);
 }
 

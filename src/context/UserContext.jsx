@@ -46,7 +46,27 @@ export function UserProvider({ children }) {
   const [orders, setOrders] = useState([]);
   const [usedCoupons, setUsedCoupons] = useState([]);
   const [authed, setAuthed] = useState(false);
+  const [reviewedItemIds, setReviewedItemIds] = useState([]);
   const signedInEmail = useRef(null);
+
+  // Orders, points and reviewed lines from the server — the account's real
+  // history on any device. The browser copy (loadStore) stays as the
+  // fallback when the server can't be reached.
+  const refreshAccount = useCallback(async () => {
+    if (!signedInEmail.current) return;
+    try {
+      const api = await import("../lib/api/myAccount.js");
+      const [o, pts, rev] = await Promise.all([api.listMyOrders(), api.getMyPoints(), api.listMyReviewedItemIds()]);
+      if (!signedInEmail.current) return;
+      if (o.data) setOrders(o.data);
+      if (pts.data !== null) setPoints(pts.data);
+      if (rev.data) setReviewedItemIds(rev.data);
+      const failed = [o, pts, rev].find((r) => r.error);
+      if (failed) console.error("[account] couldn't load part of the account from the server:", failed.error);
+    } catch (err) {
+      console.error("[account] couldn't load the account from the server:", err);
+    }
+  }, []);
   const [auth, setAuth] = useState({ open: false, mode: "login", onSuccess: null });
   const openAuth = useCallback((mode = "login", onSuccess = null) => {
     setAuth({ open: true, mode, onSuccess });
@@ -92,6 +112,7 @@ export function UserProvider({ children }) {
     setReviewedIds([]);
     setOrders([]);
     setUsedCoupons([]);
+    setReviewedItemIds([]);
   }, []);
 
   // Follow the real session: sign-in (password, confirmation link, reset
@@ -106,13 +127,14 @@ export function UserProvider({ children }) {
       if (email && email !== signedInEmail.current) {
         signedInEmail.current = email;
         handleAuth(email, session.user.user_metadata?.full_name);
+        refreshAccount();
       } else if (!email && signedInEmail.current) {
         clearSignedIn();
       }
     }).then((unsub) => { if (alive) unsubscribe = unsub; else unsub(); })
       .catch((err) => console.error("[auth] couldn't restore the session:", err));
     return () => { alive = false; unsubscribe?.(); };
-  }, [handleAuth, clearSignedIn]);
+  }, [handleAuth, clearSignedIn, refreshAccount]);
 
   /** @returns {Promise<{ error: string|null }>} */
   const login = useCallback(({ email, password }) => signInCustomer({ email, password }), []);
@@ -148,6 +170,8 @@ export function UserProvider({ children }) {
       ...profile,
       authed,
       auth,
+      refreshAccount,
+      hasReviewedItem: (orderItemId) => reviewedItemIds.includes(orderItemId),
       openAuth,
       closeAuth,
       login,
@@ -215,14 +239,16 @@ export function UserProvider({ children }) {
           totals: orderData.totals ?? null,
           address: orderData.address ?? null,
         };
-        setOrders((prev) => [newOrder, ...prev]);
+        setOrders((prev) => [newOrder, ...prev.filter((o) => o.orderId !== newOrder.orderId)]);
         // Purchases are the primary earn path — see the loyalty economy note
         // in data/reviews.js. Without this the milestone tiers are unreachable.
         if (earned > 0) setPoints((p) => p + earned);
+        // Signed in: replace the local guess with the server's own record.
+        refreshAccount();
         return earned;
       },
     };
-  }, [points, pointsPerReview, myReviews, reviewedIds, orders, purchasedIds, profile, authed, auth, openAuth, closeAuth, login, signup, logout, usedCoupons]);
+  }, [points, pointsPerReview, myReviews, reviewedIds, orders, purchasedIds, profile, authed, auth, openAuth, closeAuth, login, signup, logout, usedCoupons, refreshAccount, reviewedItemIds]);
 
   return <UserContext.Provider value={value}>{children}</UserContext.Provider>;
 }

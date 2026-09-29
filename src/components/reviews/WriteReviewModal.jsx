@@ -9,11 +9,15 @@ import { useBodyScrollLock } from "../../lib/scrollLock.js";
 
 /**
  * WriteReviewModal — review composer for the Account/Order History page.
- * Saves to the shopper's browser-local account (UserContext.addReview);
- * there is no email verification, so reviews are not published server-side.
+ * With an `orderItemId` (an order line from the server) the review is sent
+ * to submit_review(): checked against the signed-in account, published on
+ * the product page once approved in the admin, and the points are awarded
+ * on the server. Without one (an old browser-only order) it falls back to
+ * the browser-local account (UserContext.addReview).
  */
-export default function WriteReviewModal({ product, open, onClose }) {
-  const { addReview, points, pointsPerReview } = useUser();
+export default function WriteReviewModal({ product, orderItemId = null, open, onClose }) {
+  const { addReview, points, pointsPerReview, refreshAccount } = useUser();
+  const [sending, setSending] = useState(false);
   const { toast } = useToast();
   const [stars, setStars] = useState(0);
   const [hover, setHover] = useState(0);
@@ -43,8 +47,23 @@ export default function WriteReviewModal({ product, open, onClose }) {
 
   const canSubmit = stars > 0 && body.trim().length >= 4;
 
-  function submit() {
-    if (!canSubmit) return;
+  async function submit() {
+    if (!canSubmit || sending) return;
+
+    if (orderItemId) {
+      setSending(true);
+      const { submitMyReview } = await import("../../lib/api/myAccount.js");
+      const { error } = await submitMyReview({ orderItemId, stars, title, body });
+      setSending(false);
+      if (error) return toast.error(error, "Review not sent");
+      toast.success(
+        `Thank you! It is now on the product page. +${pointsPerReview} point${pointsPerReview > 1 ? "s" : ""} ✨`,
+        "Review sent"
+      );
+      refreshAccount();
+      onClose();
+      return;
+    }
 
     const ok = addReview({ productId: product.id, stars, title, body });
     if (ok) {
@@ -130,7 +149,7 @@ export default function WriteReviewModal({ product, open, onClose }) {
               <Input
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                maxLength={70}
+                maxLength={200}
                 placeholder="Sum it up in a few words"
                 className="mt-2 py-2.5"
               />
@@ -143,7 +162,7 @@ export default function WriteReviewModal({ product, open, onClose }) {
                 value={body}
                 onChange={(e) => setBody(e.target.value)}
                 rows={4}
-                maxLength={600}
+                maxLength={3000}
                 placeholder="How did it work for your skin? Texture, results, delivery…"
                 className="mt-2 w-full resize-none rounded-xl bg-snow px-4 py-3 text-base sm:text-sm leading-relaxed text-ink ring-1 ring-line outline-none focus:ring-2 focus:ring-magenta/50"
               />
@@ -156,8 +175,8 @@ export default function WriteReviewModal({ product, open, onClose }) {
               >
                 Cancel
               </button>
-              <Button variant="primary" size="md" magnetic={false} onClick={submit} className={!canSubmit ? "pointer-events-none opacity-50" : ""}>
-                Publish review
+              <Button variant="primary" size="md" magnetic={false} onClick={submit} disabled={sending} className={!canSubmit ? "pointer-events-none opacity-50" : ""}>
+                {sending ? "Sending…" : "Publish review"}
               </Button>
             </div>
           </motion.div>

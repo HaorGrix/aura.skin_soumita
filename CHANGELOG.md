@@ -14,6 +14,8 @@
 - The shop shows 10 products per page with numbered page buttons (the page is kept in the link), instead of one endless scrolling list.
 - Forgot password for shoppers: enter the email, get a 6-digit code by email (valid 15 minutes), choose a new password and you're signed in.
 - Category tiles use one fixed design (blue arch, rays, navy name bar): the admin uploads only a cut-out "sticker" and types the name, and the tile is drawn to match the others.
+- Order history follows the account: a signed-in shopper sees every order placed with their email (on any phone), with its real status, and their real points balance.
+- Reviews are real: a buyer reviews a delivered item from Order History, it appears on the product page straight away and the points are added on the server. New Admin → Reviews screen to see every review and hide or show one.
 
 ### Changed
 - Coupons are private unless "Show to shoppers" is switched on for them; existing ordinary codes were made private so checkout no longer lists them automatically. Rewards codes still appear to members who have earned them.
@@ -26,6 +28,7 @@
 - The home page "What our customers are saying" section no longer shows the four demo pictures from other brands; it reappears as soon as real review pictures are added and featured in Admin → Testimonials.
 
 ### Fixed
+- Meta Pixel: events fired as a page first opened (a product page's ViewContent, checkout's InitiateCheckout) were dropped because the pixel hadn't loaded yet; they are now held and sent once it loads. Opening a product no longer counts two page views.
 - Uploading product photos could reverse the photo order and swap the main photo (seen on The Ordinary Niacinamide); the order is now saved in one step, a second upload can't start mid-way, and the affected products were repaired.
 - Tapping a product in the header search could open a broken page when the search was used before the catalog loaded; it now always opens the real product.
 - The placeholder size "Standard" is no longer shown on cards, the bag or receipts.

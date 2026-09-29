@@ -173,13 +173,17 @@ export default function ProductInfo({ product, onWriteReview }) {
         </div>
       )}
 
-      {/* Rating */}
+      {/* Rating — only from real customer reviews */}
       <div className="mt-3 flex flex-wrap items-center gap-3 text-sm">
-        <span className="inline-flex items-center gap-1.5 text-ink-soft">
-          <Stars value={product.rating} />
-          <span className="font-semibold text-ink">{product.rating.toFixed(1)}</span>
-          <span>({product.reviewCount.toLocaleString()} reviews)</span>
-        </span>
+        {product.reviewCount > 0 ? (
+          <span className="inline-flex items-center gap-1.5 text-ink-soft">
+            <Stars value={product.rating} />
+            <span className="font-semibold text-ink">{product.rating.toFixed(1)}</span>
+            <span>({product.reviewCount.toLocaleString()} {product.reviewCount === 1 ? "review" : "reviews"})</span>
+          </span>
+        ) : (
+          <span className="text-ink-soft">No reviews yet</span>
+        )}
         <button
           onClick={onWriteReview}
           className="text-sm font-medium text-magenta hover:underline"

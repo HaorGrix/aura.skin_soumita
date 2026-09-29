@@ -105,10 +105,11 @@ const TRUST_CHECKLIST = [
 /* ─────────────────────────────────────────────
    STATS ROW — social proof numbers
 ───────────────────────────────────────────── */
+// No "average rating" stat: ratings come only from real customer reviews,
+// shown on each product.
 const STATS = [
   { value: "10,000+", label: "Happy shoppers" },
   { value: "98%", label: "Verified authentic" },
-  { value: "4.9 ★", label: "Average rating" },
   { value: "30-day", label: "Refund window" },
 ];
 
@@ -222,10 +223,10 @@ export default function About() {
           STATS BAND
       ══════════════════════════════════════ */}
       <section className="border-y border-line bg-white">
-        <div className="mx-auto grid max-w-5xl grid-cols-2 divide-x divide-line sm:grid-cols-4">
+        <div className="mx-auto grid max-w-5xl grid-cols-3 divide-x divide-line">
           {STATS.map((s, i) => (
-            <Reveal key={s.label} delay={i * 0.5} className="flex flex-col items-center py-8 px-4 text-center">
-              <span className="font-serif text-[clamp(1.8rem,4vw,2.8rem)] leading-none text-ink">
+            <Reveal key={s.label} delay={i * 0.5} className="flex flex-col items-center py-8 px-2 text-center sm:px-4">
+              <span className="font-serif text-[clamp(1.4rem,4vw,2.8rem)] leading-none text-ink">
                 {s.value}
               </span>
               <span className="mt-2 text-xs font-semibold uppercase tracking-widest text-ink-soft">

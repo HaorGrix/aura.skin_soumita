@@ -104,7 +104,8 @@ export default function ReviewsSection({ product }) {
     all.forEach((r) => { counts[r.stars] = (counts[r.stars] ?? 0) + 1; });
     return counts;
   }, [all]);
-  const avgRating = total ? all.reduce((sum, r) => sum + r.stars, 0) / total : product.rating;
+  // Only real reviews count — never the product's seeded rating.
+  const avgRating = total ? all.reduce((sum, r) => sum + r.stars, 0) / total : 0;
 
   return (
     <div className="grid gap-10 lg:grid-cols-[300px_1fr]">
@@ -112,12 +113,12 @@ export default function ReviewsSection({ product }) {
       <div className="lg:sticky lg:top-40 lg:self-start">
         <div className="flex items-end gap-3">
           <span className="font-serif text-5xl text-ink">
-            {avgRating.toFixed(1)}
+            {total ? avgRating.toFixed(1) : "–"}
           </span>
           <div className="pb-1.5">
             <Stars value={avgRating} />
             <p className="mt-1 text-xs text-ink-soft">
-              {total.toLocaleString()} reviews
+              {total ? `${total.toLocaleString()} ${total === 1 ? "review" : "reviews"}` : "No reviews yet"}
             </p>
           </div>
         </div>

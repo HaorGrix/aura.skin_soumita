@@ -426,9 +426,12 @@ function SearchProductCard({ product: p, active, onHover, onPick }) {
           {formatPrice(p.price)}
         </div>
 
-        <div className="flex items-center gap-1 text-[11px] font-medium text-white bg-magenta w-max px-2 py-0.5 rounded-full mb-3">
-          {(p.rating ?? 4.8).toFixed(1)} <Star className="h-2.5 w-2.5" fill="currentColor" strokeWidth={0} /> ({p.reviews ?? 15})
-        </div>
+        {/* Rating only from real customer reviews */}
+        {p.reviews > 0 && (
+          <div className="flex items-center gap-1 text-[11px] font-medium text-white bg-magenta w-max px-2 py-0.5 rounded-full mb-3">
+            {p.rating.toFixed(1)} <Star className="h-2.5 w-2.5" fill="currentColor" strokeWidth={0} /> ({p.reviews})
+          </div>
+        )}
 
         <button
           onClick={handleAdd}

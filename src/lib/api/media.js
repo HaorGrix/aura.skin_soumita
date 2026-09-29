@@ -114,31 +114,21 @@ export async function deleteProductImage(imageRow) {
 }
 
 /**
- * Persist a full drag-to-reorder: `orderedIds` is every image id for a
- * product, in its new display order.
+ * Persist a gallery order: `orderedIds` in their new display order.
  *
- * `position` is unique per product, so writing final positions directly can
- * collide mid-transaction (row A wants row B's current position before B has
- * moved off it). Two passes avoid that: park every row at a negative,
- * definitely-unused position first, then assign the real final positions —
- * the same trick the adjacent-swap `move()` in ImageManager already used,
- * just generalised from 2 rows to N.
- *
- * Not atomic (no multi-statement RPC exists for this), so a failure mid-way
- * can leave rows on temporary negative positions. That's self-healing on the
- * next reorder — callers additionally re-fetch after calling this, so a
- * failure surfaces as "order didn't change" rather than a broken UI state.
+ * One transaction in the database (reorder_product_images, 0064), so it
+ * either fully applies or not at all. The old browser-side version wrote one
+ * row at a time and, when it failed part-way, left photos on temporary
+ * negative positions — which sort first and reversed, swapping the main
+ * photo. Any of the product's photos missing from `orderedIds` keep their
+ * current order after the listed ones.
  */
-export async function reorderProductImages(orderedIds) {
-  for (let i = 0; i < orderedIds.length; i++) {
-    const { error } = await supabase.from("product_images").update({ position: -(i + 1) }).eq("id", orderedIds[i]);
-    if (error) return { error };
-  }
-  for (let i = 0; i < orderedIds.length; i++) {
-    const { error } = await supabase.from("product_images").update({ position: i }).eq("id", orderedIds[i]);
-    if (error) return { error };
-  }
-  return { error: null };
+export async function reorderProductImages(productId, orderedIds) {
+  const { error } = await supabase.rpc("reorder_product_images", {
+    p_product_id: productId,
+    p_ids: orderedIds,
+  });
+  return { error: error ?? null };
 }
 
 /* =================================================================== *

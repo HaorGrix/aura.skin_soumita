@@ -29,6 +29,14 @@ export function discountPct(price, compareAt) {
   return Math.round((1 - price / compareAt) * 100);
 }
 
+/** A variant's size as shoppers should see it, or null. "Standard" is the
+ *  placeholder the database gives a product saved without a size
+ *  (0016_product_variants.sql) — it isn't a size, so it's never shown. */
+export function displaySize(label) {
+  const s = String(label ?? "").trim();
+  return s && s.toLowerCase() !== "standard" ? s : null;
+}
+
 /** Format a Supabase `*_minor` integer (BDT paisa) as a display price, e.g.
  *  199900 → "৳1999". This is the correct formatter for data coming from
  *  lib/api/products.js (priceMinor/compareAtMinor). `formatPrice` above is

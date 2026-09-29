@@ -1,7 +1,9 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { ZoomIn, X, ChevronLeft, ChevronRight, Play, Images } from "lucide-react";
 import Badge from "../ui/Badge.jsx";
+import { useBodyScrollLock } from "../../lib/scrollLock.js";
 
 /* Gradient artwork for each gallery "angle" (swap in real images via item.image) */
 function tile(item) {
@@ -23,8 +25,10 @@ export default function Gallery({ product }) {
   const [zoom, setZoom] = useState({ on: false, x: 50, y: 50 });
   const [lightbox, setLightbox] = useState(false);
 
+  // Hover-zoom is a mouse feature. A tap on a phone also fires mousemove but
+  // never mouseleave, so the photo stayed zoomed (and cropped) after the tap.
   const onMove = (e) => {
-    if (reduce) return;
+    if (reduce || e.pointerType !== "mouse") return;
     const r = e.currentTarget.getBoundingClientRect();
     setZoom({
       on: true,
@@ -164,9 +168,9 @@ export default function Gallery({ product }) {
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
                 className="group absolute inset-0 cursor-zoom-in touch-pan-y"
-                onMouseMove={onMove}
-                onMouseLeave={() => setZoom((z) => ({ ...z, on: false }))}
-                onClick={() => setLightbox(true)}
+                onPointerMove={onMove}
+                onPointerLeave={() => setZoom((z) => ({ ...z, on: false }))}
+                onClick={() => { setZoom((z) => ({ ...z, on: false })); setLightbox(true); }}
                 // Native swipe-to-change, standard mobile gallery UX. Locked to the
                 // x axis with zero drag distance (it snaps straight back) — this is
                 // a gesture trigger, not a finger-following drag, so it can't fight
@@ -268,56 +272,142 @@ export default function Gallery({ product }) {
         </div>
       </div>
 
-      {/* Lightbox */}
-      <AnimatePresence>
-        {lightbox && (
+      {/* Lightbox — the full photo, swipeable like the stage above. Portalled
+          to <body>: the page sits inside an animated route wrapper, which
+          would otherwise keep the site header painted on top of it. */}
+      {createPortal(
+        <AnimatePresence>
+          {lightbox && (
+            <Lightbox
+              gallery={gallery}
+              active={active}
+              onSelect={setActive}
+              onStep={go}
+              onClose={() => setLightbox(false)}
+            />
+          )}
+        </AnimatePresence>,
+        document.body
+      )}
+    </div>
+  );
+}
+
+/* Full-screen photo viewer. Swipe (or the arrows / keyboard) moves through
+   every photo; tapping the dark backdrop or ✕ closes it. The photo is shown
+   whole at its own ratio — never cropped. */
+function Lightbox({ gallery, active, onSelect, onStep, onClose }) {
+  const current = gallery[active];
+  const many = gallery.length > 1;
+  useBodyScrollLock(true);
+
+  useEffect(() => {
+    const onKey = (e) => {
+      if (e.key === "Escape") onClose();
+      else if (many && e.key === "ArrowRight") onStep(1);
+      else if (many && e.key === "ArrowLeft") onStep(-1);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [many, onClose, onStep]);
+
+  const arrow = "absolute top-1/2 z-10 grid h-11 w-11 -translate-y-1/2 place-items-center rounded-full bg-transparent text-white drop-shadow-[0_1px_4px_rgba(0,0,0,0.6)] transition hover:bg-white/15 active:scale-95";
+
+  return (
+    <motion.div
+      role="dialog"
+      aria-modal="true"
+      aria-label="Product photos"
+      className="fixed inset-0 z-[var(--z-modal)] flex flex-col bg-ink/90 backdrop-blur"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      onClick={onClose}
+    >
+      <div className="flex items-center justify-between px-4 pt-4 text-white" onClick={(e) => e.stopPropagation()}>
+        <span className="text-sm font-medium tabular-nums">{many ? `${active + 1} / ${gallery.length}` : ""}</span>
+        <button
+          onClick={onClose}
+          aria-label="Close"
+          className="grid h-11 w-11 place-items-center rounded-full bg-white/10 hover:bg-white/20"
+        >
+          <X className="h-5 w-5" />
+        </button>
+      </div>
+
+      <div className="relative min-h-0 flex-1">
+        <AnimatePresence mode="wait" initial={false}>
           <motion.div
-            className="fixed inset-0 z-[160] flex items-center justify-center bg-ink/85 p-4 backdrop-blur"
+            key={current.id}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            onClick={() => setLightbox(false)}
+            transition={{ duration: 0.2 }}
+            className="absolute inset-0 flex touch-pan-y items-center justify-center px-4 py-3"
+            drag={many ? "x" : false}
+            dragDirectionLock
+            dragConstraints={{ left: 0, right: 0 }}
+            dragElastic={0.7}
+            onDragEnd={(_, info) => {
+              if (info.offset.x <= -40 || info.velocity.x <= -350) onStep(1);
+              else if (info.offset.x >= 40 || info.velocity.x >= 350) onStep(-1);
+            }}
           >
-            <button
-              onClick={() => setLightbox(false)}
-              aria-label="Close"
-              className="absolute right-5 top-5 grid h-11 w-11 place-items-center rounded-full bg-white/10 text-white hover:bg-white/20"
-            >
-              <X className="h-5 w-5" />
-            </button>
-            <motion.div
-              key={current.id}
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              transition={{ type: "spring", stiffness: 260, damping: 28 }}
-              className="relative aspect-square w-full max-w-lg overflow-hidden rounded-[1.5rem]"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="absolute inset-0" style={{ background: tile(current) }} />
-              {current.image && (
-                <img src={current.image} alt="" className="absolute inset-0 h-full w-full object-contain" />
-              )}
-            </motion.div>
-
-            {/* Lightbox thumbnails */}
-            <div className="absolute bottom-6 left-1/2 flex -translate-x-1/2 gap-2" onClick={(e) => e.stopPropagation()}>
-              {gallery.map((g, i) => (
-                <button
-                  key={g.id}
-                  onClick={() => setActive(i)}
-                  className={`relative h-12 w-12 overflow-hidden rounded-lg ring-2 ${active === i ? "ring-white" : "ring-white/30"}`}
-                >
-                  <span className="absolute inset-0" style={{ background: tile(g) }} />
-                  {g.image && (
-                    <img src={g.image} alt="" className="absolute inset-0 h-full w-full object-contain" />
-                  )}
-                </button>
-              ))}
-            </div>
+            {current.image ? (
+              <img
+                src={current.image}
+                alt=""
+                draggable={false}
+                onClick={(e) => e.stopPropagation()}
+                className="max-h-full max-w-full select-none rounded-2xl bg-white object-contain"
+              />
+            ) : (
+              <span className="aspect-square w-full max-w-lg rounded-2xl" style={{ background: tile(current) }} />
+            )}
           </motion.div>
+        </AnimatePresence>
+
+        {many && (
+          <>
+            <button
+              onClick={(e) => { e.stopPropagation(); onStep(-1); }}
+              aria-label="Previous photo"
+              className={`${arrow} left-2 sm:left-6`}
+            >
+              <ChevronLeft className="h-7 w-7" strokeWidth={1.8} />
+            </button>
+            <button
+              onClick={(e) => { e.stopPropagation(); onStep(1); }}
+              aria-label="Next photo"
+              className={`${arrow} right-2 sm:right-6`}
+            >
+              <ChevronRight className="h-7 w-7" strokeWidth={1.8} />
+            </button>
+          </>
         )}
-      </AnimatePresence>
-    </div>
+      </div>
+
+      {many && (
+        <div
+          className="flex gap-2 overflow-x-auto px-4 pb-6 pt-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:justify-center"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {gallery.map((g, i) => (
+            <button
+              key={g.id}
+              onClick={() => onSelect(i)}
+              aria-label={`Photo ${i + 1}`}
+              className={`relative h-14 w-14 shrink-0 overflow-hidden rounded-lg bg-white ring-2 ${active === i ? "ring-white" : "ring-white/30"}`}
+            >
+              {g.image ? (
+                <img src={g.image} alt="" className="absolute inset-0 h-full w-full object-contain" />
+              ) : (
+                <span className="absolute inset-0" style={{ background: tile(g) }} />
+              )}
+            </button>
+          ))}
+        </div>
+      )}
+    </motion.div>
   );
 }

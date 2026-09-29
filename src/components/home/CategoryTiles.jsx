@@ -1,8 +1,11 @@
 /* =================================================================== *
  * skin.theory — category tiles
  * -------------------------------------------------------------------
- * The shop-by-category row directly beneath the hero carousel. Five
- * destinations, each a single artwork card.
+ * The shop-by-category row directly beneath the hero carousel, one artwork
+ * card per destination. Edited in the admin (Content → Category Tiles,
+ * slot `home.categoryTiles`): tiles can be added, removed, reordered, and
+ * each one's picture and link changed. Until a picture is uploaded, a tile
+ * named like one of the original six keeps its bundled artwork.
  *
  * The card art carries its own category name, so this component renders NO
  * separate label and no section heading. Two consequences worth keeping in
@@ -15,6 +18,7 @@
  *     string. That's the trade for having the label baked into the design.
  * =================================================================== */
 import { motion, useReducedMotion } from "framer-motion";
+import { contentImage, useContent } from "../../lib/api/content.js";
 
 import SKIN_CARE from "../../../assests/cate/skin-care.png";
 import HAIR_CARE from "../../../assests/cate/hair-care.png";
@@ -23,26 +27,26 @@ import EYE_EAR from "../../../assests/cate/eye-ear.png";
 import OFFER from "../../../assests/cate/offer.png";
 import COMBO from "../../../assests/cate/combo.png";
 
-/* hrefs follow the same `/shop?category=<slug>` convention the mega menu
- * uses, so both entry points filter identically. Unchanged from the previous
- * icon set — only the visuals were swapped.
- *
- * NOTE: `hair-care` and `body-care` are real rows in the categories table,
- * but the catalog has zero products assigned to either yet — both tiles
- * correctly land on an empty (not unfiltered) Shop result until the client
- * adds real inventory in those categories via /admin/products. */
-const TILES = [
-  { label: "Skin Care", href: "/shop?category=skin-care",       img: SKIN_CARE },
-  { label: "Hair Care", href: "/shop?category=hair-care",       img: HAIR_CARE },
-  { label: "Body Care", href: "/shop?category=body-care",       img: BODY_CARE },
-  // "Eye & Ear Care" (0063) keeps the old Eye Care slug so existing links work.
-  { label: "Eye & Ear", href: "/shop?category=eye-care",        img: EYE_EAR },
-  { label: "Offer",     href: "/offers",                        img: OFFER },
-  { label: "Combo",     href: "/shop?category=skin-care-combo", img: COMBO },
-];
+// Bundled artwork for the original six tiles, by (case-insensitive) name.
+const BUNDLED = {
+  "skin care": SKIN_CARE,
+  "hair care": HAIR_CARE,
+  "body care": BODY_CARE,
+  "eye & ear": EYE_EAR,
+  offer: OFFER,
+  combo: COMBO,
+};
+
+const bundledFor = (label) => BUNDLED[String(label ?? "").trim().toLowerCase()] ?? null;
 
 export default function CategoryTiles() {
   const reduce = useReducedMotion();
+  const { content } = useContent("home.categoryTiles");
+  const tiles = (content.items ?? [])
+    .map((t) => ({ ...t, img: contentImage(t.image, bundledFor(t.label)) }))
+    .filter((t) => t.img && t.href);
+
+  if (tiles.length === 0) return null;
 
   return (
     /* mt-* is the gap between the hero slider and this row — halved from the
@@ -52,9 +56,9 @@ export default function CategoryTiles() {
     <section aria-label="Shop by category" className="relative mt-5 pb-12 sm:mt-7 sm:pb-16">
       <div className="mx-auto max-w-7xl px-5 sm:px-8">
         <ul className="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 sm:gap-x-6 lg:grid-cols-6">
-          {TILES.map((tile, i) => (
+          {tiles.map((tile, i) => (
             <motion.li
-              key={tile.label}
+              key={`${tile.label}-${i}`}
               initial={reduce ? false : { opacity: 0, y: 24 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, amount: 0.4 }}

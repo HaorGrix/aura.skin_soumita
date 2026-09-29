@@ -58,13 +58,15 @@ function TestimonialCard({ testimonial: t, index, className = "", reveal = true 
     <motion.div {...motionProps} className={className}>
       {t.type === "image" ? (
         // aspect-[16/10] — same ratio as Journal's cover image, see file header.
-        <div className="relative aspect-[16/10] overflow-hidden rounded-none shadow-soft ring-1 ring-line">
+        // object-contain: review screenshots come in any shape, and cropping
+        // cut the text off their edges; the whole image always shows.
+        <div className="relative aspect-[16/10] overflow-hidden rounded-none bg-white shadow-soft ring-1 ring-line">
           <img
             src={testimonialImageUrl(t.image_url)}
             alt="Customer reviews"
             loading="lazy"
             decoding="async"
-            className="absolute inset-0 h-full w-full object-cover"
+            className="absolute inset-0 h-full w-full object-contain"
           />
         </div>
       ) : (

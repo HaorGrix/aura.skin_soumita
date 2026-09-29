@@ -65,6 +65,38 @@ export const SLOTS = [
     ],
   },
   {
+    slot: "home.categoryTiles",
+    label: "Category Tiles",
+    group: "Homepage",
+    help: "The row of arch-shaped tiles right under the hero banners (Skin Care, Hair Care, …). Add, remove or reorder tiles, and change each tile's picture and link. Remove every tile and the row disappears from the homepage.",
+    fields: [
+      {
+        key: "items", label: "Tiles", type: "list", max: 12,
+        itemFields: [
+          { key: "label", label: "Tile name", type: "text", max: 30,
+            help: "The name is part of the picture itself; this text is what screen readers and Google read for the tile." },
+          { key: "href", label: "Clicking this tile opens", type: "link",
+            help: "Usually a category, e.g. /shop?category=skin-care — or /offers, or any page on this site." },
+          // Shown whole (object-contain) in a 750×885 box — the size the
+          // original artwork was drawn at.
+          { key: "image", label: "Picture", type: "image", aspect: "750:885",
+            help: "Recommended: 750 × 885 px PNG with a transparent background, like the current tiles. Other sizes still show in full, just with space around them." },
+        ],
+        // The six tiles that were built into the page before this slot
+        // existed. `image` stays "" — the component falls back to its own
+        // bundled artwork for these names until a picture is uploaded.
+        default: [
+          { label: "Skin Care", href: "/shop?category=skin-care", image: "" },
+          { label: "Hair Care", href: "/shop?category=hair-care", image: "" },
+          { label: "Body Care", href: "/shop?category=body-care", image: "" },
+          { label: "Eye & Ear", href: "/shop?category=eye-care", image: "" },
+          { label: "Offer", href: "/offers", image: "" },
+          { label: "Combo", href: "/shop?category=skin-care-combo", image: "" },
+        ],
+      },
+    ],
+  },
+  {
     slot: "home.offers",
     label: "Offer Banners",
     group: "Homepage",
@@ -274,7 +306,7 @@ export const SLOTS = [
           { column: "About", label: "Offers", href: "/offers" },
           { column: "About", label: "Journal", href: "/journal" },
           { column: "Help", label: "Shipping & Returns", href: "/shipping" },
-          { column: "Help", label: "Track Order", href: "/account?tab=orders" },
+          { column: "Help", label: "Track Order", href: "/track" },
           { column: "Help", label: "FAQs", href: "/contact" },
           { column: "Help", label: "Contact", href: "/contact" },
         ],

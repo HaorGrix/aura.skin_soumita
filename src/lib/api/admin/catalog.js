@@ -434,6 +434,18 @@ export async function upsertVariant(row) {
  * is the default variant), same everything — just narrower, since the list
  * view only ever needs to change one field without re-sending the whole row.
  */
+/** Rename one variant's size — the Pricing tab's "Size" field for a
+ *  single-size product. "Standard" is the database's no-size placeholder. */
+export async function updateVariantSize(variantId, sizeLabel) {
+  const { data, error } = await supabase
+    .from("product_variants")
+    .update({ size_label: sizeLabel || "Standard", updated_at: new Date().toISOString() })
+    .eq("id", variantId)
+    .select()
+    .single();
+  return { data, error };
+}
+
 export async function updateVariantPrice(variantId, priceMinor) {
   const { data, error } = await supabase
     .from("product_variants")

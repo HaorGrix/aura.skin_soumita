@@ -98,6 +98,12 @@ export function flattenTree(tree) {
   return out;
 }
 
+/** Filter/search options for every category: `{ id: slug, label: name, depth }`,
+ *  each parent followed by its sub-categories. */
+export function categoryFacetOptions(tree) {
+  return flattenTree(tree).map((n) => ({ id: n.slug, label: n.name, depth: n.depth }));
+}
+
 /** Find a node by slug, anywhere in the tree. */
 export function findBySlug(tree, slug) {
   if (!slug) return null;

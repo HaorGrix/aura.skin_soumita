@@ -2,7 +2,6 @@ import { lazy, startTransition, Suspense, useEffect, useRef, useState, useMemo, 
 import { ReactLenis } from "lenis/react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X } from "lucide-react";
-import { PRODUCTS } from "./data/products.js";
 import { listProducts } from "./lib/api/products.js";
 import PredictiveSearch from "./components/shop/PredictiveSearch.jsx";
 import { CartProvider } from "./context/CartContext.jsx";
@@ -19,6 +18,7 @@ import { navigate, onRouteChange } from "./lib/navigate.js";
 import { isAdminPath } from "./lib/adminPath.js";
 import { applySeo } from "./lib/seo.js";
 import { useStoreSettings } from "./lib/api/settings.js";
+import { categoryFacetOptions, useCategoryTree } from "./lib/api/categories.js";
 import { injectMetaPixel, trackEvent } from "./lib/analytics.js";
 
 // Route-level code splitting — the home page loads eagerly; the rest lazy-load.
@@ -125,7 +125,11 @@ export default function App() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const storeSettings = useStoreSettings();
 
-  const [liveProducts, setLiveProducts] = useState(PRODUCTS);
+  // The header search's catalog. Empty until the live list loads — never the
+  // bundled demo catalog, whose products don't exist in the shop (tapping one
+  // opened a broken /product/undefined page).
+  const [liveProducts, setLiveProducts] = useState([]);
+  const [productsLoaded, setProductsLoaded] = useState(false);
 
   // Fetch the most-visited pages' code once the browser is idle, so the first
   // tap on Shop, a product, an offer or the cart opens instantly.
@@ -160,22 +164,22 @@ export default function App() {
   useEffect(() => {
     let alive = true;
     listProducts().then(({ data }) => {
-      if (alive && data) setLiveProducts(data);
+      if (!alive) return;
+      if (data) setLiveProducts(data);
+      setProductsLoaded(true);
     });
     return () => { alive = false; };
   }, []);
 
   const trending = useMemo(() => [...liveProducts].sort((a, b) => b.popularity - a.popularity).slice(0, 3), [liveProducts]);
-  // Search hints ("Brand · Anua", "Category · Serum") from the live catalog,
-  // so brands and categories added in the admin are suggested too.
+  // Search hints ("Brand · Anua", "Category · Serum"): brands from the live
+  // catalog, categories from the admin's category tree.
   const searchBrands = useMemo(
     () => [...new Set(liveProducts.map((p) => p.brand).filter(Boolean))].sort((a, b) => a.localeCompare(b)),
     [liveProducts]
   );
-  const searchCategories = useMemo(
-    () => [...new Set(liveProducts.map((p) => p.category).filter(Boolean))].sort((a, b) => a.localeCompare(b)),
-    [liveProducts]
-  );
+  const categoryTree = useCategoryTree();
+  const searchCategories = useMemo(() => categoryFacetOptions(categoryTree), [categoryTree]);
 
   // Same "full-bleed, owns its own top spacing" set the padding logic below
   // already uses — these are the only routes with a hero/banner directly
@@ -282,6 +286,7 @@ export default function App() {
                     <div className="w-full relative z-[var(--z-dropdown)] flex-1">
                       <PredictiveSearch 
                         products={liveProducts} brands={searchBrands} categories={searchCategories} trending={trending}
+                        loading={!productsLoaded}
                         onQueryChange={() => {}} 
                         onSubmit={(q) => {
                           navigate(`/shop?q=${encodeURIComponent(q)}`);

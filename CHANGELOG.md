@@ -6,8 +6,22 @@
 - Order receipt (memo) after checkout: every item with size and quantity, subtotal, discount, delivery and total, with Print / save as PDF. The account's order details show the same saved receipt.
 - Private coupons: a 'Show to shoppers' switch per coupon. Private codes still work when typed at checkout but are never suggested on the site.
 - 'Eye & Ear Care' category right after Body Care in the menu (renamed from Eye Care, with a new Ear Care subcategory) and a matching home page tile.
+- The home page category tiles (Skin Care, Hair Care, … Combo) are now edited in the admin under Content → Category Tiles: add, remove or reorder tiles and change each one's picture and link.
+- Single-size products get a Size field on the admin Pricing tab (e.g. 50ml), shown on the product card and page.
+- Full-screen product photos can be swiped (or moved with arrows) through every photo, with a photo counter.
+- The shop's category filter lists every category from the admin, sub-categories under their parent; picking a parent shows everything inside it.
+
+### Changed
+- Phones: the bill breakdown (subtotal, discount, delivery, total) is always shown right above the checkout button; tapping a form field no longer zooms the page, and tapping + / Add quickly no longer zooms in; small text across the site is darker.
+- Checkout, coupon and bag fields no longer offer the browser's saved names, addresses or codes.
+- The Our philosophy and How to use texts collapse behind See more like the story.
+- Home page banners, the sale banner, a concern tile, the journal cover and the review pictures load about 95% lighter (same size and shape), so they no longer appear cut off at the bottom while loading on mobile data; review pictures are shown whole instead of cropped.
 
 ### Fixed
+- Uploading product photos could reverse the photo order and swap the main photo (seen on The Ordinary Niacinamide); the order is now saved in one step, a second upload can't start mid-way, and the affected products were repaired.
+- Tapping a product in the header search could open a broken page when the search was used before the catalog loaded; it now always opens the real product.
+- The placeholder size "Standard" is no longer shown on cards, the bag or receipts.
+- The footer's Track Order link opens the tracking page (it opened the account page) and Shipping & Returns opens the shipping page (it opened Offers).
 - Shop category filter: picking a category replaces the previous one, and a category picked in the sidebar clears the one chosen from the menu, so the grid always matches the selection. Refreshing a filtered page no longer shows an empty grid.
 - Brands and categories added in the admin now appear in the shop filters and search suggestions.
 - Search: pressing Enter shows the same results as the suggestions, the search panel closes by itself after Enter or picking a result, and the separate Enter button is gone.

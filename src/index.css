@@ -42,8 +42,8 @@
   /* near-black for deep/elevated dark sections */
   --color-ink-lift: #16161a;
   /* light ink for floating overlays (dropdowns, modals) */
-  --color-ink-soft: #3a4a52;
-  /* secondary text — cool charcoal-blue, 8.1:1 on aqua */
+  --color-ink-soft: #1f2a30;
+  /* secondary text — near-black charcoal-blue (client asked for darker small text) */
   --color-line: #a8c1c7;
   /* hairline — reads against BOTH the aqua page and white cards */
   --color-white: #ffffff;
@@ -172,6 +172,9 @@
      * lib/scrollLock.js) can't shift the layout sideways when the scrollbar
      * disappears. No-op on mobile (overlay scrollbars). */
     scrollbar-gutter: stable;
+    /* No double-tap zoom: tapping +/− or "Add to bag" quickly zoomed the
+     * page on phones. Pinch-zoom still works. */
+    touch-action: manipulation;
   }
 
   body {
@@ -337,5 +340,20 @@
     animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important;
     scroll-behavior: auto !important;
+  }
+}
+
+/* ------------------------------------------------------------------ *
+ * Phones: no zoom-in when a field is tapped
+ * ------------------------------------------------------------------
+ * iPhone Safari zooms the page into any focused field whose text is under
+ * 16px (checkout, coupon box, search, admin forms). Unlayered on purpose:
+ * it outranks every Tailwind utility, so a `text-sm` on some field can't
+ * bring the zoom back. */
+@media (max-width: 639px) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+  select,
+  textarea {
+    font-size: 16px;
   }
 }

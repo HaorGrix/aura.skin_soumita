@@ -3,7 +3,7 @@ import { Input } from "./index.js";
 
 export const BD_PHONE_REGEX = /^(?:\+8801|8801|01)[3-9]\d{8}$/;
 
-export default function PhoneInput({ value, onChange, required, onValidityChange, className = "", placeholder = "01XXXXXXXXX" }) {
+export default function PhoneInput({ value, onChange, required, onValidityChange, className = "", placeholder = "01XXXXXXXXX", autoComplete = "tel" }) {
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -43,6 +43,7 @@ export default function PhoneInput({ value, onChange, required, onValidityChange
         className={`${className} ${error ? "ring-magenta" : ""}`}
         placeholder={placeholder}
         required={required}
+        autoComplete={autoComplete}
       />
       {error && <span className="mt-1.5 block text-xs font-semibold text-magenta">{error}</span>}
     </div>

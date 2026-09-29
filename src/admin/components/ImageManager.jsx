@@ -145,6 +145,7 @@ export default function ImageManager({ productId, images = [], onChange, disable
     }
     if (!accepted.length) return;
 
+    setBusy(true);
     let positionOffset = 0;
     const uploadedImages = [];
 
@@ -177,7 +178,8 @@ export default function ImageManager({ productId, images = [], onChange, disable
 
     if (uploadedImages.length > 0) {
       const newOrder = [...images, ...uploadedImages];
-      await reorderProductImages(newOrder.map(img => img.id));
+      const { error: orderErr } = await reorderProductImages(productId, newOrder.map(img => img.id));
+      if (orderErr) setError("Photos uploaded, but their order couldn't be saved — please check the order below.");
     }
 
     setBusy(false);
@@ -235,7 +237,8 @@ export default function ImageManager({ productId, images = [], onChange, disable
     if (uploadedImages.length > 0) {
       const newOrder = [...images];
       newOrder.splice(insertTargetIndex, 0, ...uploadedImages);
-      await reorderProductImages(newOrder.map(img => img.id));
+      const { error: orderErr } = await reorderProductImages(productId, newOrder.map(img => img.id));
+      if (orderErr) setError("Photos uploaded, but their order couldn't be saved — please check the order below.");
     }
 
     setBusy(false);

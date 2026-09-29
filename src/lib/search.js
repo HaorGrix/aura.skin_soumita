@@ -143,9 +143,11 @@ export function suggest(query, products, { limit = 6, brands = [], categories = 
       break;
     }
   }
+  // Categories are `{ id: slug, label }` (categoryFacetOptions) — the hint
+  // shows the name and applies the slug.
   for (const c of categories) {
-    if (c.toLowerCase().startsWith(q)) {
-      facets.push({ key: "category", value: c, label: `Category · ${c}` });
+    if (c.label.toLowerCase().startsWith(q)) {
+      facets.push({ key: "category", value: c.id, label: `Category · ${c.label}` });
       break;
     }
   }

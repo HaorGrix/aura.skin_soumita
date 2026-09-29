@@ -1,10 +1,12 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { pointsForOrder } from "../data/reviews.js";
 import { MILESTONES, couponForPoints } from "../lib/rewards-config.js";
 import { useStoreSettings } from "../lib/api/settings.js";
+import { signInCustomer, signOutCustomer, signUpCustomer, watchSession } from "../lib/api/customerAuth.js";
 
 const UserContext = createContext(null);
-const SESSION_KEY = "skinscript-session";
+// Old browser-only "session" from before real accounts; removed on load.
+const LEGACY_SESSION_KEY = "skinscript-session";
 const STORE_KEY = "skinscript_users_store";
 
 function loadStore() {
@@ -22,15 +24,6 @@ function saveStore(store) {
   } catch {}
 }
 
-function loadSession() {
-  try {
-    const raw = localStorage.getItem(SESSION_KEY);
-    return raw ? JSON.parse(raw) : null;
-  } catch {
-    return null;
-  }
-}
-
 export function couponsFor(points) {
   return couponForPoints(points);
 }
@@ -44,30 +37,16 @@ export function UserProvider({ children }) {
   // store's configured award.
   const { pointsPerReview } = useStoreSettings();
 
-  const [initialUserState] = useState(() => {
-    const session = loadSession();
-    const savedEmail = session?.email?.toLowerCase();
-    const savedAuthed = session?.authed ?? false;
-    const savedUser = savedAuthed && savedEmail ? loadStore()[savedEmail] : null;
-
-    return {
-      profile: savedUser?.profile ?? {},
-      points: savedUser?.points ?? 0,
-      myReviews: savedUser?.myReviews ?? [],
-      reviewedIds: savedUser?.reviewedIds ?? [],
-      orders: savedUser?.orders ?? [],
-      usedCoupons: savedUser?.usedCoupons ?? [],
-      authed: savedAuthed,
-    };
-  });
-
-  const [profile, setProfile] = useState(() => initialUserState.profile);
-  const [points, setPoints] = useState(() => initialUserState.points);
-  const [myReviews, setMyReviews] = useState(() => initialUserState.myReviews);
-  const [reviewedIds, setReviewedIds] = useState(() => initialUserState.reviewedIds);
-  const [orders, setOrders] = useState(() => initialUserState.orders);
-  const [usedCoupons, setUsedCoupons] = useState(() => initialUserState.usedCoupons);
-  const [authed, setAuthed] = useState(() => initialUserState.authed);
+  // Signed-in state comes only from a real Supabase session (watchSession
+  // below); nothing in localStorage can make someone "logged in".
+  const [profile, setProfile] = useState({});
+  const [points, setPoints] = useState(0);
+  const [myReviews, setMyReviews] = useState([]);
+  const [reviewedIds, setReviewedIds] = useState([]);
+  const [orders, setOrders] = useState([]);
+  const [usedCoupons, setUsedCoupons] = useState([]);
+  const [authed, setAuthed] = useState(false);
+  const signedInEmail = useRef(null);
   const [auth, setAuth] = useState({ open: false, mode: "login", onSuccess: null });
   const openAuth = useCallback((mode = "login", onSuccess = null) => {
     setAuth({ open: true, mode, onSuccess });
@@ -99,39 +78,52 @@ export function UserProvider({ children }) {
     }
     
     setAuthed(true);
-    try {
-      localStorage.setItem(SESSION_KEY, JSON.stringify({ email: emailKey, authed: true }));
-    } catch {
-      /* non-fatal */
-    }
     window.dispatchEvent(new CustomEvent("auth_login", { detail: { email: emailKey } }));
   }, []);
 
-  const login = useCallback(({ email, name } = {}) => {
-    handleAuth(email, name);
-  }, [handleAuth]);
-
-  const signup = useCallback(({ name, email } = {}) => {
-    handleAuth(email, name);
-  }, [handleAuth]);
-
-  const logout = useCallback(() => {
-    const currentEmail = profile.email?.toLowerCase();
-    window.dispatchEvent(new CustomEvent("auth_logout", { detail: { email: currentEmail } }));
-
+  const clearSignedIn = useCallback(() => {
+    const currentEmail = signedInEmail.current;
+    signedInEmail.current = null;
+    if (currentEmail) window.dispatchEvent(new CustomEvent("auth_logout", { detail: { email: currentEmail } }));
     setAuthed(false);
-    try {
-      localStorage.removeItem(SESSION_KEY);
-    } catch {
-      /* non-fatal */
-    }
     setProfile({});
     setPoints(0);
     setMyReviews([]);
     setReviewedIds([]);
     setOrders([]);
     setUsedCoupons([]);
-  }, [profile.email]);
+  }, []);
+
+  // Follow the real session: sign-in (password, confirmation link, reset
+  // code), sign-out, and a session restored on reload. Token refreshes for
+  // the same account are ignored so the cart/wishlist merge runs once.
+  useEffect(() => {
+    try { localStorage.removeItem(LEGACY_SESSION_KEY); } catch { /* storage unavailable */ }
+    let unsubscribe = null;
+    let alive = true;
+    watchSession((session) => {
+      const email = session?.user?.email?.toLowerCase() ?? null;
+      if (email && email !== signedInEmail.current) {
+        signedInEmail.current = email;
+        handleAuth(email, session.user.user_metadata?.full_name);
+      } else if (!email && signedInEmail.current) {
+        clearSignedIn();
+      }
+    }).then((unsub) => { if (alive) unsubscribe = unsub; else unsub(); })
+      .catch((err) => console.error("[auth] couldn't restore the session:", err));
+    return () => { alive = false; unsubscribe?.(); };
+  }, [handleAuth, clearSignedIn]);
+
+  /** @returns {Promise<{ error: string|null }>} */
+  const login = useCallback(({ email, password }) => signInCustomer({ email, password }), []);
+
+  /** @returns {Promise<{ error: string|null, needsConfirmation: boolean }>} */
+  const signup = useCallback(({ name, email, password }) => signUpCustomer({ name, email, password }), []);
+
+  const logout = useCallback(async () => {
+    await signOutCustomer();
+    clearSignedIn();
+  }, [clearSignedIn]);
 
   const purchasedIds = useMemo(
     () => new Set(orders.flatMap((o) => o.items)),

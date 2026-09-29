@@ -19,6 +19,7 @@
  * =================================================================== */
 import { motion, useReducedMotion } from "framer-motion";
 import { contentImage, useContent } from "../../lib/api/content.js";
+import TileFrame from "./TileFrame.jsx";
 
 import SKIN_CARE from "../../../assests/cate/skin-care.png";
 import HAIR_CARE from "../../../assests/cate/hair-care.png";
@@ -43,8 +44,12 @@ export default function CategoryTiles() {
   const reduce = useReducedMotion();
   const { content, ready } = useContent("home.categoryTiles");
   const tiles = (content.items ?? [])
-    .map((t) => ({ ...t, img: contentImage(t.image, bundledFor(t.label)) }))
-    .filter((t) => t.img && t.href);
+    .map((t) => ({
+      ...t,
+      sticker: t.sticker ? contentImage(t.sticker) : null,
+      img: contentImage(t.image, bundledFor(t.label)),
+    }))
+    .filter((t) => (t.sticker || t.img) && t.href);
 
   if (ready && tiles.length === 0) return null;
 
@@ -76,7 +81,8 @@ export default function CategoryTiles() {
                   {/* Until the saved tiles arrive the box stays empty (same
                       size, so nothing shifts): showing the bundled art first
                       made phones download both sets of pictures. */}
-                  {ready && (
+                  {ready && tile.sticker && <TileFrame label={tile.label} sticker={tile.sticker} />}
+                  {ready && !tile.sticker && (
                     <img
                       src={tile.img}
                       alt={tile.label}

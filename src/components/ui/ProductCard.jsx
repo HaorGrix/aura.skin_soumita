@@ -68,9 +68,10 @@ export default function ProductCard({ product, onQuickView }) {
       className={`group relative flex flex-col overflow-hidden rounded-[1.25rem] ${surface.card} transition-shadow duration-500 hover:shadow-[var(--shadow-glow-pink)]`}
     >
       {/* Media */}
-      {/* Square, like the product photos, on white: a photo shown whole in a
-          taller box left a pink strip of the placeholder gradient under it. */}
-      <div className="relative aspect-square overflow-hidden bg-white">
+      {/* 4:5 frame on white (the client's preferred shape). White, not the
+          placeholder gradient, behind the photo: a photo shown whole in this
+          taller frame used to leave a pink strip under it. */}
+      <div className="relative aspect-[4/5] overflow-hidden bg-white">
         {/* Gradient placeholder only for products without a photo */}
         {!image && (
           <div
@@ -86,7 +87,7 @@ export default function ProductCard({ product, onQuickView }) {
             src={image}
             alt={`${brand} ${name}`}
             width="400"
-            height="400"
+            height="500"
             loading="lazy"
             decoding="async"
             className={`absolute inset-0 h-full w-full object-contain transition-transform duration-700 ease-out group-hover:scale-105 ${

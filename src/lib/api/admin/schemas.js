@@ -73,14 +73,15 @@ export const SLOTS = [
       {
         key: "items", label: "Tiles", type: "list", max: 12,
         itemFields: [
-          { key: "label", label: "Tile name", type: "text", max: 30,
-            help: "The name is part of the picture itself; this text is what screen readers and Google read for the tile." },
+          { key: "label", label: "Tile name", type: "text", max: 18,
+            help: "Printed in the navy bar under the arch, in capitals (e.g. Skin Care)." },
           { key: "href", label: "Clicking this tile opens", type: "link",
             help: "Usually a category, e.g. /shop?category=skin-care — or /offers, or any page on this site." },
-          // Shown whole (object-contain) in a 750×885 box — the size the
-          // original artwork was drawn at.
-          { key: "image", label: "Picture", type: "image", aspect: "750:885",
-            help: "Recommended: 750 × 885 px PNG with a transparent background, like the current tiles. Other sizes still show in full, just with space around them." },
+          // Drawn inside the fixed arch template (TileFrame.jsx), bottom-aligned.
+          { key: "sticker", label: "Sticker", type: "image",
+            help: "A cut-out PNG with a transparent background (a model or products), about 1000 px tall. The blue arch, rays and name bar are added automatically, so every tile matches." },
+          { key: "image", label: "Full tile picture (old style, optional)", type: "image", aspect: "750:885",
+            help: "Only used when no sticker is uploaded: a finished 750 × 885 tile picture with its own background and name." },
         ],
         // The six tiles that were built into the page before this slot
         // existed. `image` stays "" — the component falls back to its own

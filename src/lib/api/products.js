@@ -393,3 +393,33 @@ export async function listCategories() {
 
   return { data, error };
 }
+
+/**
+ * What's inside a combo (combo_items, 0068): the item products, mapped like
+ * any catalog product, each with its `quantity`. Empty for a normal product.
+ * Only published items are returned (products_public), so an unpublished
+ * component simply drops out of the list.
+ */
+export async function getComboItems(comboDbId) {
+  if (!comboDbId) return { data: [], error: null };
+  const { data: rows, error } = await supabase
+    .from("combo_items")
+    .select("item_product_id, quantity, sort_order")
+    .eq("combo_product_id", comboDbId)
+    .order("sort_order", { ascending: true });
+  if (error) return { data: [], error };
+  if (!rows?.length) return { data: [], error: null };
+
+  const { data: products, error: pError } = await supabase
+    .from("products_public")
+    .select("*")
+    .in("id", rows.map((r) => r.item_product_id));
+  if (pError) return { data: [], error: pError };
+
+  const byId = new Map(products.map((row) => [row.id, mapProduct(row)]));
+  return {
+    data: rows.filter((r) => byId.has(r.item_product_id)).map((r) => ({ ...byId.get(r.item_product_id), quantity: r.quantity })),
+    error: null,
+  };
+}
+

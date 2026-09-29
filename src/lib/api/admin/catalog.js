@@ -310,23 +310,46 @@ export async function deleteProducts(ids) {
   return { error: null };
 }
 
-/** Bulk price change. mode: 'percent' | 'fixed' | 'set' */
+/**
+ * Bulk price change for the selected products — every size of each product
+ * (prices live on variants), in one transaction (bulk_update_prices, 0066).
+ * mode: 'percent' | 'fixed' | 'set'; amount in taka (or percent).
+ * Returns { data: sizes repriced, error }.
+ */
 export async function bulkPrice(ids, mode, amount) {
-  const { data: rows, error: readError } = await supabase
-    .from("products").select("id, price_minor").in("id", ids);
-  if (readError) return { data: null, error: readError };
-
-  const updates = rows.map((r) => {
-    let next;
-    if (mode === "percent") next = Math.round(r.price_minor * (1 + amount / 100));
-    else if (mode === "fixed") next = r.price_minor + Math.round(amount * 100);
-    else next = Math.round(amount * 100);
-    return { id: r.id, price_minor: Math.max(0, next) };
+  const { data, error } = await supabase.rpc("bulk_update_prices", {
+    p_ids: ids, p_mode: mode, p_amount: amount,
   });
-
-  const { data, error } = await supabase
-    .from("products").upsert(updates, { onConflict: "id" }).select("id");
   return { data, error };
+}
+
+/* ---------------------------------------------------------------- *
+ * Combos — what is inside a combo product (combo_items, 0068)
+ * ---------------------------------------------------------------- */
+
+/** Items of one combo, in display order, with each item's name and price. */
+export async function listComboItems(comboProductId) {
+  const { data, error } = await supabase
+    .from("combo_items")
+    .select("item_product_id, quantity, sort_order, item:products!combo_items_item_product_id_fkey(id, name, brand, price_minor, status)")
+    .eq("combo_product_id", comboProductId)
+    .order("sort_order", { ascending: true });
+  return { data, error };
+}
+
+/** Replace a combo's item list: [{ item_product_id, quantity }], in order. */
+export async function saveComboItems(comboProductId, items) {
+  const { error: delError } = await supabase.from("combo_items").delete().eq("combo_product_id", comboProductId);
+  if (delError) return { error: delError };
+  if (!items.length) return { error: null };
+  const rows = items.map((it, i) => ({
+    combo_product_id: comboProductId,
+    item_product_id: it.item_product_id,
+    quantity: it.quantity,
+    sort_order: i,
+  }));
+  const { error } = await supabase.from("combo_items").insert(rows);
+  return { error };
 }
 
 /* ---------------------------------------------------------------- *

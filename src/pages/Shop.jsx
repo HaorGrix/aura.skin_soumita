@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { SlidersHorizontal, Loader2 } from "lucide-react";
+import { SlidersHorizontal } from "lucide-react";
 import {
   SKIN_TYPES,
   PRICE_RANGES,
@@ -26,6 +26,7 @@ import { useSmoothScroll } from "../lib/useSmoothScroll.js";
 import { ProductCardSkeleton } from "../components/ui/Skeleton.jsx";
 import EmptyState from "../components/ui/EmptyState.jsx";
 import Button from "../components/ui/Button.jsx";
+import Pagination from "../components/shop/Pagination.jsx";
 import BackButton from "../components/ui/BackButton.jsx";
 import { useBodyScrollLock } from "../lib/scrollLock.js";
 import { onRouteChange } from "../lib/navigate.js";
@@ -34,7 +35,7 @@ import {
   categoryFacetOptions, categoryNamesFor, categorySlugsFor, findBySlug, flattenTree,
 } from "../lib/api/categories.js";
 
-const PAGE = 12;
+const PAGE = 10; // products per page
 
 /* Valid values per facet — the single source of truth for what a URL param may
  * legally hold. Parsing filters incoming values through these sets so a stale,
@@ -209,6 +210,8 @@ export default function Shop() {
   // never round-trip through here and can't clobber React state.
   useEffect(() => onRouteChange(() => {
     const { filters: parsedFilters, search: parsedSearch } = parseUrlQuery();
+    const urlPage = Number(new URLSearchParams(window.location.search).get("page"));
+    setPage(Number.isInteger(urlPage) && urlPage > 1 ? urlPage : 1);
     setFilters(parsedFilters);
     setSearch(parsedSearch);
     resolveCategoryFromUrl();
@@ -227,9 +230,12 @@ export default function Shop() {
     const raw = new URLSearchParams(window.location.search).get("sort");
     return SORTS.some((s) => s.id === raw) ? raw : "featured";
   });
-  const [visible, setVisible] = useState(PAGE);
+  // Current page (1-based), kept in ?page= so refresh, share and Back work.
+  const [page, setPage] = useState(() => {
+    const n = Number(new URLSearchParams(window.location.search).get("page"));
+    return Number.isInteger(n) && n > 1 ? n : 1;
+  });
   const [loading, setLoading] = useState(true); // true until the initial fetch settles
-  const [loadingMore, setLoadingMore] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [quickView, setQuickView] = useState(null);
   const [products, setProducts] = useState([]);
@@ -322,25 +328,27 @@ export default function Shop() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [liveBrands]);
 
-  // Query/filter/sort changes only reset paging; results re-render immediately.
+  // A new search, filter or sort from the shopper starts again at page 1 —
+  // done in those handlers (toggleFilter, clearFilters, handleQueryChange,
+  // changeSort), not on every filters change, because resolving a
+  // ?category= link after load also changes filters and must keep ?page=.
+
+  const totalPages = Math.max(1, Math.ceil(results.length / PAGE));
+  // Never sit past the last page (e.g. a stale ?page=9 after filtering).
+  const currentPage = loading ? page : Math.min(page, totalPages);
+  const shown = results.slice((currentPage - 1) * PAGE, currentPage * PAGE);
+
+  // Keep ?page= in the URL without adding history entries.
   useEffect(() => {
-    setVisible(PAGE);
-  }, [search, filters, sort]);
+    if (loading) return;
+    const params = new URLSearchParams(window.location.search);
+    if (currentPage > 1) params.set("page", String(currentPage));
+    else params.delete("page");
+    const qs = params.toString();
+    const next = qs ? `/shop?${qs}` : "/shop";
+    if (next !== window.location.pathname + window.location.search) window.history.replaceState(null, "", next);
+  }, [currentPage, loading, search, filters, sort]);
 
-  const shown = results.slice(0, visible);
-  const hasMore = visible < results.length;
-
-  const loadMore = useCallback(() => {
-    if (loadingMore || loading) return;
-    setLoadingMore(true);
-    setTimeout(() => {
-      setVisible((v) => v + PAGE);
-      setLoadingMore(false);
-    }, 600);
-  }, [loadingMore, loading]);
-
-  // Infinite scroll via IntersectionObserver on a sentinel.
-  const sentinelRef = useRef(null);
   const gridScrollRef = useRef(null); // right pane scroll container (desktop dual-pane)
   const asideRef = useRef(null); // left filter pane scroll container
 
@@ -358,19 +366,17 @@ export default function Shop() {
   // Eased momentum scrolling for each pane (its own Lenis), matching the page.
   useSmoothScroll(asideRef, isDesktop);
   useSmoothScroll(gridScrollRef, isDesktop);
-  useEffect(() => {
-    const el = sentinelRef.current;
-    if (!el || !hasMore) return;
-    // Desktop: the right pane owns its scroll → observe within it.
-    // Mobile: the page scrolls → observe the viewport (null root).
-    const isDesktop = window.matchMedia("(min-width: 1024px)").matches;
-    const io = new IntersectionObserver(
-      (entries) => entries[0].isIntersecting && loadMore(),
-      { root: isDesktop ? gridScrollRef.current : null, rootMargin: "600px 0px" }
-    );
-    io.observe(el);
-    return () => io.disconnect();
-  }, [hasMore, loadMore]);
+  // Go to a page and bring the grid's top into view (desktop: the product
+  // pane scrolls on its own; phones: the page scrolls).
+  const resultsTopRef = useRef(null);
+  const goToPage = (p) => {
+    setPage(p);
+    if (window.matchMedia("(min-width: 1024px)").matches) gridScrollRef.current?.scrollTo({ top: 0, behavior: "smooth" });
+    else {
+      const top = (resultsTopRef.current?.getBoundingClientRect().top ?? 0) + window.scrollY - 160;
+      window.scrollTo({ top: Math.max(0, top), behavior: "smooth" });
+    }
+  };
 
   // —— filter helpers ——
   const syncUrl = (nextFilters, currentSearch) => {
@@ -400,7 +406,10 @@ export default function Shop() {
     window.history.replaceState(null, "", qs ? `/shop?${qs}` : "/shop");
   };
 
+  const changeSort = (next) => { setSort(next); setPage(1); };
+
   const toggleFilter = (key, id) => {
+    setPage(1);
     if (key === "category") setCategoryUnresolved(false);
     setFilters((f) => {
       const has = f[key].includes(id);
@@ -416,6 +425,7 @@ export default function Shop() {
   };
 
   const clearFilters = () => {
+    setPage(1);
     setCategoryUnresolved(false);
     setFilters(EMPTY_FILTERS);
     syncUrl(EMPTY_FILTERS, search);
@@ -425,7 +435,10 @@ export default function Shop() {
   // Stable callback for <PredictiveSearch /> — keeps its debounce effect from
   // re-firing on every Shop render.
   const handleQueryChange = useCallback((q) => {
-    setSearch(q);
+    setSearch((prev) => {
+      if (prev !== q) setPage(1);
+      return q;
+    });
     setFilters((currentFilters) => {
       syncUrl(currentFilters, q);
       return currentFilters;
@@ -500,7 +513,7 @@ export default function Shop() {
                   </span>
                 )}
               </button>
-              <SortMenu value={sort} onChange={setSort} />
+              <SortMenu value={sort} onChange={changeSort} />
             </div>
           </div>
 
@@ -554,9 +567,11 @@ export default function Shop() {
             {/* Single content child so the pane's Lenis instance can measure it */}
             <div>
             {/* Result count + active chips */}
-            <div className="mb-5 flex flex-col gap-3">
+            <div ref={resultsTopRef} className="mb-5 flex flex-col gap-3">
               <p className="text-sm text-ink-soft">
-                {loading ? "Curating…" : fetchError ? "" : `${results.length} products`}
+                {loading ? "Curating…" : fetchError ? "" : results.length > PAGE
+                  ? `Showing ${(currentPage - 1) * PAGE + 1}–${Math.min(currentPage * PAGE, results.length)} of ${results.length} products`
+                  : `${results.length} products`}
               </p>
 
               {saleId && !loading && !fetchError && (
@@ -611,31 +626,9 @@ export default function Shop() {
                       onQuickView={setQuickView}
                     />
                   ))}
-                  {loadingMore &&
-                    Array.from({ length: 4 }).map((_, i) => (
-                      <ProductCardSkeleton key={`more-${i}`} />
-                    ))}
                 </Grid>
 
-                {/* Sentinel + Load More */}
-                {hasMore && (
-                  <div ref={sentinelRef} className="mt-12 flex justify-center">
-                    <Button variant="secondary" onClick={loadMore} disabled={loadingMore}>
-                      {loadingMore ? (
-                        <>
-                          <Loader2 className="h-4 w-4 animate-spin" /> Loading…
-                        </>
-                      ) : (
-                        "Load more"
-                      )}
-                    </Button>
-                  </div>
-                )}
-                {!hasMore && results.length > PAGE && (
-                  <p className="mt-12 text-center text-sm text-ink-soft">
-                    You’ve seen it all — that’s your full glow shelf. 🌺
-                  </p>
-                )}
+                <Pagination page={currentPage} totalPages={totalPages} onChange={goToPage} />
               </>
             )}
             </div>
@@ -697,7 +690,7 @@ export default function Shop() {
                   brands={liveBrands}
                   categories={categoryOptions}
                   sort={sort}
-                  onSortChange={setSort}
+                  onSortChange={changeSort}
                   hiddenGroups={saleId ? ["discount"] : []}
                 />
               </div>

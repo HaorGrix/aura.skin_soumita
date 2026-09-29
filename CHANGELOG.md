@@ -10,8 +10,11 @@
 - Single-size products get a Size field on the admin Pricing tab (e.g. 50ml), shown on the product card and page.
 - Full-screen product photos can be swiped (or moved with arrows) through every photo, with a photo counter.
 - The shop's category filter lists every category from the admin, sub-categories under their parent; picking a parent shows everything inside it.
+- Combos: any product can be made a combo in Admin → Products → Combo items by picking the products inside it and how many of each. The product page shows "What's inside" and how much the shopper saves; file combos under a combo category (e.g. Skin Care Combo) so the home Combo tile lists them.
+- The shop shows 10 products per page with numbered page buttons (the page is kept in the link), instead of one endless scrolling list.
 
 ### Changed
+- Coupons are private unless "Show to shoppers" is switched on for them; existing ordinary codes were made private so checkout no longer lists them automatically. Rewards codes still appear to members who have earned them.
 - Phones: the bill breakdown (subtotal, discount, delivery, total) is always shown right above the checkout button; tapping a form field no longer zooms the page, and tapping + / Add quickly no longer zooms in; small text across the site is darker.
 - Checkout, coupon and bag fields no longer offer the browser's saved names, addresses or codes.
 - The Our philosophy and How to use texts collapse behind See more like the story.
@@ -24,6 +27,8 @@
 - Uploading product photos could reverse the photo order and swap the main photo (seen on The Ordinary Niacinamide); the order is now saved in one step, a second upload can't start mid-way, and the affected products were repaired.
 - Tapping a product in the header search could open a broken page when the search was used before the catalog loaded; it now always opens the real product.
 - The placeholder size "Standard" is no longer shown on cards, the bag or receipts.
+- Changing the price of many products at once in the admin did nothing (it failed silently). It now reprices every size of the selected products in one step, rounds to whole taka, clears a "compare at" price that would no longer be higher, and shows an error if anything goes wrong.
+- Product photos on the shop cards fill a square frame on white, without the pink strip that showed under square photos.
 - Star ratings are real: products showed made-up ratings (e.g. 4.8★) with no customer reviews behind them. Stars now appear only once a product has approved customer reviews ("No reviews yet" until then), new products no longer start at 4.8, and the About page no longer claims a 4.9★ average.
 - The footer's Track Order link opens the tracking page (it opened the account page) and Shipping & Returns opens the shipping page (it opened Offers).
 - Shop category filter: picking a category replaces the previous one, and a category picked in the sidebar clears the one chosen from the menu, so the grid always matches the selection. Refreshing a filtered page no longer shows an empty grid.

@@ -11,6 +11,7 @@ import { smartNavigate } from "../lib/nav-history.js";
 import Gallery from "../components/pdp/Gallery.jsx";
 import ProductInfo from "../components/pdp/ProductInfo.jsx";
 import ProductTabs from "../components/pdp/ProductTabs.jsx";
+import ComboContents from "../components/pdp/ComboContents.jsx";
 import RelatedProducts from "../components/pdp/RelatedProducts.jsx";
 import PdpSkeleton from "../components/pdp/PdpSkeleton.jsx";
 import QuickViewModal from "../components/shop/QuickViewModal.jsx";
@@ -173,6 +174,9 @@ export default function Product({ id }) {
           <Gallery product={product} />
           <ProductInfo product={product} onWriteReview={goReviews} />
         </div>
+
+        {/* Combos only: the products inside and the saving */}
+        <ComboContents product={product} />
 
         {/* Tabs */}
         <div ref={tabsRef}>

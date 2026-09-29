@@ -17,6 +17,7 @@
 - Order history no longer shows ৳0 totals or claims every order is Delivered after two days.
 - No more full-screen loading spinner when moving between pages; hero banners open in the same tab instead of reloading the site.
 - Visitor tracking: the site's security policy blocked the Meta Pixel, so no visits or purchases were recorded; it now loads and counts every page view. The sitemap uses the www address.
+- The "designed & developed by HaorGrix" footer credit is now in the page's HTML itself, so search engines see it as a real followed link instead of one that only appears after JavaScript runs. The live sitemap.xml and robots.txt now list the www address (the deployed copies were stale).
 
 ### Added
 - Every image uploaded in the admin panel (product photos, hero/CMS banners, testimonials, journal images) is now compressed in the browser before upload: resized to at most 2000 px (2400 px for banners) and saved as WebP. A typical 1–2 MB photo becomes 85–150 KB; large phone photos that used to be rejected for size are now accepted.

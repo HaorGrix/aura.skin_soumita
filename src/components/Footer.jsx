@@ -173,7 +173,7 @@ export default function Footer() {
               <a
                 href="https://haorgrix.com/"
                 target="_blank"
-                rel="noopener noreferrer"
+                rel="noopener"
                 className="font-medium text-ink-soft underline underline-offset-2 transition-colors hover:text-magenta"
               >
                 HaorGrix

@@ -33,6 +33,7 @@
  * =================================================================== */
 import { supabase } from "./client.js";
 import { publicImageUrl, publicVideoUrl } from "./media.js";
+import { displaySize } from "../format.js";
 
 // Mirrors the TONE map in data/products.js — the DB stores the short key
 // ('pink', 'sage', …); the frontend wants the resolved hex for gradients.
@@ -177,7 +178,7 @@ async function attachSizeLabels(products) {
   // without a size chip, exactly like today.
   if (error || !data) return products;
 
-  const bySize = new Map(data.map((r) => [r.product_id, r.size_label]));
+  const bySize = new Map(data.map((r) => [r.product_id, displaySize(r.size_label)]));
   return products.map((p) => ({ ...p, sizeLabel: bySize.get(p.dbId) ?? null }));
 }
 
@@ -187,7 +188,19 @@ async function attachSizeLabels(products) {
  * search/filter/sort over one in-memory list; no server-side pagination
  * needed yet). Pass `limit` for a capped/admin-style fetch later.
  */
-export async function listProducts({ limit } = {}) {
+// Callers that ask for the whole catalog at the same moment (the header
+// search and the homepage carousel both do on first load) share one request
+// instead of downloading it twice. Only while in flight — a later call, e.g.
+// opening Shop or its Retry button, still gets fresh data.
+let catalogInFlight = null;
+
+export function listProducts({ limit } = {}) {
+  if (limit) return fetchProducts({ limit });
+  catalogInFlight ??= fetchProducts({}).finally(() => { catalogInFlight = null; });
+  return catalogInFlight;
+}
+
+async function fetchProducts({ limit }) {
   let query = supabase
     .from("products_public")
     .select("*")

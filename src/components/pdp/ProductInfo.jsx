@@ -19,7 +19,7 @@ import NotifyMeModal from "../ui/NotifyMeModal.jsx";
 import { useCart } from "../../context/CartContext.jsx";
 import { useWishlist } from "../../context/WishlistContext.jsx";
 import { useToast } from "../ui/Toast.jsx";
-import { formatPrice } from "../../lib/format.js";
+import { displaySize, formatPrice } from "../../lib/format.js";
 import { useStoreSettings } from "../../lib/api/settings.js";
 
 function Stars({ value, className = "h-4 w-4" }) {
@@ -61,7 +61,7 @@ export default function ProductInfo({ product, onWriteReview }) {
     () => variants.find((v) => v.isDefault)?.id ?? variants[0]?.id ?? null
   );
   const selectedVariant = variants.find((v) => v.id === variantId) ?? variants[0] ?? null;
-  const hasRealSize = variants.some((v) => v.sizeLabel && v.sizeLabel !== "Standard");
+  const hasRealSize = variants.some((v) => displaySize(v.sizeLabel));
 
   const [qty, setQty] = useState(1);
   // Order-size cap is public (products_public.max_per_order); exact stock
@@ -128,7 +128,7 @@ export default function ProductInfo({ product, onWriteReview }) {
           isOnSale: unitIsOnSale,
           discountPercent: unitDiscountPercent,
           variantId: selectedVariant?.id ?? null,
-          sizeLabel: selectedVariant?.sizeLabel ?? null,
+          sizeLabel: displaySize(selectedVariant?.sizeLabel),
         },
         qty
       );

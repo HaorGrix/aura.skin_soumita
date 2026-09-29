@@ -31,7 +31,7 @@ import { useBodyScrollLock } from "../lib/scrollLock.js";
 import { onRouteChange } from "../lib/navigate.js";
 import {
   useCategoryTree, useProductCategoryMap,
-  categoryNamesFor, categorySlugsFor, findBySlug, flattenTree,
+  categoryFacetOptions, categoryNamesFor, categorySlugsFor, findBySlug, flattenTree,
 } from "../lib/api/categories.js";
 
 const PAGE = 12;
@@ -130,23 +130,16 @@ export default function Shop() {
       !!new URLSearchParams(window.location.search).get("category")
   );
 
-  /* The URL-driven category selection, kept separate from `filters.category`.
-   *
-   * The sidebar's own category checkboxes are NAME-based and stay that way —
-   * ticking "Serum" there reasonably means "serums wherever they live". The
-   * menu, by contrast, points at one specific column, so it selects by slug.
-   * Two different questions, two different filters. */
-  const [categorySlugs, setCategorySlugs] = useState([]);
-  const [categoryNames, setCategoryNames] = useState([]); // fallback, see results memo
-  const [activeCategoryName, setActiveCategoryName] = useState(null);
+  /* Category selection lives in `filters.category` as ONE category slug —
+   * the sidebar, the mega menu, the home tiles and search hints all pick
+   * from the same admin category tree. A parent (Skin Care) covers its
+   * sub-categories; slugs, not names, because names repeat across the tree
+   * (Skin Care ▸ Serum and K-Beauty ▸ Serum). */
   // True only when the URL carries a ?category= that doesn't resolve to any
-  // node in the tree (a dead/misspelled slug, or a nav link — CategoryTiles,
-  // the mega menu — pointing at a category that was never created). Kept
-  // apart from `categorySlugs` because an empty categorySlugs array means
-  // BOTH "no category was ever specified" and "one was specified but
-  // doesn't exist" — the results memo needs to tell those apart, or a
-  // dead category link silently shows the whole unfiltered catalog instead
-  // of the empty result a nonexistent category actually has.
+  // node in the tree (a dead/misspelled slug, or a nav link pointing at a
+  // category that was never created). An empty filters.category means "no
+  // category"; this flag means "a category that doesn't exist", which must
+  // show an empty result, not the whole catalog.
   const [categoryUnresolved, setCategoryUnresolved] = useState(false);
   const productCategory = useProductCategoryMap();
 
@@ -191,30 +184,23 @@ export default function Shop() {
     const raw = new URLSearchParams(window.location.search).get("category");
     if (!raw) {
       pendingCategoryRef.current = false;
-      setCategorySlugs([]); setCategoryNames([]); setActiveCategoryName(null);
       setCategoryUnresolved(false);
       return;
     }
     if (!tree.length) return; // tree not loaded yet — the [categoryTree] effect will resolve it
 
-    const tokens = raw.split(",").map((t) => t.trim()).filter(Boolean);
-    // Slugs (menu and tile links) select one specific column of the tree;
-    // "Serum" exists under both Skin Care and K-Beauty, so a name can't.
-    const slugs = [...new Set(tokens.flatMap((token) => categorySlugsFor(tree, token)))];
-    // Plain names are what the sidebar writes (?category=Moisturizer), so a
-    // refreshed or shared sidebar URL keeps working. They drive the name
-    // facet in `filters.category`, same as ticking the box.
-    const treeNames = new Set(flattenTree(tree).map((n) => n.name));
-    const names = tokens.filter((t) => !categorySlugsFor(tree, t).length && treeNames.has(t));
+    // A slug (menu, tiles, this page's own URL) or, from older shared links,
+    // a category name — the first one that matches a real category wins.
+    const nodes = flattenTree(tree);
+    const slug = raw.split(",").map((t) => t.trim()).filter(Boolean)
+      .map((t) => findBySlug(tree, t)?.slug ?? nodes.find((n) => n.name === t)?.slug)
+      .find(Boolean);
 
     // Release the URL guard either way: an unresolvable token is a dead link,
     // and holding the guard forever would freeze the URL for the whole visit.
     pendingCategoryRef.current = false;
-    setCategorySlugs(slugs);
-    setCategoryUnresolved(slugs.length === 0 && names.length === 0);
-    setCategoryNames([...new Set(tokens.flatMap((token) => categoryNamesFor(tree, token)))]);
-    setActiveCategoryName(slugs.length ? findBySlug(tree, tokens[0])?.name ?? null : null);
-    setFilters((f) => ({ ...f, category: names.slice(0, 1) }));
+    setCategoryUnresolved(!slug);
+    setFilters((f) => ({ ...f, category: slug ? [slug] : [] }));
   }, []);
 
   // Re-sync on REAL navigation only — browser back/forward, clicking another
@@ -263,36 +249,31 @@ export default function Shop() {
   useBodyScrollLock(sheetOpen);
 
   const results = useMemo(() => {
-    let list = queryProducts(products, { search, filters, sort });
+    // queryProducts matches category by NAME, which repeats across the tree —
+    // so category is taken out here and applied below by slug.
+    let list = queryProducts(products, { search, filters: { ...filters, category: [] }, sort });
 
     if (saleId) list = list.filter((p) => p.activeSaleId === saleId);
 
-    // Menu-driven category selection, applied on top of the facet engine.
-    // Held apart from queryProducts because that matches on category NAME and
-    // names are no longer unique across the tree — this narrows by the
-    // product's actual category slug instead.
-    //
     // A ?category= that didn't resolve to any real node (dead nav link, or
     // stale ?category=<old-slug>) is NOT the same as no category being
     // requested at all — it must show empty, not fall through to the whole
     // catalog, or a broken category link silently looks like it worked.
     if (categoryUnresolved) return [];
-    if (!categorySlugs.length) return list;
+    const picked = filters.category[0];
+    if (!picked) return list;
 
     if (productCategory.size > 0) {
-      const wanted = new Set(categorySlugs);
+      const wanted = new Set(categorySlugsFor(categoryTree, picked));
       return list.filter((p) => wanted.has(productCategory.get(p.dbId ?? p.id)));
     }
 
-    // Fallback: the map view isn't available (migration 0010 not applied, or
-    // the request failed). Match on category NAME instead — correct for every
-    // name that appears once, and the previous behaviour for all of them.
-    // Better than returning the whole catalog and looking like the filter was
-    // ignored. Still skipped entirely while names are empty.
-    if (!categoryNames.length) return list;
-    const wantedNames = new Set(categoryNames);
+    // Fallback: the product→category map isn't available (the request
+    // failed). Match on category NAME instead — correct for every name that
+    // appears once. Better than looking like the filter was ignored.
+    const wantedNames = new Set(categoryNamesFor(categoryTree, picked));
     return list.filter((p) => wantedNames.has(p.category));
-  }, [products, search, filters, sort, categorySlugs, categoryNames, productCategory, saleId, categoryUnresolved]);
+  }, [products, search, filters, sort, categoryTree, productCategory, saleId, categoryUnresolved]);
 
   // Fetch the live catalog. The skeleton (existing `loading` state — same UI
   // as before) now reflects a REAL fetch instead of a fixed timer. Extracted
@@ -321,17 +302,15 @@ export default function Shop() {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- fetch once on mount only
   }, []);
 
-  // Brands and categories the live catalog actually uses — the sidebar facets
-  // and search hints are built from these, so anything added in the admin
-  // appears once a product carries it.
+  // Brands the live catalog actually uses (a brand with no published product
+  // would only lead to an empty grid).
   const liveBrands = useMemo(
     () => [...new Set(products.map((p) => p.brand).filter(Boolean))].sort((a, b) => a.localeCompare(b)),
     [products]
   );
-  const liveCategories = useMemo(
-    () => [...new Set(products.map((p) => p.category).filter(Boolean))].sort((a, b) => a.localeCompare(b)),
-    [products]
-  );
+  // Every category from the admin's category tree, parents followed by their
+  // sub-categories — the same list and order as the menu.
+  const categoryOptions = useMemo(() => categoryFacetOptions(categoryTree), [categoryTree]);
 
   // A ?brand= that no live product carries is a stale link: drop it once the
   // catalog has loaded, same "accept then prune" as concerns above.
@@ -421,16 +400,8 @@ export default function Shop() {
     window.history.replaceState(null, "", qs ? `/shop?${qs}` : "/shop");
   };
 
-  // Drop a category chosen from the mega menu / home tiles. Called as soon as
-  // the shopper picks a category (or clears filters) in the sidebar, so the
-  // two selections can never combine into an empty or stale grid.
-  const clearMenuCategory = () => {
-    setCategorySlugs([]); setCategoryNames([]); setActiveCategoryName(null);
-    setCategoryUnresolved(false);
-  };
-
   const toggleFilter = (key, id) => {
-    if (key === "category") clearMenuCategory();
+    if (key === "category") setCategoryUnresolved(false);
     setFilters((f) => {
       const has = f[key].includes(id);
       // Category is single-choice: picking Moisturizer after Facewash shows
@@ -445,7 +416,7 @@ export default function Shop() {
   };
 
   const clearFilters = () => {
-    clearMenuCategory();
+    setCategoryUnresolved(false);
     setFilters(EMPTY_FILTERS);
     syncUrl(EMPTY_FILTERS, search);
   };
@@ -507,11 +478,12 @@ export default function Shop() {
             <PredictiveSearch
               products={products}
               brands={liveBrands}
-              categories={liveCategories}
+              categories={categoryOptions}
               trending={trending}
               onQueryChange={handleQueryChange}
               onApplyFilter={toggleFilter}
               initialQuery={search}
+              loading={loading}
             />
 
             <div className="flex items-center gap-2">
@@ -570,7 +542,7 @@ export default function Shop() {
             className="relative hidden lg:flex lg:h-full lg:min-h-0 lg:flex-col lg:overflow-y-auto lg:overscroll-contain lg:rounded-2xl lg:bg-snow lg:p-4 lg:ring-1 lg:ring-line scrollbar-thin"
           >
             <FilterPanel filters={filters} onToggle={toggleFilter} onClear={clearFilters}
-              brands={liveBrands} categories={liveCategories}
+              brands={liveBrands} categories={categoryOptions}
               hiddenGroups={saleId ? ["discount"] : []} />
           </aside>
 
@@ -587,20 +559,6 @@ export default function Shop() {
                 {loading ? "Curating…" : fetchError ? "" : `${results.length} products`}
               </p>
 
-              {/* The menu-driven category isn't part of `filters`, so it gets
-                  no ActiveChip. Without this the grid would look filtered for
-                  no visible reason — and with no way back to everything. */}
-              {activeCategoryName && !loading && !fetchError && (
-                <div className="flex items-center gap-2">
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-petal px-3 py-1 text-xs font-medium text-magenta">
-                    {activeCategoryName}
-                  </span>
-                  <a href="/shop" className="text-xs text-ink-soft underline-offset-2 hover:text-magenta hover:underline">
-                    Clear
-                  </a>
-                </div>
-              )}
-
               {saleId && !loading && !fetchError && (
                 <div className="flex items-center gap-2">
                   <span className="inline-flex items-center gap-1.5 rounded-full bg-magenta px-3 py-1 text-xs font-medium text-white">
@@ -613,7 +571,7 @@ export default function Shop() {
               )}
 
               {!fetchError && (
-                <ActiveChips filters={filters} onToggle={toggleFilter} onClear={clearFilters} />
+                <ActiveChips filters={filters} onToggle={toggleFilter} onClear={clearFilters} categories={categoryOptions} />
               )}
             </div>
 
@@ -737,7 +695,7 @@ export default function Shop() {
                   onToggle={toggleFilter}
                   onClear={clearFilters}
                   brands={liveBrands}
-                  categories={liveCategories}
+                  categories={categoryOptions}
                   sort={sort}
                   onSortChange={setSort}
                   hiddenGroups={saleId ? ["discount"] : []}

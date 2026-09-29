@@ -42,6 +42,7 @@ export default function PredictiveSearch({
   variant = "default",
   onClose,
   initialQuery = "",
+  loading = false,
 }) {
   // Seeded from the caller (Shop's ?q=) so the first debounce sync reports
   // the real query instead of "", which used to wipe the search on arrival.
@@ -114,7 +115,7 @@ export default function PredictiveSearch({
   }
 
   function pickProduct(p) {
-    navigate(`/product/${p.slug}`);
+    navigate(`/product/${encodeURIComponent(p.slug ?? p.id)}`);
     setOpen(false);
     onClose?.();
   }
@@ -157,7 +158,10 @@ export default function PredictiveSearch({
   }
 
   const showProducts = !!suggestion && suggestion.products.length > 0;
-  const showEmpty = !!debounced && suggestion && suggestion.products.length === 0;
+  // While the live catalog is still loading, an empty result means "not
+  // loaded yet", not "no match".
+  const showLoading = loading && !!debounced && !showProducts;
+  const showEmpty = !loading && !!debounced && suggestion && suggestion.products.length === 0;
   const showFocused = !debounced && open && trending.length > 0;
 
   return (
@@ -213,7 +217,7 @@ export default function PredictiveSearch({
       </div>
 
       <AnimatePresence>
-        {open && (showProducts || showEmpty || showFocused) && (
+        {open && (showProducts || showEmpty || showFocused || showLoading) && (
           <motion.div
             id="search-results-listbox"
             role="listbox"
@@ -230,6 +234,10 @@ export default function PredictiveSearch({
           >
             {variant === "megamenu" && (showProducts || showEmpty) && (
               <h2 className="font-serif text-2xl font-bold uppercase tracking-wide text-ink mb-6">Product</h2>
+            )}
+
+            {showLoading && (
+              <p role="status" className="px-3 py-2 text-sm text-ink-soft">Searching…</p>
             )}
 
             {/* Suggested filter chips */}

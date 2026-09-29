@@ -16,7 +16,7 @@ import { ArrowLeft, ExternalLink, History, Plus, Star, Trash2 } from "lucide-rea
 import {
   adjustStock, archiveProduct, createProduct, deleteProduct, deleteVariant,
   getProduct, listBrandRows, categoryOptions, listCategoryTree, listStockMovements,
-  listVariants, setStock, setVariantStock, slugify, updateProduct, upsertBrand, upsertVariant,
+  listVariants, setStock, setVariantStock, slugify, updateProduct, updateVariantSize, upsertBrand, upsertVariant,
 } from "../../lib/api/admin/catalog.js";
 import { useAdmin } from "../context.js";
 import { adminNavigate } from "../AdminApp.jsx";
@@ -27,6 +27,7 @@ import {
   SearchableCreatableSelect, SelectField, Spinner, StockPill, TagsField, TextField, Toggle, money, useAsync,
 } from "../components/kit.jsx";
 import { useConcerns } from "../../lib/api/concerns.js";
+import { displaySize } from "../../lib/format.js";
 
 const TABS = ["Details", "Pricing", "Variants", "Inventory", "Attributes", "Images", "SEO"];
 
@@ -84,6 +85,10 @@ export default function ProductEdit({ id }) {
   // zero" in the stock history.
   const [initialStock, setInitialStock] = useState("");
   const [variants, setVariants] = useState([]);
+  // Size of a single-size product (e.g. "50ml"), edited on the Pricing tab.
+  // It lives on the product's one variant row, not on `form`.
+  const [size, setSize] = useState("");
+  const [originalSize, setOriginalSize] = useState("");
 
   // The same tree the storefront's mega menu renders from, so whatever is
   // picked here lines up with the shop filters automatically — no SQL, and no
@@ -112,6 +117,9 @@ export default function ProductEdit({ id }) {
     if (isNew) return;
     const { data } = await listVariants(id);
     setVariants(data ?? []);
+    const single = data?.length === 1 ? displaySize(data[0].size_label) ?? "" : "";
+    setSize(single);
+    setOriginalSize(single);
   };
 
   const load = async () => {
@@ -130,8 +138,8 @@ export default function ProductEdit({ id }) {
   useEffect(() => { load(); /* eslint-disable-next-line */ }, [id]);
 
   const dirty = useMemo(
-    () => form && original && JSON.stringify(form) !== JSON.stringify(original),
-    [form, original]
+    () => (form && original && JSON.stringify(form) !== JSON.stringify(original)) || size.trim() !== originalSize,
+    [form, original, size, originalSize]
   );
 
   const set = (key) => (value) => setForm((f) => ({ ...f, [key]: value }));
@@ -188,6 +196,24 @@ export default function ProductEdit({ id }) {
       if (startingStock > 0) {
         const { error: stockErr } = await adjustStock(data.id, startingStock, "restock", "Starting stock at creation");
         stockError = stockErr;
+      }
+
+      // Single-size product: write the Size field onto its one variant row
+      // (a new product's row is created by the database, so it's read back).
+      const nextSize = size.trim();
+      if (!hasMultipleVariants && nextSize !== originalSize) {
+        const { data: rows, error: listErr } = await listVariants(data.id);
+        const { error: sizeErr } = listErr
+          ? { error: listErr }
+          : rows?.length === 1
+            ? await updateVariantSize(rows[0].id, nextSize)
+            : { error: { message: "it now has more than one size — set sizes in the Variants tab" } };
+        if (sizeErr) setError(`Product saved, but the size couldn't be saved: ${sizeErr.message}`);
+        else {
+          setOriginalSize(nextSize);
+          setSize(nextSize);
+          if (!isNew) await loadVariants();
+        }
       }
 
       setOriginal(data);
@@ -347,6 +373,16 @@ export default function ProductEdit({ id }) {
             <MoneyField label="Compare at" hint="Optional — the “was” price" valueMinor={form.compare_at_minor} onChangeMinor={set("compare_at_minor")} disabled={readOnly || hasMultipleVariants} />
             <MoneyField label="Cost per item" hint="Private — never shown to shoppers" valueMinor={form.cost_minor} onChangeMinor={set("cost_minor")} disabled={readOnly || hasMultipleVariants} />
             <TextField label="SKU" value={form.sku ?? ""} onChange={setInput("sku")} disabled={readOnly || hasMultipleVariants} />
+            {!hasMultipleVariants && (
+              <TextField
+                label="Size"
+                hint="e.g. 50ml, 100g, 20 pads — shown on the product card and page. Leave blank if it has no size."
+                value={size}
+                onChange={(e) => setSize(e.target.value)}
+                maxLength={30}
+                disabled={readOnly}
+              />
+            )}
             {/* New product only — stock is ledger-backed everywhere else
                 (never a plain column write), so this doesn't set
                 form.stock; Save applies it as one real "restock" movement
@@ -520,7 +556,7 @@ export default function ProductEdit({ id }) {
       )}
 
       {!readOnly && (
-        <SaveBar dirty={dirty} saving={saving} onSave={handleSave} onDiscard={() => setForm(original)}
+        <SaveBar dirty={dirty} saving={saving} onSave={handleSave} onDiscard={() => { setForm(original); setSize(originalSize); }}
           message={isNew ? "Save to create this product." : "You have unsaved changes."} />
       )}
 

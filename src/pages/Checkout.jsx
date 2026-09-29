@@ -442,6 +442,7 @@ export default function Checkout() {
                     applyCoupon={applyCoupon} removeCoupon={removeCoupon}
                     authed={authed} openAuth={openAuth} points={points}
                     email={form.email || userEmail}
+                    showTotals={false}
                   />
                 </div>
               </motion.div>
@@ -518,6 +519,16 @@ export default function Checkout() {
               </AnimatePresence>
             </div>
 
+            {/* Bill breakdown — phones. Always visible right above the
+                button, so subtotal, discount, delivery and total are seen
+                before placing the order (desktop has it in the sidebar). */}
+            <div className="mt-8 lg:hidden">
+              <OrderSummary
+                subtotal={subtotal} shippingCost={shipping} total={total}
+                discountAmount={discountAmount} promoCode={appliedCoupon?.code}
+              />
+            </div>
+
             {/* Nav */}
             <div className="mt-8 flex items-center justify-between gap-4">
               {step > 0 ? (
@@ -573,31 +584,36 @@ export default function Checkout() {
 
 /* ---------- Steps ---------- */
 
+// The shop is often used on a shared phone or by staff placing orders for
+// customers, so the browser must not offer earlier customers' names,
+// addresses or codes as suggestions.
+const NO_SUGGEST = { autoComplete: "off", autoCorrect: "off", spellCheck: false };
+
 function InfoStep({ form, set, setForm, setIsPhoneValid, errors }) {
   return (
     <div>
       <h2 className="font-serif text-2xl text-ink">Contact & shipping</h2>
       <div className="mt-5 grid gap-4 sm:grid-cols-2">
         <Field label="Email" full error={errors.email}>
-          <Input type="email" value={form.email} onChange={set("email")} placeholder="you@email.com" />
+          <Input type="email" value={form.email} onChange={set("email")} placeholder="you@email.com" {...NO_SUGGEST} />
         </Field>
         <Field label="First name" error={errors.firstName}>
-          <Input value={form.firstName} onChange={set("firstName")} placeholder="First name" />
+          <Input value={form.firstName} onChange={set("firstName")} placeholder="First name" {...NO_SUGGEST} />
         </Field>
         <Field label="Last name" error={errors.lastName}>
-          <Input value={form.lastName} onChange={set("lastName")} placeholder="Last name" />
+          <Input value={form.lastName} onChange={set("lastName")} placeholder="Last name" {...NO_SUGGEST} />
         </Field>
         <Field label="Address" full error={errors.address}>
-          <Input value={form.address} onChange={set("address")} placeholder="House, road, area" />
+          <Input value={form.address} onChange={set("address")} placeholder="House, road, area" {...NO_SUGGEST} />
         </Field>
         <Field label="City" error={errors.city}>
-          <Input value={form.city} onChange={set("city")} placeholder="Dhaka" />
+          <Input value={form.city} onChange={set("city")} placeholder="Dhaka" {...NO_SUGGEST} />
         </Field>
         <Field label="Postal code" error={errors.postal}>
-          <Input value={form.postal} onChange={set("postal")} placeholder="1207" inputMode="numeric" maxLength={4} />
+          <Input value={form.postal} onChange={set("postal")} placeholder="1207" inputMode="numeric" maxLength={4} {...NO_SUGGEST} />
         </Field>
         <Field label="Country">
-          <Input value={form.country} onChange={set("country")} />
+          <Input value={form.country} onChange={set("country")} {...NO_SUGGEST} />
         </Field>
         <Field label="Phone">
           <PhoneInput
@@ -605,6 +621,7 @@ function InfoStep({ form, set, setForm, setIsPhoneValid, errors }) {
             onChange={(val) => setForm((f) => ({ ...f, phone: val }))}
             onValidityChange={setIsPhoneValid}
             required
+            autoComplete="off"
           />
         </Field>
       </div>
@@ -728,7 +745,7 @@ function SelectZoneField({ zones, value, onChange, hint }) {
 }
 
 /* ---------- Summary panel (items + totals) ---------- */
-function SummaryPanel({ items, subtotal, shipping, total, discountAmount, appliedCoupon, couponInput, setCouponInput, applyCoupon, removeCoupon, authed, openAuth, points, email }) {
+function SummaryPanel({ items, subtotal, shipping, total, discountAmount, appliedCoupon, couponInput, setCouponInput, applyCoupon, removeCoupon, authed, openAuth, points, email, showTotals = true }) {
   return (
     <div className="space-y-4">
       <div className="max-h-72 space-y-4 overflow-y-auto rounded-[1.5rem] bg-snow p-5 ring-1 ring-line">
@@ -747,7 +764,7 @@ function SummaryPanel({ items, subtotal, shipping, total, discountAmount, applie
             <button onClick={removeCoupon} className="text-xs font-medium text-ink-soft hover:text-magenta">Remove</button>
           </div>
         ) : (
-          <form onSubmit={applyCoupon} className="flex flex-col gap-3">
+          <form onSubmit={applyCoupon} autoComplete="off" className="flex flex-col gap-3">
             <p className="text-sm font-medium text-ink">Discount Code</p>
             <div className="flex items-center gap-2">
               <Input
@@ -756,6 +773,7 @@ function SummaryPanel({ items, subtotal, shipping, total, discountAmount, applie
                 onChange={(e) => setCouponInput(e.target.value)}
                 placeholder="Enter coupon code"
                 className="bg-snow uppercase"
+                {...NO_SUGGEST}
               />
               <Button variant="secondary" onClick={applyCoupon} disabled={!couponInput.trim()} type="submit" className="shrink-0 h-11 px-5">Apply</Button>
             </div>
@@ -783,7 +801,9 @@ function SummaryPanel({ items, subtotal, shipping, total, discountAmount, applie
         )}
       </div>
 
-      <OrderSummary subtotal={subtotal} shippingCost={shipping} total={total} discountAmount={discountAmount} promoCode={appliedCoupon?.code} />
+      {showTotals && (
+        <OrderSummary subtotal={subtotal} shippingCost={shipping} total={total} discountAmount={discountAmount} promoCode={appliedCoupon?.code} />
+      )}
     </div>
   );
 }

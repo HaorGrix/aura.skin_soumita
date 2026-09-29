@@ -19,7 +19,10 @@ import {
 } from "../components/kit.jsx";
 import { useConcerns } from "../../lib/api/concerns.js";
 
-const ROUTES = ["/", "/shop", "/offers", "/rewards", "/journal", "/about", "/contact", "/wishlist"];
+const ROUTES = [
+  "/", "/shop", "/offers", "/rewards", "/journal", "/about", "/contact", "/wishlist",
+  "/track", "/shipping", "/account", "/privacy", "/terms", "/cookies",
+];
 
 export default function ContentEdit({ slot }) {
   const [schema, setSchema] = useState(null);

@@ -12,9 +12,9 @@ import { useConcerns, concernNameFor } from "../../lib/api/concerns.js";
 
 /* The filter groups, in display order. `concern`'s options come from the
  * live `concerns` table (0059_concerns_table.sql) — id = stable slug,
- * label = current, admin-editable name. `brand` and `category` come from the
- * live product list the caller already fetched, so a brand or category added
- * in the admin shows up here as soon as a product uses it. */
+ * label = current, admin-editable name. `category` is the admin's whole
+ * category tree ({ id: slug, label, depth }, sub-categories indented);
+ * `brand` is every brand a published product carries. */
 function buildGroups(concerns, brands, categories) {
   return [
     { key: "availability", label: "Availability", options: AVAILABILITY },
@@ -86,9 +86,11 @@ function FacetGroup({ group, selected, onToggle, defaultOpen }) {
                 const checked = selected.includes(o.id);
                 return (
                   <li key={o.id}>
-                    <label className="flex cursor-pointer items-center gap-3 rounded-lg px-1 py-1.5 text-sm text-ink-soft transition-colors hover:text-ink">
+                    <label className={`flex cursor-pointer items-center gap-3 rounded-lg px-1 py-1.5 text-sm transition-colors hover:text-ink ${
+                      o.depth ? "pl-6 text-ink-soft" : o.depth === 0 ? "font-medium text-ink" : "text-ink-soft"
+                    }`}>
                       <span
-                        className={`grid h-[18px] w-[18px] place-items-center rounded-[6px] border transition-all ${
+                        className={`grid h-[18px] w-[18px] shrink-0 place-items-center rounded-[6px] border transition-all ${
                           checked
                             ? "border-magenta bg-magenta text-white"
                             : "border-ink/25"
@@ -226,9 +228,10 @@ export function FilterPanel({ filters, onToggle, onClear, sort, onSortChange, hi
 }
 
 /* Active selections as removable chips (shown above the grid) */
-export function ActiveChips({ filters, onToggle, onClear }) {
+export function ActiveChips({ filters, onToggle, onClear, categories = [] }) {
   const concerns = useConcerns();
   const labelFor = (key, id) => {
+    if (key === "category") return categories.find((c) => c.id === id)?.label ?? id;
     if (key === "price") return PRICE_RANGES.find((r) => r.id === id)?.label ?? id;
     if (key === "availability") return AVAILABILITY.find((a) => a.id === id)?.label ?? id;
     if (key === "discount") return DISCOUNT_TIERS.find((t) => t.id === id)?.label ?? id;

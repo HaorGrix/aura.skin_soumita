@@ -168,7 +168,7 @@ export default function Cart() {
               total={total}
             >
               {/* Promo */}
-              <form onSubmit={handlePromo} className="flex gap-2">
+              <form onSubmit={handlePromo} autoComplete="off" className="flex gap-2">
                 <div className="relative flex-1">
                   <Tag className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-soft" strokeWidth={1.7} />
                   <Input
@@ -176,6 +176,9 @@ export default function Cart() {
                     onChange={(e) => setPromoInput(e.target.value)}
                     placeholder="Promo code"
                     className="pl-10 rounded-full py-2.5"
+                    autoComplete="off"
+                    autoCorrect="off"
+                    spellCheck={false}
                   />
                 </div>
                 <button

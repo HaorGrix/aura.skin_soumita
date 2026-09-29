@@ -7,7 +7,7 @@
  * product later renamed, repriced or removed from the catalog can't turn
  * an old order into zeros.
  * =================================================================== */
-import { formatPrice } from "./format.js";
+import { displaySize, formatPrice } from "./format.js";
 
 /** Cart lines → the fields a receipt needs. */
 export function receiptLines(items) {
@@ -15,7 +15,7 @@ export function receiptLines(items) {
     id: i.id,
     name: i.name,
     brand: i.brand ?? "",
-    size: i.sizeLabel && i.sizeLabel !== "Standard" ? i.sizeLabel : null,
+    size: displaySize(i.sizeLabel),
     qty: i.qty,
     price: i.price ?? 0,
     image: i.image ?? null,

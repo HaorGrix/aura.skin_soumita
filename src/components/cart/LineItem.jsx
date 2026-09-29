@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 import { Minus, Plus, Trash2 } from "lucide-react";
 import { useCart } from "../../context/CartContext.jsx";
-import { formatPrice } from "../../lib/format.js";
+import { displaySize, formatPrice } from "../../lib/format.js";
 
 /**
  * LineItem — a single cart row. `compact` = drawer styling; default = cart page.
@@ -9,6 +9,8 @@ import { formatPrice } from "../../lib/format.js";
  */
 export default function LineItem({ item, compact = false, readOnly = false }) {
   const { inc, dec, removeItem, atMaxQty } = useCart();
+  // Bags saved before "Standard" was hidden may still carry it.
+  const size = displaySize(item.sizeLabel);
   const thumb = compact ? "h-16 w-16" : "h-24 w-24";
   const maxed = atMaxQty(item.id, item.variantId);
 
@@ -50,11 +52,11 @@ export default function LineItem({ item, compact = false, readOnly = false }) {
             </a>
             {!compact && (
               <p className="mt-0.5 text-xs text-ink-soft">
-                {item.sizeLabel ? `${item.sizeLabel} · ${item.category}` : item.category}
+                {size ? `${size} · ${item.category}` : item.category}
               </p>
             )}
-            {compact && item.sizeLabel && (
-              <p className="mt-0.5 text-[11px] text-ink-soft">{item.sizeLabel}</p>
+            {compact && size && (
+              <p className="mt-0.5 text-[11px] text-ink-soft">{size}</p>
             )}
           </div>
           {!readOnly && (

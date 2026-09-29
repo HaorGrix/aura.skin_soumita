@@ -41,12 +41,12 @@ const bundledFor = (label) => BUNDLED[String(label ?? "").trim().toLowerCase()] 
 
 export default function CategoryTiles() {
   const reduce = useReducedMotion();
-  const { content } = useContent("home.categoryTiles");
+  const { content, ready } = useContent("home.categoryTiles");
   const tiles = (content.items ?? [])
     .map((t) => ({ ...t, img: contentImage(t.image, bundledFor(t.label)) }))
     .filter((t) => t.img && t.href);
 
-  if (tiles.length === 0) return null;
+  if (ready && tiles.length === 0) return null;
 
   return (
     /* mt-* is the gap between the hero slider and this row — halved from the
@@ -66,19 +66,25 @@ export default function CategoryTiles() {
             >
               <a
                 href={tile.href}
+                aria-label={tile.label}
                 className="group block rounded-2xl outline-none focus-visible:ring-2 focus-visible:ring-magenta/60"
               >
                 {/* Fixed aspect box matching the artwork's own 750×885 ratio —
                     the row's height is therefore known before the PNGs decode,
                     so nothing reflows on load. */}
                 <span className="block aspect-[750/885] w-full">
-                  <img
-                    src={tile.img}
-                    alt={tile.label}
-                    loading="lazy"
-                    decoding="async"
-                    className="h-full w-full object-contain transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform group-hover:-translate-y-1.5 group-hover:scale-[1.04]"
-                  />
+                  {/* Until the saved tiles arrive the box stays empty (same
+                      size, so nothing shifts): showing the bundled art first
+                      made phones download both sets of pictures. */}
+                  {ready && (
+                    <img
+                      src={tile.img}
+                      alt={tile.label}
+                      loading="lazy"
+                      decoding="async"
+                      className="h-full w-full object-contain transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform group-hover:-translate-y-1.5 group-hover:scale-[1.04]"
+                    />
+                  )}
                 </span>
               </a>
             </motion.li>

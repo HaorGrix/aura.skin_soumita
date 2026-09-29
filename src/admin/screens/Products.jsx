@@ -233,8 +233,10 @@ export default function Products() {
       <BulkPriceModal
         open={priceModal} onClose={() => setPriceModal(false)} count={selected.length}
         onApply={async (mode, amount) => {
-          await bulkPrice(selected, mode, amount);
+          const { error } = await bulkPrice(selected, mode, amount);
+          if (error) return error.message;
           setSelected([]); setPriceModal(false); list.reload();
+          return null;
         }}
       />
 
@@ -300,6 +302,7 @@ function BulkPriceModal({ open, onClose, count, onApply }) {
   const [mode, setMode] = useState("percent");
   const [amount, setAmount] = useState("");
   const [busy, setBusy] = useState(false);
+  const [error, setError] = useState(null);
 
   const help = {
     percent: "Use a negative number to discount, e.g. -20 for 20% off.",
@@ -313,7 +316,13 @@ function BulkPriceModal({ open, onClose, count, onApply }) {
         <>
           <Btn variant="secondary" size="sm" onClick={onClose}>Cancel</Btn>
           <Btn size="sm" loading={busy} disabled={amount === ""}
-            onClick={async () => { setBusy(true); await onApply(mode, Number(amount)); setBusy(false); }}>
+            onClick={async () => {
+              setBusy(true); setError(null);
+              const failure = await onApply(mode, Number(amount));
+              setBusy(false);
+              if (failure) setError(`Prices were not changed: ${failure}`);
+              else setAmount("");
+            }}>
             Apply
           </Btn>
         </>
@@ -328,8 +337,10 @@ function BulkPriceModal({ open, onClose, count, onApply }) {
         <TextField label="Amount" type="number" value={amount} hint={help}
           onChange={(e) => setAmount(e.target.value)} />
         <p className="rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-800">
-          This writes new prices immediately. Past orders keep the price they were placed at.
+          This changes every size of each selected product immediately, rounded to whole taka. A “compare at”
+          price that would no longer be higher is cleared. Past orders keep the price they were placed at.
         </p>
+        {error && <p className="rounded-lg bg-red-50 px-3 py-2 text-xs text-red-700">{error}</p>}
       </div>
     </Modal>
   );

@@ -64,7 +64,9 @@ begin
 end;
 $$;
 
-revoke all on function public.reorder_product_images(uuid, uuid[]) from public;
+-- Supabase grants new functions to anon by default; revoking PUBLIC alone
+-- leaves that grant, so anon is revoked explicitly.
+revoke all on function public.reorder_product_images(uuid, uuid[]) from public, anon;
 grant execute on function public.reorder_product_images(uuid, uuid[]) to authenticated;
 
 -- ---------------------------------------------------------------------

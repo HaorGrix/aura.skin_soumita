@@ -68,21 +68,25 @@ export default function ProductCard({ product, onQuickView }) {
       className={`group relative flex flex-col overflow-hidden rounded-[1.25rem] ${surface.card} transition-shadow duration-500 hover:shadow-[var(--shadow-glow-pink)]`}
     >
       {/* Media */}
-      <div className="relative aspect-[4/5] overflow-hidden">
-        {/* Gradient fallback (always present behind image) */}
-        <div
-          aria-hidden
-          className="absolute inset-0"
-          style={{
-            background: `radial-gradient(120% 100% at 50% 0%, #ffffff 0%, ${tone} 70%, #ffe1ec 100%)`,
-          }}
-        />
+      {/* Square, like the product photos, on white: a photo shown whole in a
+          taller box left a pink strip of the placeholder gradient under it. */}
+      <div className="relative aspect-square overflow-hidden bg-white">
+        {/* Gradient placeholder only for products without a photo */}
+        {!image && (
+          <div
+            aria-hidden
+            className="absolute inset-0"
+            style={{
+              background: `radial-gradient(120% 100% at 50% 0%, #ffffff 0%, ${tone} 70%, #ffe1ec 100%)`,
+            }}
+          />
+        )}
         {image && (
           <img
             src={image}
             alt={`${brand} ${name}`}
             width="400"
-            height="500"
+            height="400"
             loading="lazy"
             decoding="async"
             className={`absolute inset-0 h-full w-full object-contain transition-transform duration-700 ease-out group-hover:scale-105 ${

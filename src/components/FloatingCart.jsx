@@ -1,92 +1,115 @@
-import { useRef } from "react";
-import { motion, AnimatePresence, motionValue } from "framer-motion";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { ShoppingBag } from "lucide-react";
 import { useCart } from "../context/CartContext.jsx";
 
 /**
- * FloatingCart — persistent, draggable FAB, lives above all pages.
+ * FloatingCart — persistent, draggable cart button, above all pages.
  *
- * Behaviour:
- *  - Hidden when cart is empty (clean baseline).
- *  - Hides automatically when the cart drawer is open (no overlap).
- *  - Badge springs in/out on every count change.
- *  - Pulse ring fires on each add so the icon "breathes" acknowledgement.
- *  - Vertically centered (45 vh) by default so it's always in the peripheral
- *    view without covering page content at the bottom.
- *  - Freely draggable (mouse + touch) anywhere within the viewport, so a
- *    shopper can pull it off whatever text/button it happens to be sitting
- *    over. Dragging is constrained to `constraintsRef` — a full-viewport
- *    layer that's `pointer-events-none` itself, so it never traps clicks;
- *    only the button (`pointer-events-auto`) is ever actually clickable.
- *  - The dragged position lives in module-level motion values, so it
- *    survives the button hiding (drawer open, cart/checkout pages) and
- *    coming back. The slide-in/out animates a wrapper, never the button's
- *    own x/y: framer-motion returns to `animate` values when a hover or tap
- *    ends, which used to snap a dragged button straight back to x: 0.
+ *  - Hidden when the cart is empty or the cart drawer is open.
+ *  - Drag it anywhere on screen (mouse or finger); a tap opens the cart.
+ *  - It stays exactly where it was put. The position is kept in pixels and
+ *    is only changed by the shopper's own drag, or pulled back inside the
+ *    screen when the screen really gets smaller (rotation, window resize).
+ *    It used to sit at `45vh` inside a drag-constraint layer: on phones the
+ *    viewport height changes every time the address bar shows or hides
+ *    while scrolling, so the button slid up/down and the drag library
+ *    re-fitted it sideways on its own.
+ *  - The position lives at module level, so it survives the button hiding
+ *    (drawer open, cart/checkout pages) and coming back.
  */
-const dragX = motionValue(0);
-const dragY = motionValue(0);
+const SIZE = 56; // h-14 / w-14
+const MARGIN = 12; // keep at least this far from the screen edges
+const DRAG_THRESHOLD = 6; // px moved before a press counts as a drag, not a tap
+
+let savedPos = null; // { x, y } top-left in px, shared across mounts
+
+const clamp = (v, min, max) => Math.min(Math.max(v, min), max);
+const fitToScreen = ({ x, y }) => ({
+  x: clamp(x, MARGIN, window.innerWidth - SIZE - MARGIN),
+  y: clamp(y, MARGIN, window.innerHeight - SIZE - MARGIN),
+});
+const defaultPos = () =>
+  fitToScreen({ x: window.innerWidth - SIZE - (window.innerWidth >= 640 ? 24 : 16), y: Math.round(window.innerHeight * 0.45) });
 
 export default function FloatingCart() {
   const { count, isOpen, openCart } = useCart();
-
-  // Show only when there's something in the cart AND the drawer is closed.
   const visible = count > 0 && !isOpen;
 
-  // framer-motion computes the drag's min/max offsets automatically from
-  // this element's bounding box vs the button's — no manual position state
-  // needed, and it can never be dragged off-screen.
-  const constraintsRef = useRef(null);
+  const [pos, setPos] = useState(() => savedPos ?? defaultPos());
+  const drag = useRef(null); // { startX, startY, originX, originY, moved }
 
-  // A real drag and a tap both fire onClick when using framer-motion's
-  // `drag` (it doesn't suppress the trailing click event) — so track how
-  // far the pointer actually travelled and only open the cart when that
-  // distance is small enough to be a tap, not a reposition.
-  const dragDistance = useRef(0);
+  const place = useCallback((next) => {
+    savedPos = next;
+    setPos(next);
+  }, []);
+
+  // Only a real size change can push it off-screen; nudge it back inside
+  // then, and leave it alone otherwise (scrolling never moves it).
+  useEffect(() => {
+    let lastW = window.innerWidth;
+    let lastH = window.innerHeight;
+    const onResize = () => {
+      if (window.innerWidth === lastW && Math.abs(window.innerHeight - lastH) < 120) return; // address bar
+      lastW = window.innerWidth;
+      lastH = window.innerHeight;
+      setPos((p) => {
+        const fitted = fitToScreen(p);
+        if (fitted.x === p.x && fitted.y === p.y) return p;
+        savedPos = fitted;
+        return fitted;
+      });
+    };
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+
+  function onPointerDown(e) {
+    if (e.button !== undefined && e.button !== 0) return;
+    e.currentTarget.setPointerCapture?.(e.pointerId);
+    drag.current = { startX: e.clientX, startY: e.clientY, originX: pos.x, originY: pos.y, moved: false };
+  }
+
+  function onPointerMove(e) {
+    const d = drag.current;
+    if (!d) return;
+    const dx = e.clientX - d.startX;
+    const dy = e.clientY - d.startY;
+    if (!d.moved && Math.hypot(dx, dy) < DRAG_THRESHOLD) return;
+    d.moved = true;
+    place(fitToScreen({ x: d.originX + dx, y: d.originY + dy }));
+  }
+
+  function onPointerUp(e) {
+    const d = drag.current;
+    drag.current = null;
+    e.currentTarget.releasePointerCapture?.(e.pointerId);
+    if (d && !d.moved) openCart();
+  }
 
   return (
-    <div ref={constraintsRef} className="pointer-events-none fixed inset-0 z-[140]">
-      <AnimatePresence>
-        {visible && (
-          <motion.div
-            key="floating-cart"
-            // Enter from right, exit to right — drawer slides in from the same side
-            // so the motion reads as a single continuous gesture.
-            initial={{ x: 80, opacity: 0, scale: 0.85 }}
-            animate={{ x: 0, opacity: 1, scale: 1 }}
-            exit={{ x: 80, opacity: 0, scale: 0.85 }}
-            transition={{ type: "spring", stiffness: 380, damping: 30 }}
-            // Fixed at vertical center-ish (45 vh) so it floats in the middle of
-            // the viewport rather than clashing with bottom UI chrome on mobile.
-            // `absolute` (not `fixed`) because it's positioned relative to the
-            // full-viewport `constraintsRef` layer above, not the document.
-            className="pointer-events-none absolute right-4 top-[45vh] -translate-y-1/2 sm:right-6"
-          >
-          <motion.button
-            onPointerDown={() => { dragDistance.current = 0; }}
-            onDrag={(_e, info) => {
-              dragDistance.current = Math.hypot(info.offset.x, info.offset.y);
-            }}
-            onClick={(e) => {
-              if (dragDistance.current > 6) {
-                e.preventDefault();
-                return;
-              }
-              openCart();
-            }}
+    <AnimatePresence>
+      {visible && (
+        <motion.div
+          key="floating-cart"
+          initial={{ opacity: 0, scale: 0.7 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 0.7 }}
+          transition={{ type: "spring", stiffness: 380, damping: 30 }}
+          className="fixed z-[140]"
+          style={{ left: pos.x, top: pos.y, width: SIZE, height: SIZE }}
+        >
+          <button
+            type="button"
+            onPointerDown={onPointerDown}
+            onPointerMove={onPointerMove}
+            onPointerUp={onPointerUp}
+            onPointerCancel={() => { drag.current = null; }}
+            onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openCart(); } }}
             aria-label={`Open cart — ${count} item${count !== 1 ? "s" : ""}`}
-            drag
-            dragConstraints={constraintsRef}
-            dragElastic={0.08}
-            dragMomentum={false}
-            dragTransition={{ bounceStiffness: 420, bounceDamping: 32 }}
-            whileDrag={{ scale: 1.08, cursor: "grabbing" }}
-            whileHover={{ scale: 1.1, boxShadow: "0 0 32px 8px rgba(225,48,108,0.55)" }}
-            whileTap={{ scale: 0.92 }}
-            className="pointer-events-auto relative flex h-14 w-14 cursor-grab touch-none items-center justify-center rounded-full bg-gradient-to-br from-magenta to-magenta-deep shadow-[0_0_28px_4px_rgba(225,48,108,0.5)]"
-            style={{ x: dragX, y: dragY, WebkitTapHighlightColor: "transparent" }}
+            className="relative flex h-14 w-14 cursor-grab touch-none select-none items-center justify-center rounded-full bg-gradient-to-br from-magenta to-magenta-deep shadow-[0_0_28px_4px_rgba(225,48,108,0.5)] transition-transform active:scale-95 active:cursor-grabbing [@media(hover:hover)]:hover:scale-110"
+            style={{ WebkitTapHighlightColor: "transparent" }}
           >
-            {/* Bag icon */}
             <ShoppingBag className="h-6 w-6 text-white drop-shadow-sm" strokeWidth={1.9} />
 
             {/* Count badge — springs between values */}
@@ -110,18 +133,16 @@ export default function FloatingCart() {
               initial={{ opacity: 0.55, scale: 1 }}
               animate={{ opacity: 0, scale: 1.75 }}
               transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-              className="absolute inset-0 rounded-full bg-magenta"
+              className="pointer-events-none absolute inset-0 rounded-full bg-magenta"
             />
 
-            {/* Subtle inner glow shimmer — always present */}
             <span
               aria-hidden
               className="pointer-events-none absolute inset-0 rounded-full bg-gradient-to-t from-transparent to-white/20"
             />
-          </motion.button>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
+          </button>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 }

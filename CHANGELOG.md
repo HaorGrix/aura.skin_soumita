@@ -29,6 +29,7 @@
 - The home page "What our customers are saying" section no longer shows the four demo pictures from other brands; it reappears as soon as real review pictures are added and featured in Admin → Testimonials.
 
 ### Fixed
+- The floating cart button no longer drifts by itself on phones (up/down while scrolling, or sideways): it stays exactly where the shopper drags it, a tap opens the bag, and it only moves back inside the screen when the phone is rotated.
 - Meta Pixel: events fired as a page first opened (a product page's ViewContent, checkout's InitiateCheckout) were dropped because the pixel hadn't loaded yet; they are now held and sent once it loads. Opening a product no longer counts two page views.
 - Uploading product photos could reverse the photo order and swap the main photo (seen on The Ordinary Niacinamide); the order is now saved in one step, a second upload can't start mid-way, and the affected products were repaired.
 - Tapping a product in the header search could open a broken page when the search was used before the catalog loaded; it now always opens the real product.

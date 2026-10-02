@@ -1,8 +1,7 @@
 import { useState } from "react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
-import { Heart, Eye, ShoppingBag, Check, Star, Bell } from "lucide-react";
+import { Heart, Eye, ShoppingBag, Check, Star } from "lucide-react";
 import Badge from "./Badge.jsx";
-import NotifyMeModal from "./NotifyMeModal.jsx";
 import { useCart } from "../../context/CartContext.jsx";
 import { useWishlist } from "../../context/WishlistContext.jsx";
 import { useToast } from "./Toast.jsx";
@@ -26,7 +25,6 @@ export default function ProductCard({ product, onQuickView }) {
   const { has: wishHas, toggle: wishToggle } = useWishlist();
   const { toast } = useToast();
   const [added, setAdded] = useState(false);
-  const [notify, setNotify] = useState(false); // back-in-stock modal
   const wished = wishHas(product.id);
 
   const {
@@ -90,9 +88,7 @@ export default function ProductCard({ product, onQuickView }) {
             height="500"
             loading="lazy"
             decoding="async"
-            className={`absolute inset-0 h-full w-full object-contain transition-transform duration-700 ease-out group-hover:scale-105 ${
-              !inStock ? "grayscale" : ""
-            }`}
+            className="absolute inset-0 h-full w-full object-contain transition-transform duration-700 ease-out group-hover:scale-105"
           />
         )}
 
@@ -115,15 +111,6 @@ export default function ProductCard({ product, onQuickView }) {
           {product.isStaffPick && <Badge variant="staffPick">Staff Pick</Badge>}
           {product.isLimitedEdition && <Badge variant="limited">Limited Edition</Badge>}
         </div>
-
-        {/* Out-of-stock overlay */}
-        {!inStock && (
-          <div className="absolute inset-0 z-[2] grid place-items-center bg-ink/45 backdrop-blur-[1px]">
-            <span className="rounded-full bg-white/90 px-4 py-1.5 text-xs font-bold uppercase tracking-[0.14em] text-ink">
-              Out of Stock
-            </span>
-          </div>
-        )}
 
         {/* Wishlist — global persistent state via WishlistContext */}
         <button
@@ -195,7 +182,7 @@ export default function ProductCard({ product, onQuickView }) {
 
         {/* Price + Add — locked to the bottom via mt-auto so it aligns across
             every card regardless of title length or rating presence.
-            flex-wrap: the "Notify Me" pill (icon + text) is wider than the
+            flex-wrap: the "Stock Out" pill (icon + text) is wider than the
             in-stock quick-add circle, and on a narrow 2-col mobile card
             there isn't always room for it beside the price on one line —
             without wrap that overflowed the card's right edge instead of
@@ -216,7 +203,7 @@ export default function ProductCard({ product, onQuickView }) {
             )}
           </div>
 
-          {/* In stock → quick-add circle. Out of stock → Notify Me pill. */}
+          {/* In stock → quick-add circle. Out of stock → Stock Out pill. */}
           {inStock ? (
             <button
               onClick={handleAdd}
@@ -254,18 +241,13 @@ export default function ProductCard({ product, onQuickView }) {
               </AnimatePresence>
             </button>
           ) : (
-            <button
-              onClick={() => setNotify(true)}
-              aria-label={`Notify me when ${name} is back in stock`}
-              className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-magenta/40 bg-magenta/5 px-3 py-2 text-xs font-semibold text-magenta transition-colors hover:bg-magenta hover:text-white"
-            >
-              <Bell className="h-3.5 w-3.5" strokeWidth={2} /> Notify Me
-            </button>
+            <span className="inline-flex shrink-0 items-center rounded-full border border-line bg-snow px-3 py-2 text-xs font-semibold text-ink-soft">
+              Stock Out
+            </span>
           )}
         </div>
       </div>
 
-      <NotifyMeModal product={product} open={notify} onClose={() => setNotify(false)} />
     </motion.article>
   );
 }

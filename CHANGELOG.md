@@ -19,6 +19,7 @@
 - Reviews are real: a buyer reviews a delivered item from Order History, it appears on the product page straight away and the points are added on the server. New Admin → Reviews screen to see every review and hide or show one.
 
 ### Changed
+- Out-of-stock products now come after every in-stock product in the shop, whatever the sort or search. Their photos stay in full colour (no grey "Out of Stock" overlay), and the card and product page show a plain "Stock Out" label instead of "Notify Me".
 - Coupons are private unless "Show to shoppers" is switched on for them; existing ordinary codes were made private so checkout no longer lists them automatically. Rewards codes still appear to members who have earned them.
 - Phones: the bill breakdown (subtotal, discount, delivery, total) is always shown right above the checkout button; tapping a form field no longer zooms the page, and tapping + / Add quickly no longer zooms in; small text across the site is darker.
 - Checkout, coupon and bag fields no longer offer the browser's saved names, addresses or codes.
@@ -26,6 +27,7 @@
 - Home page banners, the sale banner, a concern tile, the journal cover and the review pictures load about 95% lighter (same size and shape), so they no longer appear cut off at the bottom while loading on mobile data; review pictures are shown whole instead of cropped.
 
 ### Removed
+- The "Notify Me" back-in-stock popup: it never saved the request, so nobody was ever notified.
 - The "Join the glow letter" newsletter box in the footer. It never saved the email or sent the promised 10% code.
 - The About page's "30-Day Money-Back Promise" card and "30-day refund window" stat are gone; they promised refunds the shop's 7-day return policy doesn't offer.
 - The home page "What our customers are saying" section no longer shows the four demo pictures from other brands; it reappears as soon as real review pictures are added and featured in Admin → Testimonials.

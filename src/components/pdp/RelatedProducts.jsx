@@ -3,7 +3,11 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import ProductCard from "../ui/ProductCard.jsx";
 
 /** "Complete Your Ritual" — horizontal snap carousel of related products. */
-export default function RelatedProducts({ products, onQuickView, title = "Complete your ritual" }) {
+// The rail runs edge to edge: it cancels the page's side padding, so
+// `bleed` must match the padding of the page it sits in.
+const PDP_BLEED = "-mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-10 lg:px-10";
+
+export default function RelatedProducts({ products, onQuickView, title = "Complete your ritual", bleed = PDP_BLEED }) {
   const scroller = useRef(null);
 
   const scrollBy = (dir) => {
@@ -45,7 +49,7 @@ export default function RelatedProducts({ products, onQuickView, title = "Comple
 
       <div
         ref={scroller}
-        className="-mx-5 flex snap-x snap-mandatory gap-4 overflow-x-auto px-5 pb-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        className={`${bleed} flex snap-x snap-mandatory gap-4 overflow-x-auto pb-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden`}
       >
         {products.map((p) => (
           <div

@@ -357,3 +357,17 @@
     font-size: 16px;
   }
 }
+
+/* ------------------------------------------------------------------ *
+ * Grid items may shrink below their content's natural width
+ * ------------------------------------------------------------------
+ * A grid column (`grid` with no template, or `1fr`) can't get narrower
+ * than its widest unbreakable content. Safari counts a one-line,
+ * truncated product name at its full length there, so the bag and
+ * checkout columns grew wider than the phone screen and cut off prices
+ * and buttons. Letting every grid item shrink (the standard
+ * `min-width: 0` reset) keeps columns inside the screen in every browser;
+ * text that must not wrap still truncates with "…". */
+.grid > * {
+  min-width: 0;
+}

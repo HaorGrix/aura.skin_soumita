@@ -1,7 +1,5 @@
-import { useMemo, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { ArrowUp, Check, ArrowRight, Instagram, Facebook } from "lucide-react";
-import { isValidEmail } from "../lib/email-validation.js";
+import { useMemo } from "react";
+import { ArrowUp, Instagram, Facebook } from "lucide-react";
 import { useStoreSettings } from "../lib/api/settings.js";
 import { useContent } from "../lib/api/content.js";
 
@@ -19,8 +17,6 @@ function TikTokIcon({ className }) {
 export default function Footer() {
   const { storeName } = useStoreSettings();
   const { content } = useContent("footer.columns");
-  const [email, setEmail] = useState("");
-  const [sent, setSent] = useState(false);
 
   // Group the flat admin-editable link list back into columns, in the order
   // each column heading first appears — so an admin adding a brand-new
@@ -49,82 +45,11 @@ export default function Footer() {
     { Icon: TikTokIcon, label: "TikTok", href: content.tiktok },
   ].filter((s) => s.href);
 
-  const ok = isValidEmail(email);
-
-  function submit(e) {
-    e.preventDefault();
-    if (!ok) return;
-    setSent(true);
-    setTimeout(() => {
-      setSent(false);
-      setEmail("");
-    }, 3500);
-  }
-
   return (
     <footer className="border-t border-line bg-snow">
-      {/* Newsletter */}
-      <div className="mx-auto max-w-7xl px-5 py-16 sm:px-8">
-        <div className="grid gap-8 rounded-[1.75rem] bg-gradient-to-br from-petal via-white to-cyan-soft/40 p-8 ring-1 ring-line sm:p-12 lg:grid-cols-2 lg:items-center">
-          <div>
-            <h2 className="font-serif text-[clamp(1.75rem,4vw,2.75rem)] leading-tight text-ink">
-              Join the <span className="italic text-gradient-glow">glow letter</span> 🌸
-            </h2>
-            <p className="mt-3 max-w-md text-ink-soft">
-              Soulful skincare tips, early drops, and a little daily affirmation.
-              Plus <strong>10% off</strong> your first ritual.
-            </p>
-          </div>
-
-          <form onSubmit={submit} className="relative">
-            <div className="flex flex-col gap-3 sm:flex-row">
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="your@email.com"
-                aria-label="Email address"
-                className="flex-1 rounded-full bg-white px-5 py-4 text-base sm:text-sm text-ink ring-1 ring-line outline-none focus:ring-2 focus:ring-magenta/50"
-              />
-              <button
-                type="submit"
-                disabled={!ok || sent}
-                className={`inline-flex items-center justify-center gap-2 rounded-full px-7 py-4 text-sm font-semibold text-white transition-all ${
-                  ok && !sent ? "bg-magenta hover:shadow-[var(--shadow-glow-pink)]" : "bg-ink/30"
-                }`}
-              >
-                <AnimatePresence mode="wait" initial={false}>
-                  {sent ? (
-                    <motion.span key="sent" initial={{ scale: 0.6, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ opacity: 0 }} className="inline-flex items-center gap-2">
-                      <Check className="h-4 w-4" strokeWidth={3} /> You’re in!
-                    </motion.span>
-                  ) : (
-                    <motion.span key="join" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="inline-flex items-center gap-2">
-                      Subscribe <ArrowRight className="h-4 w-4" strokeWidth={2} />
-                    </motion.span>
-                  )}
-                </AnimatePresence>
-              </button>
-            </div>
-            <AnimatePresence>
-              {sent && (
-                <motion.p
-                  initial={{ opacity: 0, y: 6 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0 }}
-                  className="mt-3 text-sm font-medium text-magenta"
-                >
-                  Welcome to the glow ✨ Check your inbox for your 10% code.
-                </motion.p>
-              )}
-            </AnimatePresence>
-          </form>
-        </div>
-      </div>
-
       {/* Links */}
-      <div className="mx-auto max-w-7xl px-5 pb-12 sm:px-8">
-        <div className="grid gap-10 border-t border-line pt-12 sm:grid-cols-2 lg:grid-cols-5">
+      <div className="mx-auto max-w-7xl px-5 py-12 sm:px-8">
+        <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-5">
           <div className="lg:col-span-2">
             <a href="/" className="font-serif text-2xl text-ink">
               {storeName}

@@ -26,6 +26,7 @@
 - Home page banners, the sale banner, a concern tile, the journal cover and the review pictures load about 95% lighter (same size and shape), so they no longer appear cut off at the bottom while loading on mobile data; review pictures are shown whole instead of cropped.
 
 ### Removed
+- The "Join the glow letter" newsletter box in the footer. It never saved the email or sent the promised 10% code.
 - The About page's "30-Day Money-Back Promise" card and "30-day refund window" stat are gone; they promised refunds the shop's 7-day return policy doesn't offer.
 - The home page "What our customers are saying" section no longer shows the four demo pictures from other brands; it reappears as soon as real review pictures are added and featured in Admin → Testimonials.
 

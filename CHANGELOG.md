@@ -30,6 +30,7 @@
 - The home page "What our customers are saying" section no longer shows the four demo pictures from other brands; it reappears as soon as real review pictures are added and featured in Admin → Testimonials.
 
 ### Fixed
+- The Combos page could show "0 products" even with published combos when the combo list failed to load for a visitor; it now loads through one public lookup that works the same for guests, shoppers and staff, retries once, and shows a Retry message instead of an empty page if it still fails.
 - The home Combo tile and the hero banner's combo link opened an empty shop ("No matches… yet"): they pointed at a category that never existed (and at the old preview domain), and shoppers weren't allowed to read combo contents, so "What's inside" never showed either. The tile now opens Combos, and shows "Combos are on the way" while there are none.
 - The Rewards page showed tiers (SKN3/SKN5/SKN8FS) and earn rates (1 point per ৳1000, 5 per review) that didn't exist; it now shows the real reward codes and the rates actually set.
 - Bag page on iPhone: a long product name made the page wider than the screen, cutting off prices, the promo Apply button and the order total. Every page and pop-up was re-checked on 320–390px phones (Safari and Chrome); the product page tabs and "Complete your ritual" strip no longer stick out at the edges.

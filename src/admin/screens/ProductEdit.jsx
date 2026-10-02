@@ -22,7 +22,6 @@ import { useAdmin } from "../context.js";
 import { adminNavigate } from "../AdminApp.jsx";
 import { useStoreSettings } from "../../lib/api/settings.js";
 import ImageManager, { VideoField } from "../components/ImageManager.jsx";
-import ComboItemsTab from "../components/ComboItemsTab.jsx";
 import {
   Btn, Card, ConfirmModal, Modal, MoneyField, MultiSelectField, PageHeader, Pill, SaveBar,
   SearchableCreatableSelect, SelectField, Spinner, StockPill, TagsField, TextField, Toggle, money, useAsync,
@@ -30,7 +29,7 @@ import {
 import { useConcerns } from "../../lib/api/concerns.js";
 import { displaySize } from "../../lib/format.js";
 
-const TABS = ["Details", "Pricing", "Variants", "Combo items", "Inventory", "Attributes", "Images", "SEO"];
+const TABS = ["Details", "Pricing", "Variants", "Inventory", "Attributes", "Images", "SEO"];
 
 const BLANK = {
   name: "", brand: "", brand_id: null, slug: "", subtitle: "", description: "", how_to_use: "",
@@ -296,12 +295,18 @@ export default function ProductEdit({ id }) {
         {form.is_best_seller_manual && <Pill tone="magenta">Bestseller</Pill>}
         {form.is_staff_pick && <Pill tone="sky">Staff Pick</Pill>}
         {form.is_limited_edition && <Pill tone="sky">Limited Edition</Pill>}
+        {form.is_combo && !isNew && (
+          <button type="button" onClick={() => adminNavigate(`/admin/combos/${productId}`)}
+            className="text-sm font-medium text-magenta hover:underline">
+            Combo — manage what's inside →
+          </button>
+        )}
       </div>
 
       <div className="mb-4 flex gap-1 overflow-x-auto border-b border-line">
         {TABS.map((t) => (
           <button key={t} onClick={() => setTab(t)}
-            disabled={isNew && (t === "Images" || t === "Inventory" || t === "Variants" || t === "Combo items")}
+            disabled={isNew && (t === "Images" || t === "Inventory" || t === "Variants")}
             className={`whitespace-nowrap border-b-2 px-4 py-2.5 text-sm transition-colors disabled:opacity-40 ${
               tab === t ? "border-magenta font-medium text-magenta" : "border-transparent text-ink-soft hover:text-ink"
             }`}>
@@ -445,9 +450,6 @@ export default function ProductEdit({ id }) {
         </Card>
       )}
 
-      {tab === "Combo items" && !isNew && (
-        <ComboItemsTab productId={productId} comboPriceMinor={form.price_minor} readOnly={readOnly} />
-      )}
 
       {tab === "Variants" && !isNew && (
         <VariantsTab

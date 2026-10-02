@@ -25,6 +25,7 @@ import { isAdminPath } from "../lib/adminPath.js";
 const Dashboard   = lazy(() => import("./screens/Dashboard.jsx"));
 const Products    = lazy(() => import("./screens/Products.jsx"));
 const ProductEdit = lazy(() => import("./screens/ProductEdit.jsx"));
+const Combos      = lazy(() => import("./screens/Combos.jsx"));
 const Categories  = lazy(() => import("./screens/Categories.jsx"));
 const Brands      = lazy(() => import("./screens/Brands.jsx"));
 const Concerns    = lazy(() => import("./screens/Concerns.jsx"));
@@ -260,6 +261,7 @@ function Screen({ route }) {
   switch (screen) {
     case "dashboard": return <Dashboard />;
     case "products":  return id ? <ProductEdit id={id} /> : <Products />;
+    case "combos":    return <Combos id={id} />;
     case "categories": return <Categories />;
     case "brands":    return <Brands />;
     case "concerns":  return <Concerns />;

@@ -423,3 +423,12 @@ export async function getComboItems(comboDbId) {
   };
 }
 
+/**
+ * Database ids of the published combos (Admin → Combos) — the products that
+ * have combo items. Drives /shop?combo=1 and the home Combo tile.
+ */
+export async function getComboProductIds() {
+  const { data, error } = await supabase.from("combo_items").select("combo_product_id");
+  if (error) return { data: new Set(), error };
+  return { data: new Set(data.map((r) => r.combo_product_id)), error: null };
+}

@@ -164,7 +164,7 @@ const WRITABLE = [
   "max_per_order", "backorder_ok", "status", "is_new", "popularity", "tone",
   "concern", "skin_type", "ingredients", "seo_title", "seo_description",
   "rating", "review_count",
-  "is_staff_pick", "is_limited_edition", "is_best_seller_manual",
+  "is_staff_pick", "is_limited_edition", "is_best_seller_manual", "is_combo",
 ];
 
 function pickWritable(input) {
@@ -326,6 +326,28 @@ export async function bulkPrice(ids, mode, amount) {
 /* ---------------------------------------------------------------- *
  * Combos — what is inside a combo product (combo_items, 0068)
  * ---------------------------------------------------------------- */
+
+/** Every combo product (any status) with its item count, newest first. */
+export async function listCombos() {
+  const { data, error } = await supabase
+    .from("products")
+    .select("id, slug, name, brand, price_minor, stock, status, updated_at, combo_items!combo_items_combo_product_id_fkey(count)")
+    .eq("is_combo", true)
+    .order("updated_at", { ascending: false });
+  if (error) return { data: null, error };
+  return { data: data.map(({ combo_items, ...p }) => ({ ...p, itemCount: combo_items?.[0]?.count ?? 0 })), error: null };
+}
+
+/** Mark an existing product as a combo, or turn a combo back into a plain product. */
+export async function setProductCombo(id, isCombo) {
+  if (!isCombo) {
+    // Its contents go with it, so the shop stops listing it as a combo.
+    const { error: delError } = await supabase.from("combo_items").delete().eq("combo_product_id", id);
+    if (delError) return { error: delError };
+  }
+  const { error } = await supabase.from("products").update({ is_combo: isCombo }).eq("id", id);
+  return { error };
+}
 
 /** Items of one combo, in display order, with each item's name and price. */
 export async function listComboItems(comboProductId) {

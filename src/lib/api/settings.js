@@ -19,14 +19,18 @@ import { fromMinor } from "../format.js";
 import {
   FREE_SHIPPING_THRESHOLD, STANDARD_SHIPPING, TAX_RATE,
 } from "../shop-config.js";
-import { POINTS_PER_REVIEW } from "../../data/reviews.js";
 
 /** Exactly the previous hardcoded behaviour. */
 export const DEFAULT_SETTINGS = {
   freeShippingThreshold: FREE_SHIPPING_THRESHOLD,
   standardShipping: STANDARD_SHIPPING,
   taxRate: TAX_RATE,
-  pointsPerReview: POINTS_PER_REVIEW,
+  // Rewards programme (Admin → Rewards). Defaults are "on, earning nothing"
+  // until the live row loads, so no made-up rates are ever shown.
+  rewardsEnabled: true,
+  rewardsName: null,
+  pointsPerTaka: 0,
+  pointsPerReview: 0,
   storeName: "skin.theory",
   supportEmail: null,
   supportPhone: null,
@@ -50,9 +54,10 @@ function mapRow(row) {
     freeShippingThreshold: fromMinor(row.free_shipping_threshold_minor),
     standardShipping: fromMinor(row.standard_shipping_minor),
     taxRate: Number(row.tax_rate) || 0,
-    // Falls back to the compiled-in constant if the column is missing
-    // (migration 0002 not yet applied) or left blank.
-    pointsPerReview: row.points_per_review ?? DEFAULT_SETTINGS.pointsPerReview,
+    rewardsEnabled: row.rewards_enabled ?? true,
+    rewardsName: row.rewards_name?.trim() || null,
+    pointsPerTaka: Number(row.points_per_taka) || 0,
+    pointsPerReview: Number(row.points_per_review) || 0,
     storeName: row.store_name ?? DEFAULT_SETTINGS.storeName,
     supportEmail: row.support_email ?? null,
     supportPhone: row.support_phone ?? null,

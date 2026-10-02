@@ -30,7 +30,7 @@ export default function ReviewsSection({ product }) {
   // impossible from here. `authed`/`openAuth` drive the "review to earn" CTA:
   // signed-in shoppers jump straight to My Orders; guests get the auth modal
   // first, then land on My Orders on success.
-  const { myReviewsFor, authed, openAuth } = useUser();
+  const { myReviewsFor, authed, openAuth, rewards } = useUser();
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState("newest");
   // Real, verified-purchase reviews from Postgres (0031_reviews_table.sql) —
@@ -160,7 +160,7 @@ export default function ReviewsSection({ product }) {
           >
             <span className="inline-flex items-start gap-2">
               <Sparkles className="mt-0.5 h-3.5 w-3.5 shrink-0 text-magenta" strokeWidth={1.8} />
-              Bought this? Review your orders to earn points &amp; unlock discounts.
+              {rewards.enabled ? "Bought this? Review your orders to earn points & unlock discounts." : "Bought this? Review it from your orders."}
             </span>
             <ChevronRight className="h-3.5 w-3.5 shrink-0" strokeWidth={2} />
           </button>

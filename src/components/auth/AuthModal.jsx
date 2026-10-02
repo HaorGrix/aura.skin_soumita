@@ -25,7 +25,7 @@ import { resetPasswordWithCode, sendPasswordResetCode } from "../../lib/api/cust
 const emailOk = isValidEmail;
 
 export default function AuthModal() {
-  const { auth, closeAuth, login, signup } = useUser();
+  const { auth, closeAuth, login, signup, rewards } = useUser();
   const { toast } = useToast();
   const { storeName } = useStoreSettings();
   const { open, mode: initialMode, onSuccess } = auth;
@@ -168,7 +168,7 @@ export default function AuthModal() {
                 : "Welcome back"}
             </h2>
             <p className="mt-1 text-sm text-ink-soft">
-              {mode === "signup" ? "Save your faves, track orders & earn glow points."
+              {mode === "signup" ? (rewards.enabled ? "Save your faves, track orders & earn glow points." : "Save your faves and track your orders.")
                 : mode === "forgot" ? (codeSent ? "Enter the code from the email and choose a new password." : "We'll email you a 6-digit code.")
                 : mode === "confirm" ? `We sent a confirmation link to ${email}. Open it to activate your account, then log in.`
                 : "Sign in to pick up right where you left off."}

@@ -4,7 +4,6 @@ import { motion } from "framer-motion";
 import { Check, Clock, PenLine, Truck, XCircle } from "lucide-react";
 import { useUser } from "../../context/UserContext.jsx";
 import { productById } from "../../data/reviews.js";
-import { useStoreSettings } from "../../lib/api/settings.js";
 import { formatPrice } from "../../lib/format.js";
 import { getProductsByIds } from "../../lib/api/products.js";
 import EmptyState from "../../components/ui/EmptyState.jsx";
@@ -24,8 +23,8 @@ const STATUS = {
 export default function OrdersTab() {
   // The signed-in account's orders, loaded from the server (UserContext →
   // lib/api/myAccount.js): every order placed with this email, on any device.
-  const { orders, email, hasReviewedItem } = useUser();
-  const { pointsPerReview } = useStoreSettings();
+  const { orders, email, hasReviewedItem, rewards } = useUser();
+  const { pointsPerReview } = rewards;
   const [review, setReview] = useState(null); // { product, orderItemId }
   const [activeOrder, setActiveOrder] = useState(null);
   const [liveProducts, setLiveProducts] = useState({});
@@ -55,7 +54,7 @@ export default function OrdersTab() {
       <div className="mb-6">
         <h2 className="font-serif text-2xl text-ink">Order History</h2>
         <p className="mt-1 text-sm text-ink-soft">
-          Every order placed with {email || "your email"}. Review delivered items to earn points.
+          Every order placed with {email || "your email"}.{rewards.earnsOnReview ? " Review delivered items to earn points." : ""}
         </p>
       </div>
 
@@ -63,7 +62,7 @@ export default function OrdersTab() {
         <EmptyState
           emoji="🛍️"
           title="No orders yet"
-          message="Your purchases will appear here, ready to review for points."
+          message={rewards.earnsOnReview ? "Your purchases will appear here, ready to review for points." : "Your purchases will appear here."}
           actionLabel="Start shopping"
           onAction={() => navigate("/shop")}
         />
@@ -135,7 +134,7 @@ export default function OrdersTab() {
                             className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-magenta px-3.5 py-2 text-xs font-semibold text-white transition-shadow hover:shadow-[var(--shadow-glow-pink)]"
                           >
                             <PenLine className="h-3.5 w-3.5" strokeWidth={2} />
-                            <span className="hidden sm:inline">Review · +{pointsPerReview} pts</span>
+                            <span className="hidden sm:inline">Review{rewards.earnsOnReview ? ` · +${pointsPerReview} pts` : ""}</span>
                             <span className="sm:hidden">Review</span>
                           </button>
                         ) : (

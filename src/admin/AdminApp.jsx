@@ -39,6 +39,7 @@ const Coupons     = lazy(() => import("./screens/Coupons.jsx"));
 const Sales       = lazy(() => import("./screens/Sales.jsx"));
 const Testimonials = lazy(() => import("./screens/Testimonials.jsx"));
 const Reviews = lazy(() => import("./screens/Reviews.jsx"));
+const RewardsScreen = lazy(() => import("./screens/Rewards.jsx"));
 const Journal      = lazy(() => import("./screens/Journal.jsx"));
 const Settings    = lazy(() => import("./screens/Settings.jsx"));
 const Staff       = lazy(() => import("./screens/Staff.jsx"));
@@ -271,6 +272,7 @@ function Screen({ route }) {
     case "sales":     return <Sales />;
     case "testimonials": return <Testimonials />;
     case "reviews":   return <Reviews />;
+    case "rewards":   return <RewardsScreen />;
     case "journal":   return <Journal />;
     case "settings":  return <Settings />;
     case "staff":     return <Staff />;

@@ -241,6 +241,39 @@ export const SLOTS = [
     ],
   },
   {
+    slot: "page.rewards",
+    label: "Rewards Page",
+    group: "Pages",
+    help: "The wording on the Rewards page. The programme itself — on/off, name, how points are earned and the reward tiers — is set in Admin → Rewards; the earn rates and tiers shown on the page always come from there.",
+    fields: [
+      { key: "title", label: "Headline", type: "text", max: 60, default: "Your Glow, Rewarded" },
+      {
+        key: "intro", label: "Intro paragraph", type: "textarea", max: 300, default: "",
+        help: "Leave blank to describe the programme automatically from the current earn rates and tiers.",
+      },
+      {
+        key: "guestText", label: "Message for shoppers who aren't signed in", type: "text", max: 120,
+        default: "Sign in to track your points and unlock exclusive rewards.",
+      },
+      {
+        key: "extraWays", label: "Extra ways to earn (optional)", type: "list", max: 4,
+        help: "Shown under How to earn, after the automatic spend and review lines — e.g. a birthday bonus you add by hand.",
+        itemFields: [
+          { key: "title", label: "Title", type: "text", max: 40 },
+          { key: "text", label: "Description", type: "text", max: 100 },
+        ],
+        default: [],
+      },
+      { key: "ctaLabel", label: "Button label", type: "text", max: 30, default: "Shop to earn points" },
+      { key: "ctaHref", label: "Button opens", type: "link", default: "/shop" },
+      { key: "pausedTitle", label: "Headline while the programme is off", type: "text", max: 60, default: "Rewards are taking a break" },
+      {
+        key: "pausedText", label: "Message while the programme is off", type: "textarea", max: 300,
+        default: "Our rewards programme is paused right now. Points you've already earned are safe and will be here when it's back.",
+      },
+    ],
+  },
+  {
     slot: "page.contact",
     label: "Contact Page",
     group: "Pages",

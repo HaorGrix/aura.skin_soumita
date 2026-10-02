@@ -1,7 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
-import { pointsForOrder } from "../data/reviews.js";
-import { MILESTONES, couponForPoints } from "../lib/rewards-config.js";
-import { useStoreSettings } from "../lib/api/settings.js";
+import { pointsForPurchase, useRewards } from "../lib/api/rewards.js";
 import { signInCustomer, signOutCustomer, signUpCustomer, watchSession } from "../lib/api/customerAuth.js";
 
 const UserContext = createContext(null);
@@ -24,18 +22,13 @@ function saveStore(store) {
   } catch {}
 }
 
-export function couponsFor(points) {
-  return couponForPoints(points);
-}
-export function nextMilestoneFor(points) {
-  return MILESTONES.find((m) => points < m.points) ?? null;
-}
-
 export function UserProvider({ children }) {
   // Live value from /admin/settings — points_per_review — so every
   // customer-facing "+N pts" line (loyalty header, review toast) matches the
   // store's configured award.
-  const { pointsPerReview } = useStoreSettings();
+  // The rewards programme as set in Admin → Rewards (tiers, rates, on/off).
+  const rewards = useRewards();
+  const { pointsPerReview } = rewards;
 
   // Signed-in state comes only from a real Supabase session (watchSession
   // below); nothing in localStorage can make someone "logged in".
@@ -179,11 +172,13 @@ export function UserProvider({ children }) {
       logout,
       points,
       pointsPerReview,
+      rewards,
       orders,
       myReviews,
-      coupons: couponsFor(points),
-      nextMilestone: nextMilestoneFor(points),
-      milestones: MILESTONES,
+      // Reward tiers from the database: those unlocked, the next one, all.
+      coupons: rewards.tiers.filter((t) => points >= t.points),
+      nextMilestone: rewards.tiers.find((t) => points < t.points) ?? null,
+      milestones: rewards.tiers,
       hasPurchased,
       hasReviewed,
       myReviewsFor: (productId) => myReviews.filter((r) => r.productId === productId),
@@ -204,7 +199,7 @@ export function UserProvider({ children }) {
         };
         setMyReviews((prev) => [review, ...prev]);
         setReviewedIds((prev) => [...prev, productId]);
-        setPoints((p) => p + pointsPerReview);
+        if (rewards.earnsOnReview) setPoints((p) => p + pointsPerReview);
         return true;
       },
       updateProfile: (updates) => {
@@ -221,7 +216,7 @@ export function UserProvider({ children }) {
         setUsedCoupons((prev) => (prev.includes(normalized) ? prev : [...prev, normalized]));
       },
       addOrder: (orderData) => {
-        const earned = pointsForOrder(orderData.total);
+        const earned = pointsForPurchase(orderData.total, rewards);
         const newOrder = {
           orderId: orderData.number,
           date: new Date().toISOString().split('T')[0],
@@ -248,7 +243,7 @@ export function UserProvider({ children }) {
         return earned;
       },
     };
-  }, [points, pointsPerReview, myReviews, reviewedIds, orders, purchasedIds, profile, authed, auth, openAuth, closeAuth, login, signup, logout, usedCoupons, refreshAccount, reviewedItemIds]);
+  }, [points, pointsPerReview, myReviews, reviewedIds, orders, purchasedIds, profile, authed, auth, openAuth, closeAuth, login, signup, logout, usedCoupons, refreshAccount, reviewedItemIds, rewards]);
 
   return <UserContext.Provider value={value}>{children}</UserContext.Provider>;
 }

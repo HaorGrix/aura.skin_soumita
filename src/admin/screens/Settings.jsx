@@ -77,14 +77,8 @@ export default function Settings() {
           </div>
         </Card>
 
-        <Card title="Loyalty" description="How customers earn points.">
-          <div className="grid gap-4">
-            <TextField label="Points per taka spent" type="number" step="0.001"
-              hint="0.01 means 1 point per ৳100"
-              value={form.points_per_taka ?? 0} onChange={(e) => set("points_per_taka")(Number(e.target.value))} />
-            <TextField label="Points per review" type="number" min="0"
-              value={form.points_per_review ?? 0} onChange={(e) => set("points_per_review")(Number(e.target.value))} />
-          </div>
+        <Card title="Loyalty" description="Points, reward tiers and the programme on/off switch now live in their own screen.">
+          <a href="/admin/rewards" className="text-sm font-semibold text-magenta hover:underline">Open Admin → Rewards →</a>
         </Card>
 
         <Card title="Contact details" description="Store name is used site-wide. Support email/phone here are used only as the fallback contact mention in the legal pages (Privacy, Terms, Cookies, Shipping & Returns) — the Contact page's own Email/Phone/Social/Hours/Address cards are edited separately under Content → Contact Page.">

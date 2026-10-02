@@ -14,6 +14,7 @@ import {
 import Button from "../components/ui/Button.jsx";
 import Footer from "../components/Footer.jsx";
 import { useStoreSettings } from "../lib/api/settings.js";
+import { useRewards } from "../lib/api/rewards.js";
 import { useContent } from "../lib/api/content.js";
 
 /* ─────────────────────────────────────────────
@@ -142,6 +143,7 @@ const ACCENT_BORDER = {
 ───────────────────────────────────────────── */
 export default function About() {
   const { storeName } = useStoreSettings();
+  const rewards = useRewards();
   const { content } = useContent("page.about");
   const PILLARS = buildPillars();
   const heroIntro = (content.intro || "").replace(/\{storeName\}/g, storeName);
@@ -376,10 +378,12 @@ export default function About() {
               Shop the collection
               <ArrowRight className="h-4 w-4" strokeWidth={2} />
             </Button>
-            <Button variant="secondary" size="lg" as="a" href="/rewards" magnetic={false}>
-              Join {storeName} Rewards
-              <Sparkles className="h-4 w-4" strokeWidth={2} />
-            </Button>
+            {rewards.enabled && (
+              <Button variant="secondary" size="lg" as="a" href="/rewards" magnetic={false}>
+                Join {rewards.name}
+                <Sparkles className="h-4 w-4" strokeWidth={2} />
+              </Button>
+            )}
           </div>
         </Reveal>
       </section>

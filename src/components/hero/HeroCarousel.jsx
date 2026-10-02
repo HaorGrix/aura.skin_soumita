@@ -437,7 +437,9 @@ export default function HeroCarousel() {
           </button>
 
           {/* Dots count REAL banners, not the padded rail (header note 1). */}
-          <div className="mt-6 flex items-center justify-center gap-2">
+          {/* The visible dot stays small; the button around it is a
+              finger-sized tap target. */}
+          <div className="mt-4 flex items-center justify-center">
             {slides.map((_, i) => (
               <button
                 key={i}
@@ -445,10 +447,14 @@ export default function HeroCarousel() {
                 aria-label={`Go to banner ${i + 1}`}
                 aria-current={i === active}
                 onClick={() => goTo(i)}
-                className={`h-2 rounded-full transition-all duration-300 ${
-                  i === active ? "w-7 bg-magenta" : "w-2 bg-ink/20 hover:bg-ink/40"
-                }`}
-              />
+                className="group grid h-8 place-items-center px-1"
+              >
+                <span
+                  className={`block h-2 rounded-full transition-all duration-300 ${
+                    i === active ? "w-7 bg-magenta" : "w-2 bg-ink/20 group-hover:bg-ink/40"
+                  }`}
+                />
+              </button>
             ))}
           </div>
         </>

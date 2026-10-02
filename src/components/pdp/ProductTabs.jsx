@@ -4,6 +4,7 @@ import { Truck, RotateCcw, PackageCheck } from "lucide-react";
 import ReviewsSection from "../reviews/ReviewsSection.jsx";
 import { useStoreSettings } from "../../lib/api/settings.js";
 import { formatPrice } from "../../lib/format.js";
+import { findConcernBySlug, useConcerns } from "../../lib/api/concerns.js";
 
 const TABS = [
   { id: "description", label: "Description" },
@@ -92,6 +93,9 @@ function ExpandableText({ text, className = "" }) {
 }
 
 function Description({ product }) {
+  // product.concern holds concern slugs — show the names shoppers know.
+  const concerns = useConcerns();
+  const targets = product.concern.map((slug) => findConcernBySlug(concerns, slug)?.name ?? slug).join(", ");
   return (
     <div className="grid gap-8 lg:grid-cols-[1.4fr_1fr]">
       <div className="max-w-2xl">
@@ -105,7 +109,7 @@ function Description({ product }) {
         <dl className="mt-4 space-y-3 text-sm">
           <Row k="Category" v={product.category} />
           <Row k="Best for" v={product.skinType.join(", ")} />
-          <Row k="Targets" v={product.concern.join(", ")} />
+          <Row k="Targets" v={targets} />
           {/* stacked, not inline+right-aligned like the rows above — a full
               ingredient list can run to 30+ names, and right-aligning that
               much wrapped text reads as a jagged, hard-to-scan mess (every

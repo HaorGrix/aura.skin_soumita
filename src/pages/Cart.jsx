@@ -129,7 +129,7 @@ export default function Cart() {
           <ChevronLeft className="h-4 w-4" strokeWidth={1.8} /> Continue shopping
         </a>
 
-        <div className="mt-4 flex items-end justify-between gap-4">
+        <div className="mt-4 flex items-baseline justify-between gap-4">
           <h1 className="font-serif text-[clamp(2rem,5vw,3.25rem)] leading-tight text-ink">
             Your Bag{" "}
             <span className="text-ink-soft">({count})</span>
@@ -184,7 +184,7 @@ export default function Cart() {
                 </div>
                 <button
                   type="submit"
-                  className="rounded-full bg-ink px-5 text-sm font-semibold text-white transition-colors hover:bg-magenta"
+                  className="rounded-full bg-magenta px-5 text-sm font-semibold text-white transition-colors hover:bg-magenta-deep"
                 >
                   Apply
                 </button>

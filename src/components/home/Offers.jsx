@@ -86,6 +86,8 @@ function OfferCard({ offer, index }) {
  * nothing to poll: this component just re-fetches on mount, same as any
  * other homepage section.
  */
+const OFFER_WIDTH = "w-full sm:w-[calc(50%-0.75rem)] lg:w-[calc((100%-3rem)/3)]";
+
 export default function Offers() {
   const [sales, setSales] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -129,13 +131,16 @@ export default function Offers() {
           </p>
         </div>
 
-        <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        {/* Centred wrap so one or two deals sit in the middle, not on the left. */}
+        <div className="mt-10 flex flex-wrap justify-center gap-6">
           {loading
             ? Array.from({ length: 3 }).map((_, i) => (
-                <div key={i} className="aspect-[4/3] animate-pulse rounded-none bg-white/60 ring-1 ring-line" />
+                <div key={i} className={`${OFFER_WIDTH} aspect-[4/3] animate-pulse rounded-none bg-white/60 ring-1 ring-line`} />
               ))
             : offers.map((offer, i) => (
-                <OfferCard key={sales[i].id} offer={offer} index={i} />
+                <div key={sales[i].id} className={OFFER_WIDTH}>
+                  <OfferCard offer={offer} index={i} />
+                </div>
               ))}
         </div>
       </div>

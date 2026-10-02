@@ -471,7 +471,7 @@ export default function Checkout() {
                           done
                             ? "bg-magenta text-white"
                             : current
-                            ? "bg-ink text-white"
+                            ? "bg-magenta text-white"
                             : "bg-snow text-ink-soft ring-1 ring-line"
                         }`}
                       >

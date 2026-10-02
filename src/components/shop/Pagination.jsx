@@ -45,7 +45,7 @@ export default function Pagination({ page, totalPages, onChange }) {
             onClick={() => onChange(p)}
             aria-label={`Page ${p}`}
             aria-current={p === page ? "page" : undefined}
-            className={`${btn} ${p === page ? "bg-ink text-white" : "bg-white text-ink ring-1 ring-line hover:ring-magenta"}`}
+            className={`${btn} ${p === page ? "bg-magenta text-white" : "bg-white text-ink ring-1 ring-line hover:ring-magenta"}`}
           >
             {p}
           </button>

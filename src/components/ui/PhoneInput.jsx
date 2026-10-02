@@ -5,6 +5,9 @@ export const BD_PHONE_REGEX = /^(?:\+8801|8801|01)[3-9]\d{8}$/;
 
 export default function PhoneInput({ value, onChange, required, onValidityChange, className = "", placeholder = "01XXXXXXXXX", autoComplete = "tel" }) {
   const [error, setError] = useState("");
+  // Errors show once the shopper has left the field or tried to submit,
+  // never on a form they haven't started filling in.
+  const [touched, setTouched] = useState(false);
 
   useEffect(() => {
     let isValid = true;
@@ -19,7 +22,7 @@ export default function PhoneInput({ value, onChange, required, onValidityChange
         err = "Phone number is required";
       } else if (cleaned && !BD_PHONE_REGEX.test(cleaned)) {
         isValid = false;
-        err = "Invalid number";
+        err = "Enter a valid Bangladeshi mobile number (01XXXXXXXXX)";
       }
     }
     
@@ -40,12 +43,14 @@ export default function PhoneInput({ value, onChange, required, onValidityChange
         type="tel"
         value={value || ""}
         onChange={handleChange}
-        className={`${className} ${error ? "ring-magenta" : ""}`}
+        onBlur={() => setTouched(true)}
+        onInvalid={() => setTouched(true)}
+        className={`${className} ${touched && error ? "ring-magenta" : ""}`}
         placeholder={placeholder}
         required={required}
         autoComplete={autoComplete}
       />
-      {error && <span className="mt-1.5 block text-xs font-semibold text-magenta">{error}</span>}
+      {touched && error && <span className="mt-1.5 block text-xs font-semibold text-magenta">{error}</span>}
     </div>
   );
 }

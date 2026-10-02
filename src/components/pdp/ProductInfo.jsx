@@ -12,10 +12,8 @@ import {
   ShieldCheck,
   Leaf,
   Sparkles,
-  Bell,
 } from "lucide-react";
 import Badge from "../ui/Badge.jsx";
-import NotifyMeModal from "../ui/NotifyMeModal.jsx";
 import { useCart } from "../../context/CartContext.jsx";
 import { useWishlist } from "../../context/WishlistContext.jsx";
 import { useToast } from "../ui/Toast.jsx";
@@ -72,7 +70,6 @@ export default function ProductInfo({ product, onWriteReview }) {
   const [adding, setAdding] = useState(false);
   const [added, setAdded] = useState(false);
   const wished = wishHas(product.id);
-  const [notify, setNotify] = useState(false); // back-in-stock modal
   const [flights, setFlights] = useState([]);
 
   function handleWishlist() {
@@ -244,8 +241,8 @@ export default function ProductInfo({ product, onWriteReview }) {
               {variants.map((v) => {
                 const on = v.id === variantId;
                 // Out-of-stock variants stay clickable — selecting one must
-                // surface its explicit Out of Stock state (price, "Notify
-                // Me" CTA, stock hint below) rather than silently blocking
+                // surface its explicit Out of Stock state (price, "Stock
+                // Out" button, stock hint below) rather than silently blocking
                 // the click, so shoppers can see exactly why that size is
                 // unavailable instead of it just looking unresponsive.
                 return (
@@ -296,10 +293,11 @@ export default function ProductInfo({ product, onWriteReview }) {
 
         <button
           ref={addBtnRef}
-          onClick={unitInStock ? handleAdd : () => setNotify(true)}
+          onClick={unitInStock ? handleAdd : undefined}
+          disabled={!unitInStock}
           className={`group relative flex flex-1 items-center justify-center gap-2 overflow-hidden rounded-full px-6 text-sm font-semibold transition-all duration-500 ${
             !unitInStock
-              ? "border border-magenta/50 bg-magenta/10 text-magenta hover:bg-magenta hover:text-white hover:shadow-[var(--shadow-glow-pink)]"
+              ? "cursor-not-allowed border border-line bg-snow text-ink-soft"
               : added
               ? "bg-success text-white"
               : "bg-magenta text-white hover:shadow-[var(--shadow-glow-pink)]"
@@ -307,7 +305,7 @@ export default function ProductInfo({ product, onWriteReview }) {
         >
           {!unitInStock ? (
             <span className="inline-flex items-center gap-2">
-              <Bell className="h-4 w-4" strokeWidth={2} /> Out of Stock — Notify Me
+              Stock Out
             </span>
           ) : (
             <AnimatePresence mode="wait" initial={false}>
@@ -418,17 +416,13 @@ export default function ProductInfo({ product, onWriteReview }) {
         adding={adding}
         added={added}
         onAdd={handleAdd}
-        onNotify={() => setNotify(true)}
       />
-
-      {/* Back-in-stock modal (shared component) */}
-      <NotifyMeModal product={product} open={notify} onClose={() => setNotify(false)} />
     </div>
   );
 }
 
 /* Fixed bottom bar on mobile only */
-function MobileAddBar({ product, inStock, price, adding, added, onAdd, onNotify }) {
+function MobileAddBar({ product, inStock, price, adding, added, onAdd }) {
   return (
     <div className="fixed inset-x-0 bottom-0 z-[90] border-t border-line bg-white/90 px-4 py-3 backdrop-blur lg:hidden">
       <div className="flex items-center gap-3">
@@ -439,10 +433,11 @@ function MobileAddBar({ product, inStock, price, adding, added, onAdd, onNotify 
           </p>
         </div>
         <button
-          onClick={inStock ? onAdd : onNotify}
+          onClick={inStock ? onAdd : undefined}
+          disabled={!inStock}
           className={`flex flex-1 items-center justify-center gap-2 rounded-full py-3.5 text-sm font-semibold transition-colors ${
             !inStock
-              ? "border border-magenta/50 bg-magenta/10 text-magenta"
+              ? "cursor-not-allowed border border-line bg-snow text-ink-soft"
               : added
               ? "bg-success text-white"
               : "bg-magenta text-white"
@@ -450,7 +445,7 @@ function MobileAddBar({ product, inStock, price, adding, added, onAdd, onNotify 
         >
           {!inStock ? (
             <>
-              <Bell className="h-4 w-4" strokeWidth={2} /> Notify Me
+              Stock Out
             </>
           ) : adding ? (
             <>

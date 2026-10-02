@@ -727,14 +727,18 @@ export function queryProducts(all, { search = "", filters = {}, sort = "featured
     rating: (a, b) => b.rating - a.rating,
     newest: (a, b) => Number(b.isNew) - Number(a.isNew) || b.popularity - a.popularity,
   };
-  const chosen = sorters[sort] ?? sorters.featured;
+  // Out-of-stock products always go after everything that can be bought,
+  // whatever the sort or search.
+  const byStock = (a, b) => Number(a.inStock === false) - Number(b.inStock === false);
+  const picked = sorters[sort] ?? sorters.featured;
+  const chosen = (a, b) => byStock(a, b) || picked(a, b);
 
   // Active search → rank by relevance (name-prefix first, then contains, then
   // keyword/ingredient hits). The chosen sort is only a tiebreak, so typing
   // "a" still floats "Aloe…"/"Advanced…" above products that merely contain a.
   if (terms.length) {
     return [...list].sort(
-      (a, b) => relevanceScore(b, q, terms) - relevanceScore(a, q, terms) || chosen(a, b)
+      (a, b) => byStock(a, b) || relevanceScore(b, q, terms) - relevanceScore(a, q, terms) || picked(a, b)
     );
   }
 
@@ -756,5 +760,5 @@ export function queryProducts(all, { search = "", filters = {}, sort = "featured
   if (hasFilters || sort !== "featured") return ordered;
 
   // Generic catalog → float image-backed products to the top (stable).
-  return ordered.sort((a, b) => (b.image ? 1 : 0) - (a.image ? 1 : 0));
+  return ordered.sort((a, b) => byStock(a, b) || (b.image ? 1 : 0) - (a.image ? 1 : 0));
 }

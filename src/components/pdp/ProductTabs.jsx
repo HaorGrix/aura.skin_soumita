@@ -16,7 +16,7 @@ export default function ProductTabs({ product, active, onChange, onWriteReview }
   return (
     <section className="mt-16">
       {/* Tab bar */}
-      <div className="sticky top-20 z-20 -mx-5 mb-6 overflow-x-auto bg-[var(--bg)]/80 px-5 backdrop-blur sm:top-24 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      <div className="sticky top-20 z-20 -mx-4 mb-6 overflow-x-auto bg-[var(--bg)]/80 px-4 sm:-mx-6 sm:px-6 lg:-mx-10 lg:px-10 backdrop-blur sm:top-24 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         <div className="flex min-w-max gap-1 border-b border-line">
           {TABS.map((t) => {
             const on = active === t.id;

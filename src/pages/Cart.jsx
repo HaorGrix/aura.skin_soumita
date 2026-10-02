@@ -100,6 +100,7 @@ export default function Cart() {
             onAction={() => (navigate("/shop"))}
           />
           <RelatedProducts
+            bleed="-mx-5 px-5 sm:-mx-8 sm:px-8"
             products={recommended}
             onQuickView={setQuickView}
             title="Most-loved right now"
@@ -219,6 +220,7 @@ export default function Cart() {
 
         {/* Recommended */}
         <RelatedProducts
+            bleed="-mx-5 px-5 sm:-mx-8 sm:px-8"
           products={recommended}
           onQuickView={setQuickView}
           title="You may also love"

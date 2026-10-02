@@ -424,11 +424,13 @@ export async function getComboItems(comboDbId) {
 }
 
 /**
- * Database ids of the published combos (Admin → Combos) — the products that
- * have combo items. Drives /shop?combo=1 and the home Combo tile.
+ * Database ids of the published combos (Admin → Combos) that have items —
+ * drives /shop?combo=1 and the home Combo tile. Retried once, since a
+ * failure would otherwise read as "no combos".
  */
 export async function getComboProductIds() {
-  const { data, error } = await supabase.from("combo_items").select("combo_product_id");
-  if (error) return { data: new Set(), error };
-  return { data: new Set(data.map((r) => r.combo_product_id)), error: null };
+  let result = await supabase.rpc("list_combo_product_ids");
+  if (result.error) result = await supabase.rpc("list_combo_product_ids");
+  if (result.error) return { data: null, error: result.error };
+  return { data: new Set(result.data), error: null };
 }

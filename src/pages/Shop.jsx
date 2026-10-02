@@ -179,12 +179,19 @@ export default function Shop() {
     setComboOnly(new URLSearchParams(window.location.search).get("combo") === "1");
   }), []);
   const [comboIds, setComboIds] = useState(null); // null until loaded
+  const [comboError, setComboError] = useState(null);
+  const [comboAttempt, setComboAttempt] = useState(0);
   useEffect(() => {
     if (!comboOnly || comboIds) return;
     let alive = true;
-    getComboProductIds().then(({ data }) => { if (alive) setComboIds(data); });
+    setComboError(null);
+    getComboProductIds().then(({ data, error }) => {
+      if (!alive) return;
+      if (error) setComboError(error);
+      else setComboIds(data);
+    });
     return () => { alive = false; };
-  }, [comboOnly, comboIds]);
+  }, [comboOnly, comboIds, comboAttempt]);
 
   // Resolve a slug-based ?category= against whichever tree is available right
   // now (treeRef, kept current by the effect above). Shared by both the
@@ -255,7 +262,7 @@ export default function Shop() {
   const [sheetOpen, setSheetOpen] = useState(false);
   const [quickView, setQuickView] = useState(null);
   const [products, setProducts] = useState([]);
-  const loading = catalogLoading || (comboOnly && !comboIds);
+  const loading = catalogLoading || (comboOnly && !comboIds && !comboError);
   const [fetchError, setFetchError] = useState(null);
 
   // Land at the top when entering the page.
@@ -588,7 +595,7 @@ export default function Shop() {
             {/* Result count + active chips */}
             <div ref={resultsTopRef} className="mb-5 flex flex-col gap-3">
               <p className="text-sm text-ink-soft">
-                {loading ? "Curating…" : fetchError ? "" : results.length > PAGE
+                {loading ? "Curating…" : fetchError || (comboOnly && comboError) ? "" : results.length > PAGE
                   ? `Showing ${(currentPage - 1) * PAGE + 1}–${Math.min(currentPage * PAGE, results.length)} of ${results.length} products`
                   : `${results.length} products`}
               </p>
@@ -627,6 +634,14 @@ export default function Shop() {
                   <ProductCardSkeleton key={i} />
                 ))}
               </Grid>
+            ) : comboOnly && comboError ? (
+              <EmptyState
+                emoji="🔌"
+                title="Couldn't load the combos"
+                message="Something went wrong reaching our catalog. Please check your connection and try again."
+                actionLabel="Retry"
+                onAction={() => setComboAttempt((n) => n + 1)}
+              />
             ) : fetchError ? (
               <EmptyState
                 emoji="🔌"

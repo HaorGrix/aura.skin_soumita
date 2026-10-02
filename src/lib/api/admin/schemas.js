@@ -92,7 +92,7 @@ export const SLOTS = [
           { label: "Body Care", href: "/shop?category=body-care", image: "" },
           { label: "Eye & Ear", href: "/shop?category=eye-care", image: "" },
           { label: "Offer", href: "/offers", image: "" },
-          { label: "Combo", href: "/shop?category=skin-care-combo", image: "" },
+          { label: "Combo", href: "/shop?combo=1", image: "" },
         ],
       },
     ],

@@ -1,11 +1,10 @@
 /* =================================================================== *
- * skin.theory admin — Combo items tab (Products → a combo product)
+ * skin.theory admin — what is inside a combo (Admin → Combos → a combo)
  * -------------------------------------------------------------------
  * A combo is a normal product: its own price, photos and stock are set on
- * the other tabs. This tab picks what is inside it (combo_items, 0068) so
- * the product page can show "What's inside" and the saving. Put the combo
- * in a combo category (e.g. Skin Care Combo) so the home "Combo" tile and
- * the menu list it.
+ * its product page. This tab picks what is inside it (combo_items, 0068) so
+ * the product page can show "What's inside" and the saving, and the home
+ * "Combo" tile (/shop?combo=1) lists it.
  * =================================================================== */
 import { useEffect, useState } from "react";
 import { ArrowDown, ArrowUp, Search, Trash2 } from "lucide-react";
@@ -15,7 +14,7 @@ import { Btn, Card, SaveBar, Spinner, money } from "./kit.jsx";
 const signature = (items) =>
   JSON.stringify(items.map(({ item_product_id, quantity }) => ({ item_product_id, quantity })));
 
-export default function ComboItemsTab({ productId, comboPriceMinor, readOnly }) {
+export default function ComboItemsTab({ productId, comboPriceMinor, readOnly, onSaved }) {
   const [items, setItems] = useState(null); // [{ item_product_id, quantity, name, brand, price_minor }]
   const [original, setOriginal] = useState("[]");
   const [query, setQuery] = useState("");
@@ -76,12 +75,12 @@ export default function ComboItemsTab({ productId, comboPriceMinor, readOnly }) 
     const { error: e } = await saveComboItems(productId, items);
     setSaving(false);
     if (e) setError(`Couldn't save the combo items: ${e.message}`);
-    else await load();
+    else { await load(); onSaved?.(); }
   }
 
   return (
     <>
-      <Card description="Pick the products inside this combo. The combo's own price, photos and stock are set on the other tabs — shoppers see what's inside and how much they save. File the combo under a combo category (e.g. Skin Care Combo) so the home Combo tile shows it.">
+      <Card description="Pick the products inside this combo. The combo's own price, photos and stock are set under “Price, photos & stock” — shoppers see what's inside and how much they save. Once it has items and is Active, it shows on the home Combo tile.">
         {error && <p className="mb-3 rounded-xl bg-red-50 px-4 py-2.5 text-sm text-red-700">{error}</p>}
 
         {items.length === 0 ? (

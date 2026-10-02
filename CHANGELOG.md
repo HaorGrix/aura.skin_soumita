@@ -11,7 +11,7 @@
 - Single-size products get a Size field on the admin Pricing tab (e.g. 50ml), shown on the product card and page.
 - Full-screen product photos can be swiped (or moved with arrows) through every photo, with a photo counter.
 - The shop's category filter lists every category from the admin, sub-categories under their parent; picking a parent shows everything inside it.
-- Combos: any product can be made a combo in Admin → Products → Combo items by picking the products inside it and how many of each. The product page shows "What's inside" and how much the shopper saves; file combos under a combo category (e.g. Skin Care Combo) so the home Combo tile lists them.
+- Combos have their own Admin → Combos section: create a combo (or turn an existing product into one), pick the products inside it and how many of each, see the saving, and remove it again. The product page shows "What's inside" and how much the shopper saves, and the home Combo tile lists every published combo, whatever category it is filed under.
 - The shop shows 16 products per page with numbered page buttons (the page is kept in the link), instead of one endless scrolling list.
 - Forgot password for shoppers: enter the email, get a 6-digit code by email (valid 15 minutes), choose a new password and you're signed in.
 - Category tiles use one fixed design (blue arch, rays, navy name bar): the admin uploads only a cut-out "sticker" and types the name, and the tile is drawn to match the others.
@@ -30,6 +30,7 @@
 - The home page "What our customers are saying" section no longer shows the four demo pictures from other brands; it reappears as soon as real review pictures are added and featured in Admin → Testimonials.
 
 ### Fixed
+- The home Combo tile and the hero banner's combo link opened an empty shop ("No matches… yet"): they pointed at a category that never existed (and at the old preview domain), and shoppers weren't allowed to read combo contents, so "What's inside" never showed either. The tile now opens Combos, and shows "Combos are on the way" while there are none.
 - The Rewards page showed tiers (SKN3/SKN5/SKN8FS) and earn rates (1 point per ৳1000, 5 per review) that didn't exist; it now shows the real reward codes and the rates actually set.
 - Bag page on iPhone: a long product name made the page wider than the screen, cutting off prices, the promo Apply button and the order total. Every page and pop-up was re-checked on 320–390px phones (Safari and Chrome); the product page tabs and "Complete your ritual" strip no longer stick out at the edges.
 - The floating cart button no longer drifts by itself on phones (up/down while scrolling, or sideways): it stays exactly where the shopper drags it, a tap opens the bag, and it only moves back inside the screen when the phone is rotated.

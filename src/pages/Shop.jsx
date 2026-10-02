@@ -10,7 +10,7 @@ import {
   queryProducts,
 } from "../data/products.js";
 import { useConcerns } from "../lib/api/concerns.js";
-import { listProducts } from "../lib/api/products.js";
+import { getComboProductIds, listProducts } from "../lib/api/products.js";
 import { listActiveSales } from "../lib/api/sales.js";
 import {
   FilterPanel,
@@ -29,7 +29,7 @@ import Button from "../components/ui/Button.jsx";
 import Pagination from "../components/shop/Pagination.jsx";
 import BackButton from "../components/ui/BackButton.jsx";
 import { useBodyScrollLock } from "../lib/scrollLock.js";
-import { onRouteChange } from "../lib/navigate.js";
+import { navigate, onRouteChange } from "../lib/navigate.js";
 import {
   useCategoryTree, useProductCategoryMap,
   categoryFacetOptions, categoryNamesFor, categorySlugsFor, findBySlug, flattenTree,
@@ -170,6 +170,22 @@ export default function Shop() {
     return () => { alive = false; };
   }, [saleId]);
 
+  // ?combo=1 — the home Combo tile: only combos (Admin → Combos), whatever
+  // category each one is filed under.
+  const [comboOnly, setComboOnly] = useState(
+    () => new URLSearchParams(window.location.search).get("combo") === "1"
+  );
+  useEffect(() => onRouteChange(() => {
+    setComboOnly(new URLSearchParams(window.location.search).get("combo") === "1");
+  }), []);
+  const [comboIds, setComboIds] = useState(null); // null until loaded
+  useEffect(() => {
+    if (!comboOnly || comboIds) return;
+    let alive = true;
+    getComboProductIds().then(({ data }) => { if (alive) setComboIds(data); });
+    return () => { alive = false; };
+  }, [comboOnly, comboIds]);
+
   // Resolve a slug-based ?category= against whichever tree is available right
   // now (treeRef, kept current by the effect above). Shared by both the
   // "tree just loaded" effect and the route-change handler below — without
@@ -235,10 +251,11 @@ export default function Shop() {
     const n = Number(new URLSearchParams(window.location.search).get("page"));
     return Number.isInteger(n) && n > 1 ? n : 1;
   });
-  const [loading, setLoading] = useState(true); // true until the initial fetch settles
+  const [catalogLoading, setLoading] = useState(true); // true until the initial fetch settles
   const [sheetOpen, setSheetOpen] = useState(false);
   const [quickView, setQuickView] = useState(null);
   const [products, setProducts] = useState([]);
+  const loading = catalogLoading || (comboOnly && !comboIds);
   const [fetchError, setFetchError] = useState(null);
 
   // Land at the top when entering the page.
@@ -260,6 +277,7 @@ export default function Shop() {
     let list = queryProducts(products, { search, filters: { ...filters, category: [] }, sort });
 
     if (saleId) list = list.filter((p) => p.activeSaleId === saleId);
+    if (comboOnly) list = comboIds ? list.filter((p) => comboIds.has(p.dbId)) : [];
 
     // A ?category= that didn't resolve to any real node (dead nav link, or
     // stale ?category=<old-slug>) is NOT the same as no category being
@@ -279,7 +297,7 @@ export default function Shop() {
     // appears once. Better than looking like the filter was ignored.
     const wantedNames = new Set(categoryNamesFor(categoryTree, picked));
     return list.filter((p) => wantedNames.has(p.category));
-  }, [products, search, filters, sort, categoryTree, productCategory, saleId, categoryUnresolved]);
+  }, [products, search, filters, sort, categoryTree, productCategory, saleId, comboOnly, comboIds, categoryUnresolved]);
 
   // Fetch the live catalog. The skeleton (existing `loading` state — same UI
   // as before) now reflects a REAL fetch instead of a fixed timer. Extracted
@@ -400,6 +418,7 @@ export default function Shop() {
     // mount), even though the sort itself is still applied correctly.
     if (sort !== "featured") params.set("sort", sort);
     if (saleId) params.set("sale", saleId);
+    if (comboOnly) params.set("combo", "1");
     const qs = params.toString();
     // Use replaceState so filter clicks don't bloat the history stack,
     // but the URL remains shareable. Clean path — query in the search string.
@@ -585,6 +604,17 @@ export default function Shop() {
                 </div>
               )}
 
+              {comboOnly && !loading && !fetchError && (
+                <div className="flex items-center gap-2">
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-magenta px-3 py-1 text-xs font-medium text-white">
+                    Combos
+                  </span>
+                  <a href="/shop" className="text-xs text-ink-soft underline-offset-2 hover:text-magenta hover:underline">
+                    Clear
+                  </a>
+                </div>
+              )}
+
               {!fetchError && (
                 <ActiveChips filters={filters} onToggle={toggleFilter} onClear={clearFilters} categories={categoryOptions} />
               )}
@@ -604,6 +634,14 @@ export default function Shop() {
                 message="Something went wrong reaching our catalog. Please check your connection and try again."
                 actionLabel="Retry"
                 onAction={fetchProducts}
+              />
+            ) : results.length === 0 && comboOnly && activeCount === 0 && !search ? (
+              <EmptyState
+                emoji="🎁"
+                title="Combos are on the way"
+                message="Our curated skincare combos will appear here soon. Meanwhile, explore the full collection. ✨"
+                actionLabel="Shop all products"
+                onAction={() => navigate("/shop")}
               />
             ) : results.length === 0 ? (
               <EmptyState

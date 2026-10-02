@@ -36,6 +36,7 @@ import OrderSummary from "../components/cart/OrderSummary.jsx";
 import EmptyState from "../components/ui/EmptyState.jsx";
 import PromoHint from "../components/ui/PromoHint.jsx";
 import PhoneInput from "../components/ui/PhoneInput.jsx";
+import { useRewards } from "../lib/api/rewards.js";
 
 const STEPS = [
   { id: "info", label: "Information" },
@@ -746,6 +747,7 @@ function SelectZoneField({ zones, value, onChange, hint }) {
 
 /* ---------- Summary panel (items + totals) ---------- */
 function SummaryPanel({ items, subtotal, shipping, total, discountAmount, appliedCoupon, couponInput, setCouponInput, applyCoupon, removeCoupon, authed, openAuth, points, email, showTotals = true }) {
+  const rewards = useRewards();
   return (
     <div className="space-y-4">
       <div className="max-h-72 space-y-4 overflow-y-auto rounded-[1.5rem] bg-snow p-5 ring-1 ring-line">
@@ -786,7 +788,7 @@ function SummaryPanel({ items, subtotal, shipping, total, discountAmount, applie
           appliedCoupon={appliedCoupon}
           onApply={(code) => applyCoupon(null, code)}
         />
-        {!authed && !appliedCoupon && (
+        {!authed && !appliedCoupon && rewards.tiers.length > 0 && (
           <p className="mt-3 text-center text-xs text-ink-soft">
             Have an account?{" "}
             <button

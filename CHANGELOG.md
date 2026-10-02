@@ -2,6 +2,7 @@
 
 ## Unreleased
 ### Added
+- Admin → Rewards: run the whole loyalty programme from the admin — switch it on or off, name it, set how many taka earn a point and how many points a review earns, and add, edit, switch off or delete the reward tiers (points needed, % or ৳ off, free shipping, how it's described). The Rewards page wording is editable under Content → Rewards Page. Turning the programme off stops points being earned, switches reward codes off and hides the Rewards page link, points badges and account tab.
 - Track Order page in the menu: customers enter their order number and checkout phone and see the real status set in the admin (placed, processing, shipped, delivered, or cancelled/refunded), courier and tracking number, items and status history. Works for guest orders; never shows the address or email.
 - Order receipt (memo) after checkout: every item with size and quantity, subtotal, discount, delivery and total, with Print / save as PDF. The account's order details show the same saved receipt.
 - Private coupons: a 'Show to shoppers' switch per coupon. Private codes still work when typed at checkout but are never suggested on the site.
@@ -29,6 +30,7 @@
 - The home page "What our customers are saying" section no longer shows the four demo pictures from other brands; it reappears as soon as real review pictures are added and featured in Admin → Testimonials.
 
 ### Fixed
+- The Rewards page showed tiers (SKN3/SKN5/SKN8FS) and earn rates (1 point per ৳1000, 5 per review) that didn't exist; it now shows the real reward codes and the rates actually set.
 - Bag page on iPhone: a long product name made the page wider than the screen, cutting off prices, the promo Apply button and the order total. Every page and pop-up was re-checked on 320–390px phones (Safari and Chrome); the product page tabs and "Complete your ritual" strip no longer stick out at the edges.
 - The floating cart button no longer drifts by itself on phones (up/down while scrolling, or sideways): it stays exactly where the shopper drags it, a tap opens the bag, and it only moves back inside the screen when the phone is rotated.
 - Meta Pixel: events fired as a page first opened (a product page's ViewContent, checkout's InitiateCheckout) were dropped because the pixel hadn't loaded yet; they are now held and sent once it loads. Opening a product no longer counts two page views.

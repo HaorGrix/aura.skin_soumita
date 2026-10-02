@@ -23,11 +23,13 @@ function readTabFromHash() {
 }
 
 export default function Account() {
-  const { name, authed, logout, openAuth } = useUser();
+  const { name, authed, logout, openAuth, rewards } = useUser();
+  // The rewards tab only exists while the programme is on (Admin → Rewards).
+  const tabs = TABS.filter((t) => t.id !== "loyalty" || rewards.enabled);
   // null means mobile menu is showing. Desktop always shows the current tab.
   // Seed from the deep link so #/account?tab=orders lands on My Orders.
   const [activeTab, setActiveTab] = useState(readTabFromHash);
-  const currentId = activeTab || "profile";
+  const currentId = tabs.some((t) => t.id === activeTab) ? activeTab : "profile";
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "auto" });
@@ -108,7 +110,7 @@ export default function Account() {
           {/* Sidebar Navigation */}
           <aside className={`${activeTab ? "hidden lg:block" : "block"} lg:w-64 shrink-0`}>
             <nav className="flex flex-col gap-2">
-              {TABS.map((tab) => {
+              {tabs.map((tab) => {
                 const Icon = tab.icon;
                 const isActive = currentId === tab.id;
                 return (

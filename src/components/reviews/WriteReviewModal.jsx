@@ -16,7 +16,8 @@ import { useBodyScrollLock } from "../../lib/scrollLock.js";
  * the browser-local account (UserContext.addReview).
  */
 export default function WriteReviewModal({ product, orderItemId = null, open, onClose }) {
-  const { addReview, points, pointsPerReview, refreshAccount } = useUser();
+  const { addReview, points, pointsPerReview, refreshAccount, rewards } = useUser();
+  const earnText = rewards.earnsOnReview ? ` +${pointsPerReview} point${pointsPerReview > 1 ? "s" : ""}` : "";
   const [sending, setSending] = useState(false);
   const { toast } = useToast();
   const [stars, setStars] = useState(0);
@@ -57,7 +58,7 @@ export default function WriteReviewModal({ product, orderItemId = null, open, on
       setSending(false);
       if (error) return toast.error(error, "Review not sent");
       toast.success(
-        `Thank you! It is now on the product page. +${pointsPerReview} point${pointsPerReview > 1 ? "s" : ""} ✨`,
+        `Thank you! It is now on the product page.${earnText} ✨`,
         "Review sent"
       );
       refreshAccount();
@@ -68,7 +69,7 @@ export default function WriteReviewModal({ product, orderItemId = null, open, on
     const ok = addReview({ productId: product.id, stars, title, body });
     if (ok) {
       toast.success(
-        `+${pointsPerReview} point${pointsPerReview > 1 ? "s" : ""} earned · ${points + pointsPerReview} total ✨`,
+        rewards.earnsOnReview ? `+${pointsPerReview} point${pointsPerReview > 1 ? "s" : ""} earned · ${points + pointsPerReview} total ✨` : "Thank you for your review ✨",
         "Review saved"
       );
       onClose();
@@ -113,7 +114,7 @@ export default function WriteReviewModal({ product, orderItemId = null, open, on
               Review · {product.name}
             </h2>
             <p className="mt-1 inline-flex items-center gap-1.5 text-xs font-medium text-cyan">
-              <Sparkles className="h-3.5 w-3.5" strokeWidth={2} /> Verified purchase — earn {pointsPerReview} loyalty point{pointsPerReview === 1 ? "" : "s"}
+              <Sparkles className="h-3.5 w-3.5" strokeWidth={2} /> Verified purchase{rewards.earnsOnReview ? ` — earn ${pointsPerReview} loyalty point${pointsPerReview === 1 ? "" : "s"}` : ""}
             </p>
 
             {/* Star picker */}

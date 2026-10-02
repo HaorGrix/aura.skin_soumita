@@ -40,7 +40,9 @@ const SCROLL_THRESHOLD = 64;
 export default function Navbar({ onOpenSearch, hasHero = false }) {
   const reduce = useReducedMotion();
   const { count, openCart, isOpen: cartOpen } = useCart();
-  const { points, authed, openAuth } = useUser();
+  const { points, authed, openAuth, rewards } = useUser();
+  // Rewards link, points pill and menu card only while the programme is on.
+  const links = LINKS.filter((l) => l.href !== "/rewards" || rewards.enabled);
   const { count: wishCount } = useWishlist();
   // Admin-editable (Store settings → Announcement bar); falls back to a
   // sensible default (same pattern as shipping/tax settings) if the row or
@@ -190,7 +192,7 @@ export default function Navbar({ onOpenSearch, hasHero = false }) {
               stay plain links. The menu falls back to a normal link if the
               category tree can't be loaded, so this can't break navigation. */}
           <nav className="hidden items-center gap-2 lg:flex">
-            {LINKS.map((link) =>
+            {links.map((link) =>
               link.href === "/shop" ? (
                 <MegaMenu key={link.label} label={link.label} href={link.href} />
               ) : (
@@ -259,7 +261,7 @@ export default function Navbar({ onOpenSearch, hasHero = false }) {
 
             {/* Loyalty pill — a guest has no balance, so invite them to join
                 instead of implying points they don't own. */}
-            {authed ? (
+            {rewards.enabled && (authed ? (
               <a
                 href="/rewards"
                 aria-label={`You have ${points} loyalty points`}
@@ -271,13 +273,13 @@ export default function Navbar({ onOpenSearch, hasHero = false }) {
             ) : (
               <button
                 onClick={() => openAuth("signup")}
-                aria-label={`Join ${storeName} Rewards to start earning points`}
+                aria-label={`Join ${rewards.name} to start earning points`}
                 className="hidden items-center gap-1.5 rounded-full bg-petal px-3 py-1.5 text-xs font-semibold text-magenta transition-colors hover:bg-rose/30 sm:inline-flex"
               >
                 <Sparkles className="h-3.5 w-3.5" strokeWidth={2} />
                 Join &amp; earn
               </button>
-            )}
+            ))}
 
             {/* Logged out → open the login modal; logged in → go to account.
                 Browsing never forces auth, so this is just a friendly entry. */}
@@ -356,7 +358,7 @@ export default function Navbar({ onOpenSearch, hasHero = false }) {
                   cards below the fold. */}
               <div data-lenis-prevent className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-7 pb-10">
               <nav className="mt-8 flex flex-col">
-                {LINKS.map((link, i) => (
+                {links.map((link, i) => (
                   <motion.div
                     key={link.label}
                     initial={{ opacity: 0, x: 30 }}
@@ -424,9 +426,9 @@ export default function Navbar({ onOpenSearch, hasHero = false }) {
                   </span>
                 </button>
 
-                {/* Skin Theory Rewards — full-width accent row. Guests get a join CTA
+                {/* Rewards — full-width accent row. Guests get a join CTA
                     rather than a points balance they don't have. */}
-                <a
+                {rewards.enabled && <a
                   href={authed ? "/rewards" : "/account"}
                   onClick={(e) => {
                     setOpen(false);
@@ -441,12 +443,12 @@ export default function Navbar({ onOpenSearch, hasHero = false }) {
                     <span className="grid h-9 w-9 place-items-center rounded-full bg-white text-magenta">
                       <Sparkles className="h-4 w-4" strokeWidth={2} />
                     </span>
-                    {storeName} Rewards
+                    {rewards.name}
                   </span>
                   <span className="text-sm font-semibold text-magenta-deep">
                     {authed ? `${points} pts →` : "Join & earn →"}
                   </span>
-                </a>
+                </a>}
 
                 {/* Account + Wishlist — equal tiles, icon + label + hint */}
                 <div className="grid grid-cols-2 gap-3">

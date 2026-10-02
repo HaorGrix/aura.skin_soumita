@@ -17,7 +17,7 @@ export async function getSettings() {
 const SETTINGS_FIELDS = [
   "store_name", "free_shipping_threshold_minor", "standard_shipping_minor",
   "tax_rate", "currency_code", "currency_symbol",
-  "points_per_taka", "points_per_review", "low_stock_threshold",
+  "points_per_taka", "points_per_review", "rewards_enabled", "rewards_name", "low_stock_threshold",
   "support_email", "support_phone", "socials", "announcement_enabled",
   "announcement_text", "announcement_link_label", "announcement_link_href",
   "announcement_starts_at", "announcement_ends_at",

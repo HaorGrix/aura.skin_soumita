@@ -11,7 +11,7 @@
 - Full-screen product photos can be swiped (or moved with arrows) through every photo, with a photo counter.
 - The shop's category filter lists every category from the admin, sub-categories under their parent; picking a parent shows everything inside it.
 - Combos: any product can be made a combo in Admin → Products → Combo items by picking the products inside it and how many of each. The product page shows "What's inside" and how much the shopper saves; file combos under a combo category (e.g. Skin Care Combo) so the home Combo tile lists them.
-- The shop shows 10 products per page with numbered page buttons (the page is kept in the link), instead of one endless scrolling list.
+- The shop shows 16 products per page with numbered page buttons (the page is kept in the link), instead of one endless scrolling list.
 - Forgot password for shoppers: enter the email, get a 6-digit code by email (valid 15 minutes), choose a new password and you're signed in.
 - Category tiles use one fixed design (blue arch, rays, navy name bar): the admin uploads only a cut-out "sticker" and types the name, and the tile is drawn to match the others.
 - Order history follows the account: a signed-in shopper sees every order placed with their email (on any phone), with its real status, and their real points balance.

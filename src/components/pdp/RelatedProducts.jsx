@@ -1,6 +1,7 @@
 import { useRef } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import ProductCard from "../ui/ProductCard.jsx";
+import { inStockFirst } from "../../data/products.js";
 
 /** "Complete Your Ritual" — horizontal snap carousel of related products. */
 // The rail runs edge to edge: it cancels the page's side padding, so
@@ -17,6 +18,7 @@ export default function RelatedProducts({ products, onQuickView, title = "Comple
   };
 
   if (!products?.length) return null;
+  const ordered = [...products].sort(inStockFirst);
 
   return (
     <section className="mt-20">
@@ -51,7 +53,7 @@ export default function RelatedProducts({ products, onQuickView, title = "Comple
         ref={scroller}
         className={`${bleed} flex snap-x snap-mandatory gap-4 overflow-x-auto pb-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden`}
       >
-        {products.map((p) => (
+        {ordered.map((p) => (
           <div
             key={p.id}
             className="w-[60%] shrink-0 snap-start sm:w-[40%] md:w-[30%] lg:w-[23%]"

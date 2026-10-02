@@ -22,19 +22,19 @@ import { useContent } from "../lib/api/content.js";
 const buildFaqs = (storeName) => [
   {
     q: "Are your products authentic?",
-    a: `Yes. ${storeName} is positioned around authorized sourcing, verified channels, and clear product metadata so customers can buy with confidence.`,
+    a: `Yes. Every product at ${storeName} comes from the brands or their authorised distributors, so you can shop with confidence.`,
   },
   {
     q: "How fast do you dispatch orders?",
-    a: "The current storefront promise is 48-hour dispatch for in-stock items, with free shipping progress shown in the cart.",
+    a: "In-stock orders are dispatched within 48 hours. Your bag shows how close you are to free shipping.",
   },
   {
     q: "Can I get help building a routine?",
-    a: "Yes. Send your skin type, top concern, and current products through the form, and the care team can suggest a simple AM/PM ritual.",
+    a: "Of course. Send us your skin type, main concern and the products you use now, and our care team will suggest a simple morning and evening routine.",
   },
   {
     q: "Where do reviews come from?",
-    a: "Product pages are read-only. Review writing lives in Account and is gated to verified purchases to keep the loyalty system honest.",
+    a: "Only customers who bought the product can review it. Once an order is delivered, you can write a review from Order History in your account.",
   },
 ];
 
@@ -211,11 +211,10 @@ export default function Contact() {
                 Quick answers
               </p>
               <h2 className="mt-3 font-serif text-[clamp(2rem,5vw,3.4rem)] leading-tight">
-                The questions care usually answers first.
+                Answers to common questions.
               </h2>
               <p className="mt-4 max-w-md text-sm leading-relaxed text-ink-soft">
-                A little clarity before you write in, so the next step feels
-                simple.
+                You may find what you need here before you write in.
               </p>
             </div>
 
@@ -267,11 +266,11 @@ export default function Contact() {
                 Building a routine for sensitive skin?
               </h2>
               <p className="mt-3 max-w-2xl text-sm leading-relaxed text-ink-soft">
-                Start with cleanser, barrier support, and sunscreen. The shop
-                filters can narrow by concern, skin type, brand, and stock state.
+                Start with a gentle cleanser, barrier support and sunscreen. In
+                the shop you can filter by concern, skin type and brand.
               </p>
             </div>
-            <Button as="a" href="/shop?concern=Barrier%20Repair" variant="solid" size="lg">
+            <Button as="a" href="/shop?concern=barrier-repair" variant="primary" size="lg">
               Browse barrier care
             </Button>
           </div>

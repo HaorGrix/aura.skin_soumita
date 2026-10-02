@@ -671,6 +671,9 @@ import {
 } from "../lib/search.js";
 export { matchesSearch };
 
+/** Sort comparator: everything that can be bought before what's out of stock. */
+export const inStockFirst = (a, b) => Number(a.inStock === false) - Number(b.inStock === false);
+
 export function queryProducts(all, { search = "", filters = {}, sort = "featured" }) {
   const q = search.trim().toLowerCase();
   const terms = tokenize(q);
@@ -729,7 +732,7 @@ export function queryProducts(all, { search = "", filters = {}, sort = "featured
   };
   // Out-of-stock products always go after everything that can be bought,
   // whatever the sort or search.
-  const byStock = (a, b) => Number(a.inStock === false) - Number(b.inStock === false);
+  const byStock = inStockFirst;
   const picked = sorters[sort] ?? sorters.featured;
   const chosen = (a, b) => byStock(a, b) || picked(a, b);
 

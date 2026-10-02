@@ -341,7 +341,9 @@ export function TagsField({ label, hint, value = [], onChange, suggestions = [],
         list={suggestions.length ? listId : undefined}
         value={(value ?? []).join(", ")}
         onChange={(e) =>
-          onChange(e.target.value.split(",").map((s) => s.trim()).filter(Boolean))
+          // A comma straight before three digits is a thousands separator
+          // ("Salicylic Acid 5,000 ppm"), not a new tag.
+          onChange(e.target.value.split(/,(?!\d{3})/).map((s) => s.trim()).filter(Boolean))
         }
       />
       {suggestions.length > 0 && (

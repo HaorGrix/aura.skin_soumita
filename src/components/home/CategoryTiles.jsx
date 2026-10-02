@@ -60,7 +60,9 @@ export default function CategoryTiles() {
        spacing stays predictable instead of compounding. */
     <section aria-label="Shop by category" className="relative mt-5 pb-12 sm:mt-7 sm:pb-16">
       <div className="mx-auto max-w-7xl px-5 sm:px-8">
-        <ul className="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 sm:gap-x-6 lg:grid-cols-6">
+        {/* Wrapping flex, not a grid, so a short last row is centred instead
+            of hanging off to the left (8 tiles = 6 + 2 on desktop). */}
+        <ul className="flex flex-wrap justify-center gap-x-4 gap-y-8 sm:gap-x-6">
           {tiles.map((tile, i) => (
             <motion.li
               key={`${tile.label}-${i}`}
@@ -68,6 +70,7 @@ export default function CategoryTiles() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, amount: 0.4 }}
               transition={{ duration: 0.5, delay: i * 0.07, ease: [0.22, 1, 0.36, 1] }}
+              className="w-[calc(50%-0.5rem)] sm:w-[calc((100%-3rem)/3)] lg:w-[calc((100%-7.5rem)/6)]"
             >
               <a
                 href={tile.href}

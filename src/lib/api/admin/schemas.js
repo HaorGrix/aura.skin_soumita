@@ -286,7 +286,7 @@ export const SLOTS = [
       {
         key: "intro", label: "Intro paragraph — shown under the headline",
         type: "textarea", max: 400,
-        default: "Send a note to the care desk. The form handles routine requests, order questions, collaboration notes, and ingredient guidance in one tidy place.",
+        default: "Questions about a routine, an order or a product? Send us a note and our care team will get back to you.",
       },
       {
         key: "email", label: "Support email", type: "text", default: "care@skinscript.com",

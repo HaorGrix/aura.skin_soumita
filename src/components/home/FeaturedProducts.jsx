@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ArrowRight } from "lucide-react";
 import { listProducts } from "../../lib/api/products.js";
 import ProductCard from "../ui/ProductCard.jsx";
+import { inStockFirst } from "../../data/products.js";
 import QuickViewModal from "../shop/QuickViewModal.jsx";
 
 const TABS = [
@@ -30,10 +31,10 @@ export default function FeaturedProducts() {
       // Only show products tagged isNew, ranked by popularity.
       return [...products]
         .filter((p) => p.isNew)
-        .sort((a, b) => b.popularity - a.popularity)
+        .sort((a, b) => inStockFirst(a, b) || b.popularity - a.popularity)
         .slice(0, 8);
     // Best Sellers: rank by salesCount, matching the Shop page.
-    return [...products].sort((a, b) => b.salesCount - a.salesCount).slice(0, 8);
+    return [...products].sort((a, b) => inStockFirst(a, b) || b.salesCount - a.salesCount).slice(0, 8);
   }, [tab, products]);
 
   return (

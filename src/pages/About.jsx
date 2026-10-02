@@ -3,7 +3,6 @@ import { motion, useInView } from "framer-motion";
 import {
   ShieldCheck,
   Microscope,
-  RotateCcw,
   Sparkles,
   ArrowRight,
   Star,
@@ -110,7 +109,6 @@ const TRUST_CHECKLIST = [
 const STATS = [
   { value: "10,000+", label: "Happy shoppers" },
   { value: "98%", label: "Verified authentic" },
-  { value: "30-day", label: "Refund window" },
 ];
 
 /* ─────────────────────────────────────────────
@@ -223,7 +221,7 @@ export default function About() {
           STATS BAND
       ══════════════════════════════════════ */}
       <section className="border-y border-line bg-white">
-        <div className="mx-auto grid max-w-5xl grid-cols-3 divide-x divide-line">
+        <div className="mx-auto grid max-w-5xl grid-cols-2 divide-x divide-line">
           {STATS.map((s, i) => (
             <Reveal key={s.label} delay={i * 0.5} className="flex flex-col items-center py-8 px-2 text-center sm:px-4">
               <span className="font-serif text-[clamp(1.4rem,4vw,2.8rem)] leading-none text-ink">
@@ -290,7 +288,7 @@ export default function About() {
           className="pointer-events-none absolute -bottom-16 right-0 h-[360px] w-[360px] rounded-full bg-cyan/15 blur-[90px]"
         />
 
-        <div className="relative mx-auto grid max-w-7xl items-start gap-10 lg:grid-cols-[1fr_400px]">
+        <div className="relative mx-auto max-w-7xl">
           <div>
             <Reveal>
               <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-cyan">
@@ -330,40 +328,6 @@ export default function About() {
             </Reveal>
           </div>
 
-          {/* Money-back card */}
-          <Reveal delay={2}>
-            <div className="rounded-[1.75rem] bg-white/[0.06] p-7 ring-1 ring-white/15 backdrop-blur-md sm:p-8">
-              <span className="inline-grid h-14 w-14 place-items-center rounded-2xl bg-magenta text-white shadow-[var(--shadow-glow-pink)]">
-                <RotateCcw className="h-6 w-6" strokeWidth={1.7} />
-              </span>
-              <h3 className="mt-5 font-display text-2xl leading-snug text-white">
-                30-Day Money-Back Promise
-              </h3>
-              <p className="mt-3 text-sm leading-relaxed text-white/60">
-                If you're unsatisfied with any product — for any reason — contact our care desk
-                within 30 days of delivery and we'll make it right. No receipts, no lectures,
-                no hoops.
-              </p>
-              <div className="mt-6 flex items-center gap-3 rounded-xl bg-magenta/15 p-4 ring-1 ring-magenta/25">
-                <ShieldCheck className="h-5 w-5 shrink-0 text-rose" strokeWidth={2} />
-                <span className="text-sm font-semibold text-white">
-                  100% satisfaction or your money back
-                </span>
-              </div>
-              <div className="mt-5">
-                <Button
-                  variant="primary"
-                  size="md"
-                  magnetic={false}
-                  as="a"
-                  href="/contact"
-                  className="w-full justify-center"
-                >
-                  Contact the care desk
-                </Button>
-              </div>
-            </div>
-          </Reveal>
         </div>
       </section>
 

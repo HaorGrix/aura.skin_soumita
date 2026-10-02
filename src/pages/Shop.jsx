@@ -35,7 +35,7 @@ import {
   categoryFacetOptions, categoryNamesFor, categorySlugsFor, findBySlug, flattenTree,
 } from "../lib/api/categories.js";
 
-const PAGE = 10; // products per page
+const PAGE = 16; // products per page
 
 /* Valid values per facet — the single source of truth for what a URL param may
  * legally hold. Parsing filters incoming values through these sets so a stale,

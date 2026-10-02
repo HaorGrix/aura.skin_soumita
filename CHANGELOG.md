@@ -30,6 +30,7 @@
 - The home page "What our customers are saying" section no longer shows the four demo pictures from other brands; it reappears as soon as real review pictures are added and featured in Admin → Testimonials.
 
 ### Fixed
+- The old preview copy of the shop (aura-skin-soumita.vercel.app) still ran on the retired database, so it showed no combos and any order placed there was lost. Every page of it now redirects to the same page on www.skintheorybd.shop.
 - The Combos page could show "0 products" even with published combos when the combo list failed to load for a visitor; it now loads through one public lookup that works the same for guests, shoppers and staff, retries once, and shows a Retry message instead of an empty page if it still fails.
 - The home Combo tile and the hero banner's combo link opened an empty shop ("No matches… yet"): they pointed at a category that never existed (and at the old preview domain), and shoppers weren't allowed to read combo contents, so "What's inside" never showed either. The tile now opens Combos, and shows "Combos are on the way" while there are none.
 - The Rewards page showed tiers (SKN3/SKN5/SKN8FS) and earn rates (1 point per ৳1000, 5 per review) that didn't exist; it now shows the real reward codes and the rates actually set.

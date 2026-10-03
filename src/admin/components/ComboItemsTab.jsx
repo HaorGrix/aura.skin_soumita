@@ -86,10 +86,11 @@ export default function ComboItemsTab({ productId, comboPriceMinor, readOnly, on
         {items.length === 0 ? (
           <p className="rounded-xl bg-snow px-4 py-3 text-sm text-ink-soft">No items yet — add products from the list below.</p>
         ) : (
-          <ul className="divide-y divide-line rounded-xl ring-1 ring-line">
+          <div className="overflow-x-auto rounded-xl ring-1 ring-line">
+          <ul className="min-w-full w-max divide-y divide-line">
             {items.map((it, i) => (
-              <li key={it.item_product_id} className="flex flex-wrap items-center gap-3 px-4 py-2.5 text-sm">
-                <span className="min-w-0 flex-1 truncate">
+              <li key={it.item_product_id} className="flex items-center gap-3 whitespace-nowrap px-4 py-2.5 text-sm">
+                <span className="flex-1">
                   <span className="text-ink-soft">{it.brand} — </span>{it.name}
                 </span>
                 <span className="text-xs text-ink-soft">{money(it.price_minor)} each</span>
@@ -117,6 +118,7 @@ export default function ComboItemsTab({ productId, comboPriceMinor, readOnly, on
               </li>
             ))}
           </ul>
+          </div>
         )}
 
         {items.length > 0 && (
@@ -138,7 +140,7 @@ export default function ComboItemsTab({ productId, comboPriceMinor, readOnly, on
                 className="w-full rounded-xl border border-line bg-white py-2 pl-8 pr-3 text-sm outline-none focus:border-magenta"
               />
             </div>
-            <div className="mt-1.5 max-h-60 overflow-y-auto rounded-lg bg-white ring-1 ring-line">
+            <div className="mt-1.5 max-h-60 overflow-auto rounded-lg bg-white ring-1 ring-line">
               {searching && <p className="px-3 py-2 text-xs text-ink-soft">Loading…</p>}
               {!searching && results.length === 0 && <p className="px-3 py-2 text-xs text-ink-soft">No products match.</p>}
               {!searching && results.map((p) => {
@@ -146,9 +148,9 @@ export default function ComboItemsTab({ productId, comboPriceMinor, readOnly, on
                 return (
                   <button
                     key={p.id} type="button" onClick={() => add(p)} disabled={added}
-                    className="flex w-full items-center justify-between gap-3 px-3 py-1.5 text-left text-xs hover:bg-snow disabled:opacity-40"
+                    className="flex min-w-full w-max items-center justify-between gap-6 whitespace-nowrap px-3 py-2 text-left text-xs hover:bg-snow disabled:opacity-40"
                   >
-                    <span className="truncate">{p.brand} — {p.name}</span>
+                    <span>{p.brand} — {p.name}</span>
                     <span className="shrink-0 text-ink-soft">{added ? "Added" : money(p.price_minor)}</span>
                   </button>
                 );

@@ -5,12 +5,13 @@ import { X, ShoppingBag, ArrowRight, Lock, Tag } from "lucide-react";
 import { useCart } from "../../context/CartContext.jsx";
 import { formatPrice } from "../../lib/format.js";
 import LineItem from "./LineItem.jsx";
+import SelectAllBar from "./SelectAllBar.jsx";
 import FreeShippingBar from "./FreeShippingBar.jsx";
 import Button from "../ui/Button.jsx";
 import { useFocusTrap } from "../../lib/useFocusTrap.js";
 
 export default function CartDrawer() {
-  const { isOpen, closeCart, items, count, subtotal, discountAmount, appliedCoupon } = useCart();
+  const { isOpen, closeCart, items, count, selectedCount, subtotal, discountAmount, appliedCoupon } = useCart();
   const drawerRef = useRef(null);
   useFocusTrap(drawerRef, isOpen);
 
@@ -81,11 +82,12 @@ export default function CartDrawer() {
                 </div>
 
                 {/* Items */}
-                <div className="flex-1 overflow-y-auto px-5 py-4">
+                <div className="flex-1 overflow-y-auto overscroll-contain px-5 pb-4 pt-2">
+                  <SelectAllBar className="mb-2 border-b border-line pb-2" />
                   <AnimatePresence initial={false}>
                     <div className="flex flex-col gap-5">
                       {items.map((item) => (
-                        <LineItem key={item.id} item={item} compact />
+                        <LineItem key={`${item.id}:${item.variantId ?? ""}`} item={item} compact selectable />
                       ))}
                     </div>
                   </AnimatePresence>
@@ -94,7 +96,9 @@ export default function CartDrawer() {
                 {/* Footer */}
                 <div className="border-t border-line px-5 py-4">
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-ink-soft">Subtotal</span>
+                    <span className="text-ink-soft">
+                      Subtotal ({selectedCount} item{selectedCount === 1 ? "" : "s"})
+                    </span>
                     <span className="font-sans font-semibold text-xl text-ink">
                       {formatPrice(subtotal)}
                     </span>
@@ -119,10 +123,11 @@ export default function CartDrawer() {
                   <Button
                     variant="primary"
                     magnetic={false}
-                    className="mt-4 w-full"
+                    className="mt-4 w-full disabled:cursor-not-allowed disabled:opacity-50"
                     onClick={goCheckout}
+                    disabled={selectedCount === 0}
                   >
-                    Checkout <ArrowRight className="h-4 w-4" strokeWidth={2} />
+                    {selectedCount === 0 ? "Select items to checkout" : <>Checkout <ArrowRight className="h-4 w-4" strokeWidth={2} /></>}
                   </Button>
 
                   <a

@@ -55,8 +55,12 @@ export function injectMetaPixel(pixelId) {
  *  Purchase, …). Before the pixel has loaded the event is held (at most
  *  MAX_PENDING) and sent when it inits; with no pixel configured it simply
  *  stays held and nothing is ever sent. */
-export function trackEvent(name, params) {
+export function trackEvent(name, rawParams) {
   if (typeof window === "undefined") return;
+  // Money to 2 decimals: 984.0500000000001 → 984.05 in Meta's reports.
+  const params = rawParams && typeof rawParams.value === "number"
+    ? { ...rawParams, value: Math.round(rawParams.value * 100) / 100 }
+    : rawParams;
   if (!injectedId || !window.fbq) {
     if (pendingEvents.length < MAX_PENDING) pendingEvents.push([name, params]);
     return;

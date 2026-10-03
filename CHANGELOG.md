@@ -2,6 +2,7 @@
 
 ## Unreleased
 ### Added
+- Key features: every product and combo can have a list of key features (one per line) in Admin → Products → Details, and right in Admin → Combos → New combo. The product page shows them as a "Key features" checklist under the price; with none set, nothing is shown.
 - Admin → Rewards: run the whole loyalty programme from the admin — switch it on or off, name it, set how many taka earn a point and how many points a review earns, and add, edit, switch off or delete the reward tiers (points needed, % or ৳ off, free shipping, how it's described). The Rewards page wording is editable under Content → Rewards Page. Turning the programme off stops points being earned, switches reward codes off and hides the Rewards page link, points badges and account tab.
 - Track Order page in the menu: customers enter their order number and checkout phone and see the real status set in the admin (placed, processing, shipped, delivered, or cancelled/refunded), courier and tracking number, items and status history. Works for guest orders; never shows the address or email.
 - Order receipt (memo) after checkout: every item with size and quantity, subtotal, discount, delivery and total, with Print / save as PDF. The account's order details show the same saved receipt.

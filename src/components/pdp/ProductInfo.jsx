@@ -210,6 +210,24 @@ export default function ProductInfo({ product, onWriteReview }) {
         )}
       </div>
 
+      {/* Key features — written by the admin (Products → Details / Combos);
+          hidden when none are set. */}
+      {product.keyFeatures?.length > 0 && (
+        <div className="mt-5 rounded-2xl bg-white/70 p-4 ring-1 ring-line">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-magenta">Key features</p>
+          <ul className="mt-2.5 space-y-2">
+            {product.keyFeatures.map((f) => (
+              <li key={f} className="flex items-start gap-2.5 text-sm leading-snug text-ink">
+                <span className="mt-0.5 grid h-4 w-4 shrink-0 place-items-center rounded-full bg-magenta text-white">
+                  <Check className="h-2.5 w-2.5" strokeWidth={3.5} />
+                </span>
+                <span className="min-w-0">{f}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       {/* Benefit badges */}
       {product.benefits.length > 0 && (
         <div className="mt-5 flex flex-wrap gap-2">

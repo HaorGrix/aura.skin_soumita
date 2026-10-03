@@ -24,7 +24,7 @@ import { useStoreSettings } from "../../lib/api/settings.js";
 import ImageManager, { VideoField } from "../components/ImageManager.jsx";
 import {
   Btn, Card, ConfirmModal, Modal, MoneyField, MultiSelectField, PageHeader, Pill, SaveBar,
-  SearchableCreatableSelect, SelectField, Spinner, StockPill, TagsField, TextField, Toggle, money, useAsync,
+  LinesField, SearchableCreatableSelect, SelectField, Spinner, StockPill, TagsField, TextField, Toggle, money, useAsync,
 } from "../components/kit.jsx";
 import { useConcerns } from "../../lib/api/concerns.js";
 import { displaySize } from "../../lib/format.js";
@@ -36,7 +36,7 @@ const BLANK = {
   category_id: "", price_minor: null, compare_at_minor: null, cost_minor: null,
   sku: "", low_stock_at: 5, max_per_order: 6, backorder_ok: false,
   status: "draft", is_new: false, popularity: 50, tone: "pink",
-  concern: [], skin_type: [], ingredients: [], seo_title: "", seo_description: "",
+  concern: [], skin_type: [], ingredients: [], key_features: [], seo_title: "", seo_description: "",
   rating: 4.8, review_count: 0,
   is_staff_pick: false, is_limited_edition: false, is_best_seller_manual: false,
 };
@@ -346,6 +346,11 @@ export default function ProductEdit({ id }) {
               </p>
             )}
             <TextField label="Short subtitle" value={form.subtitle ?? ""} onChange={setInput("subtitle")} disabled={readOnly} className="sm:col-span-2" />
+            <LinesField
+              label="Key features" hint="One per line — shown as a checklist on the product page. Leave empty to hide it."
+              value={form.key_features ?? []} onChange={set("key_features")} disabled={readOnly} className="sm:col-span-2"
+              placeholder={"Gentle enough for daily use\nFragrance-free\nSuitable for sensitive skin"}
+            />
             <TextField as="textarea" label="Description" hint="Shown on the product page as “The story.” Leave blank to show an auto-generated summary instead." value={form.description ?? ""} onChange={setInput("description")} disabled={readOnly} className="sm:col-span-2" />
             <TextField as="textarea" label="Brand philosophy" hint="Shown on the product page as “Our philosophy.” Leave blank to show the default philosophy blurb instead." value={form.philosophy ?? ""} onChange={setInput("philosophy")} disabled={readOnly} className="sm:col-span-2" />
             <TextField

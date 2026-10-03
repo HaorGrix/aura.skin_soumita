@@ -102,6 +102,7 @@ function mapProduct(row) {
     brand: row.brand,
     name: row.name,
     subtitle: row.subtitle,
+    keyFeatures: row.key_features ?? [],
     description: row.description,
     philosophy: row.philosophy,
     howToUse: row.how_to_use,

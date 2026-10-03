@@ -9,6 +9,7 @@ import { useStoreSettings } from "../lib/api/settings.js";
 import { useShippingMethods, cheapestZone } from "../lib/api/shipping.js";
 import { smartNavigate } from "../lib/nav-history.js";
 import LineItem from "../components/cart/LineItem.jsx";
+import SelectAllBar from "../components/cart/SelectAllBar.jsx";
 import FreeShippingBar from "../components/cart/FreeShippingBar.jsx";
 import OrderSummary from "../components/cart/OrderSummary.jsx";
 import RelatedProducts from "../components/pdp/RelatedProducts.jsx";
@@ -20,7 +21,7 @@ import { useToast } from "../components/ui/Toast.jsx";
 import { Input } from "../components/ui/index.js";
 
 export default function Cart() {
-  const { items, subtotal, count, clear, discountAmount, appliedCoupon, applyPromo } = useCart();
+  const { items, subtotal, count, selectedCount, clear, discountAmount, appliedCoupon, applyPromo } = useCart();
   const { authed, points, orders, usedCoupons, email: userEmail } = useUser();
   const { toast } = useToast();
   const [promoInput, setPromoInput] = useState("");
@@ -148,11 +149,12 @@ export default function Cart() {
             <div className="mb-5">
               <FreeShippingBar subtotal={discounted} couponFreeShipping={!!appliedCoupon?.freeShipping} />
             </div>
+            <SelectAllBar className="mb-2 border-b border-line pb-2" />
             <div className="flex flex-col divide-y divide-line">
               <AnimatePresence initial={false}>
                 {items.map((item) => (
                   <div key={`${item.id}:${item.variantId ?? ""}`} className="py-5 first:pt-0">
-                    <LineItem item={item} />
+                    <LineItem item={item} selectable />
                   </div>
                 ))}
               </AnimatePresence>
@@ -197,15 +199,21 @@ export default function Cart() {
                 onApply={(code) => handlePromo(null, code)}
               />
 
-              <Button
-                variant="primary"
-                magnetic={false}
-                className="mt-4 w-full"
-                as="a"
-                href="/checkout"
-              >
-                Proceed to Checkout <ArrowRight className="h-4 w-4" strokeWidth={2} />
-              </Button>
+              {selectedCount === 0 ? (
+                <p className="mt-4 rounded-full bg-snow py-3.5 text-center text-sm font-semibold text-ink-soft ring-1 ring-line">
+                  Select items to checkout
+                </p>
+              ) : (
+                <Button
+                  variant="primary"
+                  magnetic={false}
+                  className="mt-4 w-full"
+                  as="a"
+                  href="/checkout"
+                >
+                  Checkout {selectedCount} item{selectedCount === 1 ? "" : "s"} <ArrowRight className="h-4 w-4" strokeWidth={2} />
+                </Button>
+              )}
 
               {/* Trust */}
               <div className="mt-4 flex flex-wrap justify-center gap-x-4 gap-y-1.5 text-xs text-ink-soft">

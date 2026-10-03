@@ -2,6 +2,7 @@
 
 ## Unreleased
 ### Added
+- Choose what to buy from the bag: every item in the bag drawer and bag page has a tick box (all ticked by default) plus "Select all" and "Remove" for the ticked items. The subtotal, free-shipping bar, coupon and checkout cover only the ticked items, and after an order only those leave the bag; the rest stay for later. Long product names now wrap to two lines instead of being cut off.
 - Key features: every product and combo can have a list of key features (one per line) in Admin → Products → Details, and right in Admin → Combos → New combo. The product page shows them as a "Key features" checklist under the price; with none set, nothing is shown.
 - Admin → Rewards: run the whole loyalty programme from the admin — switch it on or off, name it, set how many taka earn a point and how many points a review earns, and add, edit, switch off or delete the reward tiers (points needed, % or ৳ off, free shipping, how it's described). The Rewards page wording is editable under Content → Rewards Page. Turning the programme off stops points being earned, switches reward codes off and hides the Rewards page link, points badges and account tab.
 - Track Order page in the menu: customers enter their order number and checkout phone and see the real status set in the admin (placed, processing, shipped, delivered, or cancelled/refunded), courier and tracking number, items and status history. Works for guest orders; never shows the address or email.
@@ -20,6 +21,8 @@
 - Reviews are real: a buyer reviews a delivered item from Order History, it appears on the product page straight away and the points are added on the server. New Admin → Reviews screen to see every review and hide or show one.
 
 ### Changed
+- Postal code is optional at checkout (still checked as 4 digits when filled in).
+- Admin → Combos: the chosen-items list and the product pickers scroll sideways so full product names are readable on a phone.
 - Out-of-stock products now come after every in-stock product in the shop, whatever the sort or search. Their photos stay in full colour (no grey "Out of Stock" overlay), and the card and product page show a plain "Stock Out" label instead of "Notify Me".
 - Coupons are private unless "Show to shoppers" is switched on for them; existing ordinary codes were made private so checkout no longer lists them automatically. Rewards codes still appear to members who have earned them.
 - Phones: the bill breakdown (subtotal, discount, delivery, total) is always shown right above the checkout button; tapping a form field no longer zooms the page, and tapping + / Add quickly no longer zooms in; small text across the site is darker.

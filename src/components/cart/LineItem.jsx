@@ -1,14 +1,17 @@
 import { motion } from "framer-motion";
-import { Minus, Plus, Trash2 } from "lucide-react";
+import { Check, Minus, Plus, Trash2 } from "lucide-react";
 import { useCart } from "../../context/CartContext.jsx";
 import { displaySize, formatPrice } from "../../lib/format.js";
 
 /**
  * LineItem — a single cart row. `compact` = drawer styling; default = cart page.
  * `readOnly` hides the steppers (used in checkout summary).
+ * `selectable` adds the tick box that decides whether the line is bought
+ * at the next checkout (bag drawer and bag page).
  */
-export default function LineItem({ item, compact = false, readOnly = false }) {
-  const { inc, dec, removeItem, atMaxQty } = useCart();
+export default function LineItem({ item, compact = false, readOnly = false, selectable = false }) {
+  const { inc, dec, removeItem, atMaxQty, isSelected, toggleSelect } = useCart();
+  const ticked = isSelected(item);
   // Bags saved before "Standard" was hidden may still carry it.
   const size = displaySize(item.sizeLabel);
   const thumb = compact ? "h-16 w-16" : "h-24 w-24";
@@ -21,11 +24,28 @@ export default function LineItem({ item, compact = false, readOnly = false }) {
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: -20, height: 0, marginBottom: 0 }}
       transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-      className="flex gap-3.5"
+      className="flex items-start gap-3"
     >
+      {selectable && (
+        <button
+          type="button"
+          role="checkbox"
+          aria-checked={ticked}
+          aria-label={`${ticked ? "Unselect" : "Select"} ${item.name}`}
+          onClick={() => toggleSelect(item.id, item.variantId)}
+          className={`-ml-1 grid h-10 w-8 shrink-0 place-items-center ${compact ? "self-center" : "mt-7"}`}
+        >
+          <span className={`grid h-5 w-5 place-items-center rounded-md ring-1 transition-colors ${
+            ticked ? "bg-magenta text-white ring-magenta" : "bg-white text-transparent ring-ink/25"
+          }`}>
+            <Check className="h-3.5 w-3.5" strokeWidth={3} />
+          </span>
+        </button>
+      )}
+
       <a
         href={`/product/${item.id}`}
-        className={`${thumb} shrink-0 overflow-hidden rounded-xl ring-1 ring-line`}
+        className={`${thumb} shrink-0 overflow-hidden rounded-xl ring-1 ring-line transition-opacity ${selectable && !ticked ? "opacity-50" : ""}`}
         style={{
           background: `radial-gradient(120% 100% at 50% 0%, var(--color-white) 0%, ${item.tone} 75%, var(--color-petal-deep) 100%)`,
         }}
@@ -44,7 +64,7 @@ export default function LineItem({ item, compact = false, readOnly = false }) {
             </p>
             <a
               href={`/product/${item.id}`}
-              className={`block truncate font-display text-ink hover:text-magenta ${
+              className={`line-clamp-2 font-display leading-snug text-ink hover:text-magenta ${
                 compact ? "text-sm" : "text-base sm:text-lg"
               }`}
             >
@@ -96,7 +116,7 @@ export default function LineItem({ item, compact = false, readOnly = false }) {
             </div>
           )}
 
-          <span className="font-sans font-semibold tabular-nums text-ink">
+          <span className={`font-sans font-semibold tabular-nums ${selectable && !ticked ? "text-ink-soft line-through" : "text-ink"}`}>
             {formatPrice(item.price * item.qty)}
           </span>
         </div>

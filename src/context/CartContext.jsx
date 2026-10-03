@@ -53,6 +53,10 @@ function slim(item) {
   };
 }
 
+/** A line is in the next checkout unless the shopper unticked it (lines
+ *  saved before selection existed have no flag and count as ticked). */
+const isSelected = (line) => line.selected !== false;
+
 /** Two lines are the same line iff both the product AND the size match. */
 const sameLine = (a, b) => a.id === b.id && (a.variantId ?? null) === (b.variantId ?? null);
 
@@ -76,11 +80,11 @@ function reducer(state, action) {
       if (existing) {
         return {
           items: state.items.map((i) =>
-            sameLine(i, line) ? { ...i, qty: Math.min(i.qty + qty, max) } : i
+            sameLine(i, line) ? { ...i, qty: Math.min(i.qty + qty, max), selected: true } : i
           ),
         };
       }
-      return { items: [...state.items, { ...line, qty: Math.min(qty, max) }] };
+      return { items: [...state.items, { ...line, qty: Math.min(qty, max), selected: true }] };
     }
     case "SET_QTY": {
       const target = { id: action.id, variantId: action.variantId ?? null };
@@ -94,6 +98,14 @@ function reducer(state, action) {
     }
     case "REMOVE":
       return { items: state.items.filter((i) => !sameLine(i, { id: action.id, variantId: action.variantId ?? null })) };
+    case "TOGGLE_SELECT": {
+      const target = { id: action.id, variantId: action.variantId ?? null };
+      return { items: state.items.map((i) => (sameLine(i, target) ? { ...i, selected: !isSelected(i) } : i)) };
+    }
+    case "SELECT_ALL":
+      return { items: state.items.map((i) => ({ ...i, selected: action.value })) };
+    case "REMOVE_SELECTED":
+      return { items: state.items.filter((i) => !isSelected(i)) };
     case "CLEAR":
       return { items: [] };
     case "LOAD":
@@ -167,8 +179,12 @@ export function CartProvider({ children }) {
   }, [state.items]);
 
   const value = useMemo(() => {
+    // count = everything in the bag (badge); the money and checkout only
+    // cover the ticked lines.
     const count = state.items.reduce((sum, i) => sum + i.qty, 0);
-    const subtotal = state.items.reduce((sum, i) => sum + i.qty * (i.price ?? 0), 0);
+    const selectedItems = state.items.filter(isSelected);
+    const selectedCount = selectedItems.reduce((sum, i) => sum + i.qty, 0);
+    const subtotal = selectedItems.reduce((sum, i) => sum + i.qty * (i.price ?? 0), 0);
 
     // discountAmount shares the same useMemo as subtotal — it recalculates
     // automatically whenever items (and therefore subtotal) change.
@@ -186,6 +202,15 @@ export function CartProvider({ children }) {
     return {
       items: state.items,
       count,
+      // --- Selection (which lines go to checkout) ---
+      selectedItems,
+      selectedCount,
+      allSelected: state.items.length > 0 && selectedItems.length === state.items.length,
+      isSelected,
+      toggleSelect: (id, variantId = null) => dispatch({ type: "TOGGLE_SELECT", id, variantId }),
+      selectAll: (value) => dispatch({ type: "SELECT_ALL", value }),
+      // After an order: only the lines that were bought leave the bag.
+      removeSelected: () => dispatch({ type: "REMOVE_SELECTED" }),
       subtotal,
       // --- Promo ---
       appliedCoupon,

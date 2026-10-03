@@ -217,15 +217,15 @@ function NewComboModal({ onClose }) {
               className="w-full rounded-xl border border-line bg-white py-2 pl-8 pr-3 text-sm outline-none focus:border-magenta"
             />
           </div>
-          <div className="mt-2 max-h-72 overflow-y-auto rounded-lg ring-1 ring-line">
+          <div className="mt-2 max-h-72 overflow-auto rounded-lg ring-1 ring-line">
             {found.loading && <p className="px-3 py-2 text-xs text-ink-soft">Loading…</p>}
             {!found.loading && !(found.data ?? []).length && <p className="px-3 py-2 text-xs text-ink-soft">No products match.</p>}
             {!found.loading && (found.data ?? []).map((p) => (
               <button
                 key={p.id} type="button" disabled={busy} onClick={() => pickExisting(p)}
-                className="flex w-full items-center justify-between gap-3 px-3 py-2 text-left text-xs hover:bg-snow disabled:opacity-40"
+                className="flex min-w-full w-max items-center justify-between gap-6 whitespace-nowrap px-3 py-2 text-left text-xs hover:bg-snow disabled:opacity-40"
               >
-                <span className="truncate">{p.brand} — {p.name}</span>
+                <span>{p.brand} — {p.name}</span>
                 <span className="shrink-0 text-ink-soft">{money(p.price_minor)}</span>
               </button>
             ))}

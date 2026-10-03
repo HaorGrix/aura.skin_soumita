@@ -64,7 +64,9 @@ function saveCheckoutState(state) {
 }
 
 export default function Checkout() {
-  const { items, subtotal, count, clear, removeItem, setQty, discountAmount, appliedCoupon, applyPromo, removeCoupon: cartRemoveCoupon } = useCart();
+  // Checkout covers only the lines ticked in the bag; after the order only
+  // those are removed (removeSelected), the rest stay for later.
+  const { count: bagCount, selectedItems: items, subtotal, selectedCount: count, removeSelected: clear, removeItem, setQty, discountAmount, appliedCoupon, applyPromo, removeCoupon: cartRemoveCoupon } = useCart();
   const { authed, openAuth, email: userEmail, name: userName, points, addOrder, usedCoupons, markCouponUsed, orders } = useUser();
   const { toast } = useToast();
   const savedCheckout = loadCheckoutState();
@@ -230,7 +232,8 @@ export default function Checkout() {
       if (!form.lastName.trim()) next.lastName = "Last name is required.";
       if (!form.address.trim()) next.address = "Address is required.";
       if (!form.city.trim()) next.city = "City is required.";
-      if (!postcodeOk(form.postal)) next.postal = "Postal code must be exactly 4 digits.";
+      // Optional — only checked when the shopper types one.
+      if (form.postal.trim() && !postcodeOk(form.postal)) next.postal = "Postal code must be exactly 4 digits.";
       if (!isPhoneValid) next.phone = "Enter a valid BD number.";
       if (Object.keys(next).length) {
         setErrors(next);
@@ -310,7 +313,7 @@ export default function Checkout() {
       name: `${form.firstName ?? ""} ${form.lastName ?? ""}`.trim(),
       line1: form.address ?? "",
       city: form.city ?? "",
-      postcode: form.postal ?? "",
+      postcode: form.postal?.trim() ?? "",
       country: form.country ?? "Bangladesh",
       phone: form.phone ?? "",
     };
@@ -389,9 +392,11 @@ export default function Checkout() {
         <EmptyState
           emoji="🧾"
           title="Nothing to check out"
-          message="Your bag is empty — let’s add a little glow first."
-          actionLabel="Go to shop"
-          onAction={() => (navigate("/shop"))}
+          message={bagCount > 0
+            ? "No items are selected. Tick the products you want to buy in your bag."
+            : "Your bag is empty — let’s add a little glow first."}
+          actionLabel={bagCount > 0 ? "Back to bag" : "Go to shop"}
+          onAction={() => navigate(bagCount > 0 ? "/cart" : "/shop")}
         />
       </div>
     );
@@ -610,7 +615,7 @@ function InfoStep({ form, set, setForm, setIsPhoneValid, errors }) {
         <Field label="City" error={errors.city}>
           <Input value={form.city} onChange={set("city")} placeholder="Dhaka" {...NO_SUGGEST} />
         </Field>
-        <Field label="Postal code" error={errors.postal}>
+        <Field label="Postal code (optional)" error={errors.postal}>
           <Input value={form.postal} onChange={set("postal")} placeholder="1207" inputMode="numeric" maxLength={4} {...NO_SUGGEST} />
         </Field>
         <Field label="Country">

@@ -353,6 +353,28 @@ export function TagsField({ label, hint, value = [], onChange, suggestions = [],
   );
 }
 
+/** A list edited as one item per line (key features, …). Keeps the raw
+ *  text locally so Enter can start a new, still-empty line; emits the
+ *  trimmed, non-empty lines. */
+export function LinesField({ label, hint, value = [], onChange, placeholder, disabled, className = "", rows = 4 }) {
+  const [text, setText] = useState(() => (value ?? []).join("\n"));
+  const parse = (t) => t.split("\n").map((s) => s.trim()).filter(Boolean);
+  // Follow outside changes (a product finishing loading) without fighting typing.
+  useEffect(() => {
+    if (JSON.stringify(parse(text)) !== JSON.stringify(value ?? [])) setText((value ?? []).join("\n"));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value]);
+  return (
+    <label className={`block ${className}`}>
+      {label && <Label hint={hint ?? "One per line"}>{label}</Label>}
+      <textarea
+        className={inputCls} rows={rows} value={text} placeholder={placeholder} disabled={disabled}
+        onChange={(e) => { setText(e.target.value); onChange(parse(e.target.value)); }}
+      />
+    </label>
+  );
+}
+
 /** Fixed-option multi-select, rendered as toggle pills — for fields like
  *  skin_type where free text invites typos/duplicates ("Oily" vs "oily" vs
  *  "Olly") and the real option set is small and known up front. Unlike

@@ -16,7 +16,7 @@ import {
   createProduct, listCategoryTree, listCombos, listProducts, setProductCombo,
 } from "../../lib/api/admin/catalog.js";
 import {
-  Btn, ConfirmModal, DataTable, Modal, MoneyField, PageHeader, Pill, SelectField, Spinner, TextField, money, useAsync,
+  Btn, ConfirmModal, DataTable, LinesField, Modal, MoneyField, PageHeader, Pill, SelectField, Spinner, TextField, money, useAsync,
 } from "../components/kit.jsx";
 
 const STATUS_TONE = { active: "green", draft: "amber", archived: "grey" };
@@ -136,7 +136,7 @@ function ComboDetail({ id, combos, readOnly }) {
 
 function NewComboModal({ onClose }) {
   const [mode, setMode] = useState("new"); // "new" | "existing"
-  const [form, setForm] = useState({ name: "", brand: "", category_id: "", price_minor: null });
+  const [form, setForm] = useState({ name: "", brand: "", category_id: "", price_minor: null, key_features: [] });
   const [query, setQuery] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
@@ -154,7 +154,7 @@ function NewComboModal({ onClose }) {
     setBusy(true); setError(null);
     const { data, error: e } = await createProduct({
       name: form.name.trim(), brand: form.brand.trim(), category_id: form.category_id,
-      price_minor: form.price_minor, is_combo: true, status: "draft",
+      price_minor: form.price_minor, key_features: form.key_features, is_combo: true, status: "draft",
     });
     setBusy(false);
     if (e) return setError(`Couldn't create the combo: ${e.message}`);
@@ -201,6 +201,11 @@ function NewComboModal({ onClose }) {
             value={form.category_id} onChange={(e) => set("category_id")(e.target.value)}
           />
           <MoneyField label="Combo price" required valueMinor={form.price_minor} onChangeMinor={set("price_minor")} />
+          <LinesField
+            label="Key features" hint="One per line — shown on the combo's page. Optional."
+            value={form.key_features} onChange={set("key_features")} rows={3}
+            placeholder={"Complete morning routine\nSave vs buying separately"}
+          />
           <p className="text-xs text-ink-soft">It's created as a draft. Next you pick the products inside it, then add photos and stock and set it Active.</p>
         </div>
       ) : (

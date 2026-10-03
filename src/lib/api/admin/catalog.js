@@ -164,7 +164,7 @@ const WRITABLE = [
   "max_per_order", "backorder_ok", "status", "is_new", "popularity", "tone",
   "concern", "skin_type", "ingredients", "seo_title", "seo_description",
   "rating", "review_count",
-  "is_staff_pick", "is_limited_edition", "is_best_seller_manual", "is_combo",
+  "is_staff_pick", "is_limited_edition", "is_best_seller_manual", "is_combo", "key_features",
 ];
 
 function pickWritable(input) {

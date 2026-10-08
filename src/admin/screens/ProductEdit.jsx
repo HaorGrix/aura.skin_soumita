@@ -12,7 +12,7 @@
  * one transaction.
  * =================================================================== */
 import { useEffect, useMemo, useState } from "react";
-import { ArrowLeft, ExternalLink, History, Plus, Star, Trash2 } from "lucide-react";
+import { ArrowLeft, Check, EyeOff, ExternalLink, History, Plus, Star, Trash2 } from "lucide-react";
 import {
   adjustStock, archiveProduct, createProduct, deleteProduct, deleteVariant,
   getProduct, listBrandRows, categoryOptions, listCategoryTree, listStockMovements,
@@ -149,6 +149,18 @@ export default function ProductEdit({ id }) {
     ? Math.round((1 - form.price_minor / form.compare_at_minor) * 100)
     : 0;
 
+  // One click from "draft" to live — saves the form as it is, published.
+  const [publishing, setPublishing] = useState(false);
+  async function publish() {
+    setPublishing(true);
+    setError(null);
+    const { data, error: e } = await updateProduct(productId, { ...form, status: "active" }, { previousSlug: original.slug });
+    setPublishing(false);
+    if (e) return setError(`Couldn't publish: ${e.message}`);
+    setOriginal(data);
+    setForm(data);
+  }
+
   async function handleSave() {
     setSaving(true); setError(null);
 
@@ -174,7 +186,7 @@ export default function ProductEdit({ id }) {
       // fails with "invalid input syntax for type uuid: ''" — a raw DB error
       // shown to the admin instead of a plain-English reason to fix it.
       if (!form.category_id) { setTab("Details"); return setError("Category is required."); }
-      if (form.price_minor == null) { setTab("Pricing"); return setError("A product needs a price."); }
+      if (!(form.price_minor > 0)) { setTab("Pricing"); return setError("A product needs a price above ৳0."); }
 
       const payload = { ...form, slug: form.slug || slugify(`${form.brand}-${form.name}`) };
 
@@ -302,6 +314,20 @@ export default function ProductEdit({ id }) {
           </button>
         )}
       </div>
+
+      {!isNew && form.status === "draft" && (
+        <DraftChecklist
+          checks={[
+            { label: "Price set", ok: original.price_minor > 0, tab: "Pricing" },
+            { label: "At least one photo", ok: images.length > 0, tab: "Images" },
+            { label: "Stock added (optional — it shows as Stock Out without)", ok: stock > 0, tab: "Inventory", optional: true },
+          ]}
+          onGo={setTab}
+          readOnly={readOnly}
+          publishing={publishing}
+          onPublish={publish}
+        />
+      )}
 
       <div className="mb-4 flex gap-1 overflow-x-auto border-b border-line">
         {TABS.map((t) => (
@@ -962,5 +988,43 @@ function StockModal({ open, onClose, current, onApply }) {
         </p>
       </div>
     </Modal>
+  );
+}
+
+/** Shown on a draft: why shoppers can't see it yet, what's left, and a
+ *  Publish button once the required items are done. */
+function DraftChecklist({ checks, onGo, onPublish, publishing, readOnly }) {
+  const ready = checks.every((c) => c.ok || c.optional);
+  return (
+    <div className="mb-5 rounded-2xl bg-amber-50 p-4 ring-1 ring-amber-200 sm:p-5">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="flex items-center gap-2 text-sm font-semibold text-amber-900">
+            <EyeOff className="h-4 w-4" /> Draft — hidden from the shop
+          </p>
+          <p className="mt-1 text-xs text-amber-800">Shoppers can't see this product until it is published.</p>
+        </div>
+        {!readOnly && (
+          <Btn size="sm" onClick={onPublish} loading={publishing} disabled={!ready}>
+            {ready ? "Publish now" : "Finish the steps to publish"}
+          </Btn>
+        )}
+      </div>
+      <ul className="mt-3 space-y-1.5">
+        {checks.map((c) => (
+          <li key={c.label} className="flex flex-wrap items-center gap-2 text-sm">
+            <span className={`grid h-5 w-5 shrink-0 place-items-center rounded-full ${c.ok ? "bg-success text-white" : "bg-white ring-1 ring-amber-300"}`}>
+              {c.ok && <Check className="h-3 w-3" strokeWidth={3} />}
+            </span>
+            <span className={c.ok ? "text-ink-soft line-through" : "text-ink"}>{c.label}</span>
+            {!c.ok && (
+              <button type="button" onClick={() => onGo(c.tab)} className="text-xs font-semibold text-magenta hover:underline">
+                Go to {c.tab}
+              </button>
+            )}
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }

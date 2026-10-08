@@ -19,7 +19,7 @@
 import { useState } from "react";
 import { Check, Plus, Trash2 } from "lucide-react";
 import {
-  bulkPrice, categoryOptions, deleteProducts, listCategoryTree, listProductsWithVariants,
+  bulkPrice, categoryOptions, deleteProducts, listCategoryTree, listProducts, listProductsWithVariants,
   setProductStatus, updateVariantPrice,
 } from "../../lib/api/admin/catalog.js";
 import { useAdmin } from "../context.js";
@@ -51,6 +51,7 @@ export default function Products() {
   const [deleteError, setDeleteError] = useState(null);
 
   const categories = useAsync(() => listCategoryTree(), []);
+  const drafts = useAsync(() => listProducts({ status: "draft", pageSize: 1 }), []);
   const list = useAsync(
     () => listProductsWithVariants({ search, status, categoryId, stockFilter, page }),
     [search, status, categoryId, stockFilter, page]
@@ -96,6 +97,16 @@ export default function Products() {
           </Btn>
         )}
       />
+
+      {/* Drafts are easy to forget: say how many are hidden from the shop. */}
+      {(drafts.count ?? 0) > 0 && status !== "draft" && (
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-amber-50 px-4 py-3 text-sm text-amber-900 ring-1 ring-amber-200">
+          <span>
+            <strong>{drafts.count} draft product{drafts.count === 1 ? "" : "s"}</strong> {drafts.count === 1 ? "is" : "are"} hidden from the shop until published.
+          </span>
+          <Btn size="sm" variant="secondary" onClick={() => setFilter(setStatus)("draft")}>Show drafts</Btn>
+        </div>
+      )}
 
       <div className="mb-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <SearchInput value={search} onChange={setFilter(setSearch)} placeholder="Name, brand or SKU…" />

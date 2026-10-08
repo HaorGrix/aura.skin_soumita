@@ -171,16 +171,39 @@ async function attachSizeLabels(products) {
 
   const { data, error } = await supabase
     .from("product_variants_public")
-    .select("product_id, size_label")
+    .select("*")
     .in("product_id", dbIds)
-    .eq("is_default", true);
+    .order("sort_order", { ascending: true });
 
   // A failed lookup shouldn't take down the grid — products just render
   // without a size chip, exactly like today.
   if (error || !data) return products;
 
-  const bySize = new Map(data.map((r) => [r.product_id, displaySize(r.size_label)]));
-  return products.map((p) => ({ ...p, sizeLabel: bySize.get(p.dbId) ?? null }));
+  const byProduct = new Map();
+  for (const row of data) {
+    if (!byProduct.has(row.product_id)) byProduct.set(row.product_id, []);
+    byProduct.get(row.product_id).push(mapVariant(row));
+  }
+
+  return products.map((p) => {
+    const variants = byProduct.get(p.dbId) ?? [];
+    const def = variants.find((v) => v.isDefault) ?? variants[0];
+    // The card shows (and quick-adds) the default size — unless it is sold
+    // out while another size isn't; then the first size that can be bought.
+    const shown = def && !def.inStock ? variants.find((v) => v.inStock) ?? def : def;
+    if (!shown) return { ...p, sizeLabel: null };
+    if (shown === def) return { ...p, sizeLabel: displaySize(def.sizeLabel), variantId: def.id };
+    return {
+      ...p,
+      sizeLabel: displaySize(shown.sizeLabel),
+      variantId: shown.id,
+      price: shown.price,
+      compareAt: shown.compareAt,
+      originalPrice: shown.compareAt ?? null,
+      isOnSale: shown.isOnSale,
+      discountPercent: shown.discountPercent,
+    };
+  });
 }
 
 /**

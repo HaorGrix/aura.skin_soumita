@@ -55,9 +55,12 @@ export default function ProductInfo({ product, onWriteReview }) {
   // grid already show), falling back to the first option if something odd
   // happened to the data (e.g. every row's is_default came back false).
   const variants = product.variants ?? [];
-  const [variantId, setVariantId] = useState(
-    () => variants.find((v) => v.isDefault)?.id ?? variants[0]?.id ?? null
-  );
+  // Open on the default size, unless it is sold out and another size isn't.
+  const [variantId, setVariantId] = useState(() => {
+    const def = variants.find((v) => v.isDefault) ?? variants[0];
+    if (def && !def.inStock) return variants.find((v) => v.inStock)?.id ?? def.id;
+    return def?.id ?? null;
+  });
   const selectedVariant = variants.find((v) => v.id === variantId) ?? variants[0] ?? null;
   const hasRealSize = variants.some((v) => displaySize(v.sizeLabel));
 

@@ -37,6 +37,7 @@
 - The home page "What our customers are saying" section no longer shows the four demo pictures from other brands; it reappears as soon as real review pictures are added and featured in Admin → Testimonials.
 
 ### Fixed
+- Archived products looked "lost" because they vanish from both the shop and the admin product list. The Products list now says how many are archived with a "Show archived" shortcut, and the Archive confirmation says where the product goes and how to restore it.
 - New products could be left as hidden drafts without anyone noticing (four were created with no photo, no stock and a ৳0 price, so they never appeared in the shop). A draft product now shows a "Draft — hidden from the shop" checklist (price, photo, optional stock) with a Publish now button once it's ready; the Products list says how many drafts are hidden with a "Show drafts" shortcut; and a product can no longer be saved at ৳0.
 - A product with some sizes sold out (e.g. 30ml in stock, 150ml sold out) showed as Stock Out in the shop. It now counts as in stock when any size is; its card shows and quick-adds a size that can be bought (with that size's price), and the product page opens on an available size. Choosing the sold-out size still shows Stock Out.
 - Meta Pixel event values are rounded to 2 decimals (a purchase could be reported as 984.0500000000001).

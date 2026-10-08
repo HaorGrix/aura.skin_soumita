@@ -601,7 +601,7 @@ export default function ProductEdit({ id }) {
       <ConfirmModal
         open={archiveOpen} onClose={() => setArchiveOpen(false)} danger
         title="Archive this product?" confirmLabel="Archive"
-        body="It will be removed from the storefront immediately. Past orders keep it, and you can republish at any time — nothing is deleted."
+        body="It disappears from the shop AND from the normal product list straight away (find it again with Products → Show archived). Past orders keep it, nothing is deleted, and setting its status back to Published restores it."
         onConfirm={async () => { await archiveProduct(productId); adminNavigate("/admin/products"); }}
       />
 

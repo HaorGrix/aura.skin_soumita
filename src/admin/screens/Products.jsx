@@ -52,6 +52,7 @@ export default function Products() {
 
   const categories = useAsync(() => listCategoryTree(), []);
   const drafts = useAsync(() => listProducts({ status: "draft", pageSize: 1 }), []);
+  const archived = useAsync(() => listProducts({ status: "archived", pageSize: 1 }), []);
   const list = useAsync(
     () => listProductsWithVariants({ search, status, categoryId, stockFilter, page }),
     [search, status, categoryId, stockFilter, page]
@@ -105,6 +106,15 @@ export default function Products() {
             <strong>{drafts.count} draft product{drafts.count === 1 ? "" : "s"}</strong> {drafts.count === 1 ? "is" : "are"} hidden from the shop until published.
           </span>
           <Btn size="sm" variant="secondary" onClick={() => setFilter(setStatus)("draft")}>Show drafts</Btn>
+        </div>
+      )}
+
+      {(archived.count ?? 0) > 0 && status !== "archived" && status !== "all" && (
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-snow px-4 py-3 text-sm text-ink ring-1 ring-line">
+          <span>
+            <strong>{archived.count} archived product{archived.count === 1 ? "" : "s"}</strong> {archived.count === 1 ? "is" : "are"} hidden here and in the shop. Open one and set its status back to Published to restore it.
+          </span>
+          <Btn size="sm" variant="secondary" onClick={() => setFilter(setStatus)("archived")}>Show archived</Btn>
         </div>
       )}
 

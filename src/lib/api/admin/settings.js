@@ -22,6 +22,7 @@ const SETTINGS_FIELDS = [
   "announcement_text", "announcement_link_label", "announcement_link_href",
   "announcement_starts_at", "announcement_ends_at",
   "maintenance_mode", "meta_pixel_id", "meta_pixel_enabled",
+  "ga4_measurement_id", "ga4_enabled",
 ];
 
 export async function saveSettings(input) {

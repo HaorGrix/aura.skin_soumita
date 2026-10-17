@@ -7,7 +7,7 @@ import {
   useState,
 } from "react";
 import { validateCouponLive } from "../lib/api/coupons.js";
-import { trackEvent } from "../lib/analytics.js";
+import { trackEvent, trackGa4 } from "../lib/analytics.js";
 import { CONVERSION_RATE, CURRENCY } from "../lib/format.js";
 
 // price/subtotal in this file run on the legacy "USD-ish" float scale
@@ -304,6 +304,17 @@ export function CartProvider({ children }) {
           content_type: "product",
           value: (Number(item.price) || 0) * qty * CONVERSION_RATE,
           currency: CURRENCY.code,
+        });
+        // GA4 ecommerce add_to_cart — mirrors the pixel value/currency.
+        trackGa4("add_to_cart", {
+          currency: CURRENCY.code,
+          value: (Number(item.price) || 0) * qty * CONVERSION_RATE,
+          items: [{
+            item_id: String(item.id),
+            item_name: item.name,
+            price: (Number(item.price) || 0) * CONVERSION_RATE,
+            quantity: qty,
+          }],
         });
       },
       setQty: (id, qty, variantId = null) => dispatch({ type: "SET_QTY", id, qty, variantId }),

@@ -16,7 +16,7 @@ import RelatedProducts from "../components/pdp/RelatedProducts.jsx";
 import PdpSkeleton from "../components/pdp/PdpSkeleton.jsx";
 import QuickViewModal from "../components/shop/QuickViewModal.jsx";
 import EmptyState from "../components/ui/EmptyState.jsx";
-import { trackEvent } from "../lib/analytics.js";
+import { trackEvent, trackGa4 } from "../lib/analytics.js";
 import { CONVERSION_RATE, CURRENCY } from "../lib/format.js";
 
 export default function Product({ id }) {
@@ -78,6 +78,17 @@ export default function Product({ id }) {
         content_type: "product",
         value: (Number(pdp.price) || 0) * CONVERSION_RATE,
         currency: CURRENCY.code,
+      });
+      // GA4 ecommerce view_item — same value in the store's display currency.
+      trackGa4("view_item", {
+        currency: CURRENCY.code,
+        value: (Number(pdp.price) || 0) * CONVERSION_RATE,
+        items: [{
+          item_id: String(pdp.id),
+          item_name: pdp.name,
+          price: (Number(pdp.price) || 0) * CONVERSION_RATE,
+          quantity: 1,
+        }],
       });
 
       const { data: all } = await listProducts();

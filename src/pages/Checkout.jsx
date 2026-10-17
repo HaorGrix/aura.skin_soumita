@@ -23,7 +23,7 @@ import { Field, OptionCard, Input } from "../components/ui/index.js";
 import { useStoreSettings } from "../lib/api/settings.js";
 import { useShippingMethods, resolveShippingZone } from "../lib/api/shipping.js";
 import { formatPrice, CONVERSION_RATE, CURRENCY } from "../lib/format.js";
-import { trackEvent } from "../lib/analytics.js";
+import { trackEvent, trackGa4, setUserData } from "../lib/analytics.js";
 import { receiptLines, receiptTotals, printReceipt } from "../lib/order-receipt.js";
 // Aliased: this module already has a local `placeOrder()` (the pre-flight
 // stock guard). Importing under the same name would shadow it and make the
@@ -194,6 +194,17 @@ export default function Checkout() {
       value: total * CONVERSION_RATE,
       currency: CURRENCY.code,
     });
+    // GA4 ecommerce begin_checkout — full line items, not just ids.
+    trackGa4("begin_checkout", {
+      currency: CURRENCY.code,
+      value: total * CONVERSION_RATE,
+      items: items.map((i) => ({
+        item_id: String(i.id),
+        item_name: i.name,
+        price: (Number(i.price) || 0) * CONVERSION_RATE,
+        quantity: i.qty,
+      })),
+    });
   }, [count, authed, guest, items, total]);
 
   const applyCoupon = async (e, codeOverride) => {
@@ -348,6 +359,11 @@ export default function Checkout() {
     // never optimistically before the server confirms the order. `data`
     // is the server-computed order (real total), `items` is what was
     // actually submitted and stock-checked for it.
+    // Meta Advanced Matching — enrich the pixel with the buyer's details from
+    // the checkout form just before the conversion fires, so Purchase (and the
+    // CAPI dedupe later) carries hashed identifiers. No-op if the pixel is off.
+    setUserData(form);
+
     trackEvent("Purchase", {
       content_ids: items.map((i) => i.id),
       contents: items.map((i) => ({ id: i.id, quantity: i.qty })),
@@ -355,6 +371,19 @@ export default function Checkout() {
       value: Number(data.total) * CONVERSION_RATE,
       currency: CURRENCY.code,
       order_id: data.number,
+    });
+    // GA4 ecommerce purchase — transaction_id + coupon per the GA4 schema.
+    trackGa4("purchase", {
+      transaction_id: String(data.number),
+      currency: CURRENCY.code,
+      value: Number(data.total) * CONVERSION_RATE,
+      coupon: appliedCoupon?.code ?? undefined,
+      items: items.map((i) => ({
+        item_id: String(i.id),
+        item_name: i.name,
+        price: (Number(i.price) || 0) * CONVERSION_RATE,
+        quantity: i.qty,
+      })),
     });
 
     // Mirror into the local history the Account page still reads. Once

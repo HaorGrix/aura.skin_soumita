@@ -19,7 +19,7 @@ import { isAdminPath } from "./lib/adminPath.js";
 import { applySeo } from "./lib/seo.js";
 import { useStoreSettings } from "./lib/api/settings.js";
 import { categoryFacetOptions, useCategoryTree } from "./lib/api/categories.js";
-import { injectMetaPixel, trackEvent } from "./lib/analytics.js";
+import { injectMetaPixel, trackEvent, injectGa4, trackGa4PageView } from "./lib/analytics.js";
 
 // Route-level code splitting — the home page loads eagerly; the rest lazy-load.
 // The loaders for the pages a shopper reaches first are kept as functions so
@@ -205,6 +205,7 @@ export default function App() {
     if (path === lastTrackedPath.current) return;
     lastTrackedPath.current = path;
     trackEvent("PageView");
+    trackGa4PageView();
   }, [route]);
 
   // Per-route SEO: title, description, canonical, OG tags + robots noindex.
@@ -222,6 +223,14 @@ export default function App() {
       injectMetaPixel(storeSettings.metaPixelId);
     }
   }, [storeSettings.metaPixelEnabled, storeSettings.metaPixelId]);
+
+  // GA4: same DB-driven lifecycle as the pixel. Loads gtag.js only when both
+  // a saved Measurement ID and the enable toggle are true.
+  useEffect(() => {
+    if (storeSettings.ga4Enabled && storeSettings.ga4MeasurementId) {
+      injectGa4(storeSettings.ga4MeasurementId);
+    }
+  }, [storeSettings.ga4Enabled, storeSettings.ga4MeasurementId]);
 
   // Honour a #fragment in the URL (e.g. the hero's #featured) by smooth-scrolling
   // to the matching element after React paints. rAF gives one frame for the DOM

@@ -39,8 +39,15 @@ export default function Settings() {
     return /^\d{6,20}$/.test(id) ? null : "Must be a numeric ID (digits only, 6-20 characters).";
   }, [form?.meta_pixel_id]);
 
+  const ga4IdError = useMemo(() => {
+    const id = form?.ga4_measurement_id?.trim();
+    if (!id) return null;
+    return /^G-[A-Z0-9]{6,12}$/i.test(id) ? null : "Must be a GA4 Measurement ID, e.g. G-XXXXXXXXXX.";
+  }, [form?.ga4_measurement_id]);
+
   async function handleSave() {
     if (pixelIdError) return setError(pixelIdError);
+    if (ga4IdError) return setError(ga4IdError);
     setSaving(true); setError(null); setNotice(null);
     const { data, error } = await saveSettings(form);
     setSaving(false);
@@ -140,6 +147,17 @@ export default function Settings() {
             <TextField label="Pixel ID" value={form.meta_pixel_id ?? ""} onChange={setInput("meta_pixel_id")}
               hint="Numeric ID from Meta Events Manager, e.g. 123456789012345."
               error={pixelIdError} />
+          </div>
+        </Card>
+
+        <Card title="Google Analytics 4" description="Sends ecommerce events (view_item, add_to_cart, begin_checkout, purchase) to GA4.">
+          <div className="grid gap-4">
+            <Toggle label="Enable GA4 tracking"
+              hint="Off means gtag.js never loads, even if a Measurement ID is saved below."
+              checked={form.ga4_enabled} onChange={set("ga4_enabled")} />
+            <TextField label="Measurement ID" value={form.ga4_measurement_id ?? ""} onChange={setInput("ga4_measurement_id")}
+              hint="From GA4 → Admin → Data streams → your web stream, e.g. G-XXXXXXXXXX."
+              error={ga4IdError} />
           </div>
         </Card>
       </div>

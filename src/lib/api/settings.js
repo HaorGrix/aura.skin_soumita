@@ -43,6 +43,8 @@ export const DEFAULT_SETTINGS = {
   announcementEndsAt: null,
   metaPixelId: null,
   metaPixelEnabled: false,
+  ga4MeasurementId: null,
+  ga4Enabled: false,
 };
 
 let cache = null;
@@ -77,6 +79,10 @@ function mapRow(row) {
     // 0035 not yet applied) — never inject a broken/empty pixel script.
     metaPixelId: row.meta_pixel_id || null,
     metaPixelEnabled: !!row.meta_pixel_enabled,
+    // Falls back to "not configured" if the column is missing (migration
+    // 0076 not yet applied) — never loads a broken/empty GA4 tag.
+    ga4MeasurementId: row.ga4_measurement_id || null,
+    ga4Enabled: !!row.ga4_enabled,
   };
 }
 

@@ -37,6 +37,12 @@ import {
 
 const PAGE = 16; // products per page
 
+// The shop writes its filters into the URL with replaceState. A late write
+// (a search debounce, the page sync) after the shopper has already tapped
+// through to a product would turn /product/<slug> back into /shop, so writes
+// only happen while the address is still the shop.
+const onShopPath = () => window.location.pathname.replace(/\/+$/, "") === "/shop";
+
 /* Valid values per facet — the single source of truth for what a URL param may
  * legally hold. Parsing filters incoming values through these sets so a stale,
  * misspelled, or renamed param (e.g. an old "Acne" link vs "Acne & Blemishes")
@@ -365,7 +371,7 @@ export default function Shop() {
 
   // Keep ?page= in the URL without adding history entries.
   useEffect(() => {
-    if (loading) return;
+    if (loading || !onShopPath()) return;
     const params = new URLSearchParams(window.location.search);
     if (currentPage > 1) params.set("page", String(currentPage));
     else params.delete("page");
@@ -411,7 +417,7 @@ export default function Shop() {
     // mount, which calls straight through to here, and without this guard
     // that first call rewrites the URL to a bare "/shop" and destroys the
     // slug before the tree ever lands. Hold off until it's resolved.
-    if (pendingCategoryRef.current) return;
+    if (pendingCategoryRef.current || !onShopPath()) return;
 
     const params = new URLSearchParams();
     if (currentSearch) params.set("q", currentSearch);

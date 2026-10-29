@@ -5,6 +5,7 @@ import EmptyState from "../components/ui/EmptyState.jsx";
 import ArticleProse from "../components/journal/ArticleProse.jsx";
 import { navigate } from "../lib/navigate.js";
 import { useArticleBySlug, journalImageUrl } from "../lib/api/journal.js";
+import { sizedImage } from "../lib/image-size.js";
 
 const EASE = [0.22, 1, 0.36, 1];
 
@@ -83,7 +84,7 @@ export default function JournalArticle({ slug }) {
             className="mt-6 overflow-hidden rounded-2xl ring-1 ring-line"
           >
             <img
-              src={journalImageUrl(article.cover_image)}
+              src={sizedImage(journalImageUrl(article.cover_image), 1400)}
               alt={article.title}
               className="aspect-[16/9] w-full object-cover"
             />

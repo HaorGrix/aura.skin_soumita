@@ -23,6 +23,7 @@
 - Reviews are real: a buyer reviews a delivered item from Order History, it appears on the product page straight away and the points are added on the server. New Admin → Reviews screen to see every review and hide or show one.
 
 ### Changed
+- Faster pages, especially on mobile data: photos are now sent at the size they are shown (product cards about 10–40 KB instead of 120–350 KB originals; home banners about 175 KB instead of 1.7–3.5 MB PNGs) and the server keeps every resized copy cached. The shop's product list download is about half the size (the long descriptions now load only on the product page). The server now uses HTTP/2, so a page's files download in parallel over one connection.
 - Postal code is optional at checkout (still checked as 4 digits when filled in).
 - Admin → Combos: the chosen-items list and the product pickers scroll sideways so full product names are readable on a phone.
 - Out-of-stock products now come after every in-stock product in the shop, whatever the sort or search. Their photos stay in full colour (no grey "Out of Stock" overlay), and the card and product page show a plain "Stock Out" label instead of "Notify Me".

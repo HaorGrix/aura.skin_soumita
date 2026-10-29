@@ -9,6 +9,7 @@ import { formatPrice } from "../../lib/format.js";
 import { useToast } from "../../components/ui/Toast.jsx";
 import EmptyState from "../../components/ui/EmptyState.jsx";
 import Button from "../../components/ui/Button.jsx";
+import { sizedImage } from "../../lib/image-size.js";
 
 export default function WishlistTab() {
   const { items: wishlistIds, toggle, clear } = useWishlist();
@@ -94,7 +95,7 @@ export default function WishlistTab() {
                   className="absolute inset-0"
                   style={{ background: `radial-gradient(120% 100% at 50% 0%, var(--color-white) 0%, ${p.tone} 75%, var(--color-petal-deep) 100%)` }}
                 />
-                {p.image && <img src={p.image} alt={p.name} className="absolute inset-0 h-full w-full object-contain p-2 mix-blend-multiply" />}
+                {p.image && <img src={sizedImage(p.image, 240)} alt={p.name} className="absolute inset-0 h-full w-full object-contain p-2 mix-blend-multiply" />}
               </a>
 
               <div className="mt-4 flex flex-1 flex-col">

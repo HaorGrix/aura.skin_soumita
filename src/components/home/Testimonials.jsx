@@ -27,6 +27,7 @@ import { useRef } from "react";
 import { motion } from "framer-motion";
 import { ChevronLeft, ChevronRight, Flower2, Star } from "lucide-react";
 import { useFeaturedTestimonials, testimonialImageUrl } from "../../lib/api/testimonials.js";
+import { sizedImage } from "../../lib/image-size.js";
 
 const EASE = [0.22, 1, 0.36, 1];
 // Matches Journal's rendered card width at each breakpoint closely enough
@@ -62,7 +63,7 @@ function TestimonialCard({ testimonial: t, index, className = "", reveal = true 
         // cut the text off their edges; the whole image always shows.
         <div className="relative aspect-[16/10] overflow-hidden rounded-none bg-white shadow-soft ring-1 ring-line">
           <img
-            src={testimonialImageUrl(t.image_url)}
+            src={sizedImage(testimonialImageUrl(t.image_url), 700)}
             alt="Customer reviews"
             loading="lazy"
             decoding="async"

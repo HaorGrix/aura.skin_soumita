@@ -4,6 +4,7 @@ import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { ZoomIn, X, ChevronLeft, ChevronRight, Play, Images } from "lucide-react";
 import Badge from "../ui/Badge.jsx";
 import { useBodyScrollLock } from "../../lib/scrollLock.js";
+import { imageSrcSet, sizedImage } from "../../lib/image-size.js";
 
 /* Gradient artwork for each gallery "angle" (swap in real images via item.image) */
 function tile(item) {
@@ -86,7 +87,7 @@ export default function Gallery({ product }) {
             <span className="absolute inset-0" style={{ background: tile(g) }} />
             {g.image && (
               <img
-                src={g.image}
+                src={sizedImage(g.image, 200)}
                 alt={g.label || `${brand} ${name} — photo ${i + 1}`}
                 loading="lazy"
                 className="absolute inset-0 h-full w-full object-contain"
@@ -199,7 +200,9 @@ export default function Gallery({ product }) {
                 />
                 {current.image && (
                   <img
-                    src={current.image}
+                    src={sizedImage(current.image, 1000)}
+                    srcSet={imageSrcSet(current.image, [600, 1000, 1400])}
+                    sizes="(min-width: 1024px) 45vw, 100vw"
                     alt={`${brand} ${name}`}
                     className="absolute inset-0 h-full w-full object-contain transition-transform duration-200"
                     style={{
@@ -235,7 +238,7 @@ export default function Gallery({ product }) {
                 <video
                   key={product.videoUrl}
                   src={product.videoUrl}
-                  poster={current.image}
+                  poster={sizedImage(current.image, 1000)}
                   controls
                   playsInline
                   className="absolute inset-0 h-full w-full object-cover"
@@ -355,7 +358,7 @@ function Lightbox({ gallery, active, onSelect, onStep, onClose }) {
           >
             {current.image ? (
               <img
-                src={current.image}
+                src={sizedImage(current.image, 1600, 85)}
                 alt=""
                 draggable={false}
                 onClick={(e) => e.stopPropagation()}
@@ -400,7 +403,7 @@ function Lightbox({ gallery, active, onSelect, onStep, onClose }) {
               className={`relative h-14 w-14 shrink-0 overflow-hidden rounded-lg bg-white ring-2 ${active === i ? "ring-white" : "ring-white/30"}`}
             >
               {g.image ? (
-                <img src={g.image} alt="" className="absolute inset-0 h-full w-full object-contain" />
+                <img src={sizedImage(g.image, 120)} alt="" className="absolute inset-0 h-full w-full object-contain" />
               ) : (
                 <span className="absolute inset-0" style={{ background: tile(g) }} />
               )}

@@ -4,6 +4,7 @@ import { ArrowUpRight, Home } from "lucide-react";
 import BackButton from "../components/ui/BackButton.jsx";
 import { usePublishedArticles, journalImageUrl } from "../lib/api/journal.js";
 import CoverPlaceholder from "../components/journal/CoverPlaceholder.jsx";
+import { sizedImage } from "../lib/image-size.js";
 
 const EASE = [0.22, 1, 0.36, 1];
 const TONES = ["var(--color-petal)", "var(--color-cyan-soft)", "var(--color-gold-soft)"];
@@ -102,7 +103,7 @@ export default function Articles() {
                       <CoverPlaceholder />
                       {a.cover_image && (
                         <img
-                          src={journalImageUrl(a.cover_image)}
+                          src={sizedImage(journalImageUrl(a.cover_image), 800)}
                           alt={a.title}
                           loading="lazy"
                           onError={(e) => { e.currentTarget.style.display = "none"; }}

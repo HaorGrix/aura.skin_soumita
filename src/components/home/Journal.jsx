@@ -2,6 +2,7 @@ import { motion } from "framer-motion";
 import { ArrowUpRight } from "lucide-react";
 import { useRecentArticles, journalImageUrl } from "../../lib/api/journal.js";
 import CoverPlaceholder from "../journal/CoverPlaceholder.jsx";
+import { sizedImage } from "../../lib/image-size.js";
 
 // Same gradient wash the admin's category pills rotate through — no per-
 // article "tone" field in the DB, so it's derived deterministically from
@@ -53,7 +54,7 @@ export default function Journal() {
                 <CoverPlaceholder />
                 {a.cover_image && (
                   <img
-                    src={journalImageUrl(a.cover_image)}
+                    src={sizedImage(journalImageUrl(a.cover_image), 800)}
                     alt={a.title}
                     loading="lazy"
                     onError={(e) => { e.currentTarget.style.display = "none"; }}

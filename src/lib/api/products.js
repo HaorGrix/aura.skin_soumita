@@ -224,10 +224,18 @@ export function listProducts({ limit } = {}) {
   return catalogInFlight;
 }
 
+// Everything a card, filter or search needs — not the long description,
+// how-to-use or philosophy texts (about 75% of the catalogue's size), which
+// only the product page shows and fetches for itself (getProductBySlug).
+const LIST_COLUMNS =
+  "id,slug,name,subtitle,brand,category,tone,is_new,popularity,price_minor,compare_at_minor,max_per_order," +
+  "concern,skin_type,ingredients,in_stock,is_low_stock,is_on_sale,discount_percent,sales_count,is_best_seller," +
+  "gallery,rating,review_count,is_staff_pick,is_limited_edition,video_url,sale_price_minor,active_sale_id,key_features";
+
 async function fetchProducts({ limit }) {
   let query = supabase
     .from("products_public")
-    .select("*")
+    .select(LIST_COLUMNS)
     .order("popularity", { ascending: false });
 
   if (limit) query = query.limit(limit);

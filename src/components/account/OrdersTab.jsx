@@ -10,6 +10,7 @@ import EmptyState from "../../components/ui/EmptyState.jsx";
 import Button from "../../components/ui/Button.jsx";
 import WriteReviewModal from "../../components/reviews/WriteReviewModal.jsx";
 import OrderDetailsModal from "./OrderDetailsModal.jsx";
+import { sizedImage } from "../../lib/image-size.js";
 
 const STATUS = {
   pending: { label: "Order placed", icon: Clock, tone: "bg-snow text-ink ring-1 ring-line" },
@@ -112,7 +113,7 @@ export default function OrdersTab() {
                     return (
                       <li key={line.orderItemId ?? line.id} className="flex items-center gap-4 px-5 py-4">
                         <a href={`/product/${line.id}`} className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-white ring-1 ring-line">
-                          {image && <img src={image} alt={line.name} loading="lazy" className="absolute inset-0 h-full w-full object-contain" />}
+                          {image && <img src={sizedImage(image, 200)} alt={line.name} loading="lazy" className="absolute inset-0 h-full w-full object-contain" />}
                         </a>
                         <div className="min-w-0 flex-1">
                           <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-magenta">{line.brand}</p>

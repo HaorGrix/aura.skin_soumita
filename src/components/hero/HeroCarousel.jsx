@@ -37,6 +37,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useContent, contentMedia, isVideoPath } from "../../lib/api/content.js";
 import { useStoreSettings } from "../../lib/api/settings.js";
 import "swiper/css";
+import { imageSrcSet, sizedImage } from "../../lib/image-size.js";
 
 /* NO bundled banner assets by design.
  *
@@ -208,7 +209,7 @@ function SlideMedia({ slide, active }) {
           just below (only the active slide's video plays). */}
       {!video && active && (
         <img
-          src={src}
+          src={sizedImage(src, 200, 50)}
           alt=""
           aria-hidden
           className="absolute inset-0 h-full w-full scale-110 object-cover opacity-60 blur-2xl"
@@ -230,7 +231,9 @@ function SlideMedia({ slide, active }) {
         />
       ) : (
         <img
-          src={src}
+          src={sizedImage(src, 1400, 80)}
+          srcSet={imageSrcSet(src, [700, 1000, 1400, 1920])}
+          sizes="(min-width: 1024px) 70vw, 100vw"
           alt={slide.title || `${storeName} promotion`}
           // Only the focal slide is fetched with any urgency — every other
           // rail slide (there can be up to MIN_LOOP_SLIDES of them mounted

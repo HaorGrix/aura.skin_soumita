@@ -27,6 +27,7 @@ import BODY_CARE from "../../../assests/cate/body-care.png";
 import EYE_EAR from "../../../assests/cate/eye-ear.png";
 import OFFER from "../../../assests/cate/offer.png";
 import COMBO from "../../../assests/cate/combo.png";
+import { sizedImage } from "../../lib/image-size.js";
 
 // Bundled artwork for the original six tiles, by (case-insensitive) name.
 const BUNDLED = {
@@ -87,7 +88,7 @@ export default function CategoryTiles() {
                   {ready && tile.sticker && <TileFrame label={tile.label} sticker={tile.sticker} />}
                   {ready && !tile.sticker && (
                     <img
-                      src={tile.img}
+                      src={sizedImage(tile.img, 480)}
                       alt={tile.label}
                       loading="lazy"
                       decoding="async"

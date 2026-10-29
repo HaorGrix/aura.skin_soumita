@@ -2,6 +2,7 @@ import { motion } from "framer-motion";
 import { Check, Minus, Plus, Trash2 } from "lucide-react";
 import { useCart } from "../../context/CartContext.jsx";
 import { displaySize, formatPrice } from "../../lib/format.js";
+import { sizedImage } from "../../lib/image-size.js";
 
 /**
  * LineItem — a single cart row. `compact` = drawer styling; default = cart page.
@@ -52,7 +53,7 @@ export default function LineItem({ item, compact = false, readOnly = false, sele
         aria-label={item.name}
       >
         {item.image && (
-          <img src={item.image} alt={item.name} className="h-full w-full object-contain" />
+          <img src={sizedImage(item.image, 200)} alt={item.name} className="h-full w-full object-contain" />
         )}
       </a>
 

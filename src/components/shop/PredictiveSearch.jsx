@@ -346,7 +346,7 @@ function ProductRow({ product: p, active, onHover, onPick, compact = false }) {
         >
           {p.image && (
             <img
-              src={p.image}
+              src={sizedImage(p.image, 160)}
               alt=""
               loading="lazy"
               className="absolute inset-0 h-full w-full object-contain"
@@ -376,6 +376,7 @@ function ProductRow({ product: p, active, onHover, onPick, compact = false }) {
 import { Star } from "lucide-react";
 import { useCart } from "../../context/CartContext.jsx";
 import { useToast } from "../ui/Toast.jsx";
+import { sizedImage } from "../../lib/image-size.js";
 
 function SearchProductCard({ product: p, active, onHover, onPick }) {
   const { addItem, openCart } = useCart();
@@ -401,7 +402,7 @@ function SearchProductCard({ product: p, active, onHover, onPick }) {
       >
         {p.image ? (
           <img
-            src={p.image}
+            src={sizedImage(p.image, 240)}
             alt={p.name}
             loading="lazy"
             className="h-full w-full object-contain mix-blend-multiply"

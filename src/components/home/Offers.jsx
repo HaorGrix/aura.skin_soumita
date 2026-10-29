@@ -9,6 +9,7 @@ import { listActiveSales } from "../../lib/api/sales.js";
 import summerSale from "../../../assests/summersale2.jpg";
 import clearanceSale from "../../../assests/sale3.jpg";
 import flashSale from "../../../assests/sale4.jpg";
+import { sizedImage } from "../../lib/image-size.js";
 
 const EASE = [0.22, 1, 0.36, 1];
 const FALLBACK_IMAGES = [summerSale, clearanceSale, flashSale];
@@ -40,7 +41,7 @@ function OfferCard({ offer, index }) {
         style={{ background: `radial-gradient(120% 120% at 30% 0%, #fff 0%, ${offer.tone} 90%)` }}
       >
         <img
-          src={offer.img}
+          src={sizedImage(offer.img, 900)}
           alt={`${offer.badge} — ${offer.title}`}
           loading="lazy"
           decoding="async"

@@ -7,6 +7,7 @@ import { useWishlist } from "../../context/WishlistContext.jsx";
 import { useToast } from "./Toast.jsx";
 import { surface } from "../../lib/design-system.js";
 import { formatPrice } from "../../lib/format.js";
+import { imageSrcSet, sizedImage } from "../../lib/image-size.js";
 
 /**
  * ProductCard — the reusable product tile.
@@ -82,7 +83,9 @@ export default function ProductCard({ product, onQuickView }) {
         )}
         {image && (
           <img
-            src={image}
+            src={sizedImage(image, 480)}
+            srcSet={imageSrcSet(image, [320, 480, 720])}
+            sizes="(min-width: 1024px) 22vw, (min-width: 640px) 33vw, 50vw"
             alt={`${brand} ${name}`}
             width="400"
             height="500"

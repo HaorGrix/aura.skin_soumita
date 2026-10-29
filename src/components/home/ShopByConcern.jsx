@@ -12,6 +12,7 @@ import poresImg from "../../../assests/open pores.jfif";
 import soothingImg from "../../../assests/soothing.webp";
 import antiAgingImg from "../../../assests/anti aging.jfif";
 import sunProtectionImg from "../../../assests/sun protection.jfif";
+import { sizedImage } from "../../lib/image-size.js";
 
 /* ------------------------------------------------------------------ *
  * Concern image registry — each file lives at /assests/{name}. Plain
@@ -96,7 +97,7 @@ function ConcernCard({ tile, src }) {
         {/* Full-frame product visual — edge-to-edge, cover, no clip */}
         {imgOk && src && (
           <img
-            src={src}
+            src={sizedImage(src, 700)}
             alt=""
             loading="lazy"
             decoding="async"

@@ -9,6 +9,7 @@ import { useEffect, useState } from "react";
 import { Gift } from "lucide-react";
 import { getComboItems } from "../../lib/api/products.js";
 import { displaySize, formatPrice } from "../../lib/format.js";
+import { sizedImage } from "../../lib/image-size.js";
 
 export default function ComboContents({ product }) {
   const [items, setItems] = useState([]);
@@ -46,7 +47,7 @@ export default function ComboContents({ product }) {
               <a href={`/product/${it.id}`} className="group flex items-center gap-3 py-3">
                 <span className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-white ring-1 ring-line">
                   {it.image && (
-                    <img src={it.image} alt="" loading="lazy" className="absolute inset-0 h-full w-full object-contain" />
+                    <img src={sizedImage(it.image, 240)} alt="" loading="lazy" className="absolute inset-0 h-full w-full object-contain" />
                   )}
                 </span>
                 <span className="min-w-0 flex-1">

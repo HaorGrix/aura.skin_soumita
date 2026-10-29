@@ -2,6 +2,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { X, Check } from "lucide-react";
 import { productById } from "../../data/reviews.js";
 import { formatPrice } from "../../lib/format.js";
+import { sizedImage } from "../../lib/image-size.js";
 
 /* Lines and totals come from the receipt snapshot saved at checkout
  * (lib/order-receipt.js). Orders placed before snapshots existed fall back
@@ -63,7 +64,7 @@ export default function OrderDetailsModal({ order, onClose }) {
               {lines.map((l, index) => (
                 <li key={`${l.id}-${index}`} className="flex items-center gap-4">
                   <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-snow ring-1 ring-line">
-                    {l.image && <img src={l.image} alt={l.name} className="absolute inset-0 h-full w-full object-contain" />}
+                    {l.image && <img src={sizedImage(l.image, 200)} alt={l.name} className="absolute inset-0 h-full w-full object-contain" />}
                   </div>
                   <div className="min-w-0 flex-1">
                     {l.brand && <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-magenta">{l.brand}</p>}

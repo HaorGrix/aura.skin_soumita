@@ -7,6 +7,7 @@ import { useCart } from "../context/CartContext.jsx";
 import { useToast } from "../components/ui/Toast.jsx";
 import { getProductsByIds } from "../lib/api/products.js";
 import { formatPrice } from "../lib/format.js";
+import { sizedImage } from "../lib/image-size.js";
 import EmptyState from "../components/ui/EmptyState.jsx";
 import Button from "../components/ui/Button.jsx";
 
@@ -117,7 +118,7 @@ export default function Wishlist() {
                 >
                   {p.image && (
                     <img
-                      src={p.image}
+                      src={sizedImage(p.image, 400)}
                       alt={p.name}
                       loading="lazy"
                       className="absolute inset-0 h-full w-full object-contain p-4 transition-transform duration-500 group-hover:scale-105 mix-blend-multiply"

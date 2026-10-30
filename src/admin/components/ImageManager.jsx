@@ -33,6 +33,7 @@ import {
   replaceProductImage, reorderProductImages, uploadProductImage, uploadProductVideo,
 } from "../../lib/api/media.js";
 import { compressImageSafe } from "../../lib/image-compress.js";
+import { sizedImage } from "../../lib/image-size.js";
 import { Btn, ConfirmModal, Spinner } from "./kit.jsx";
 
 const MAX_BYTES = 5 * 1024 * 1024;
@@ -322,7 +323,7 @@ export default function ImageManager({ productId, images = [], onChange, disable
             className="group relative overflow-hidden rounded-xl bg-snow ring-1 ring-line"
           >
             <img
-              src={publicImageUrl(img.storage_path)} alt={img.alt || ""}
+              src={sizedImage(publicImageUrl(img.storage_path), 300)} alt={img.alt || ""}
               className="aspect-[4/5] w-full select-none object-cover"
               loading="lazy" draggable={false}
             />

@@ -12,6 +12,7 @@ import {
   getOrder, nextStatuses, setInternalNote, setStatus, setTracking, statusMeta,
 } from "../../lib/api/admin/orders.js";
 import { publicImageUrl } from "../../lib/api/media.js";
+import { sizedImage } from "../../lib/image-size.js";
 import { useAdmin } from "../context.js";
 import { adminNavigate } from "../AdminApp.jsx";
 import {
@@ -102,7 +103,7 @@ export default function OrderDetail({ id }) {
               {order.order_items?.map((item) => (
                 <li key={item.id} className="flex gap-3 py-3">
                   {item.image_path ? (
-                    <img src={publicImageUrl(item.image_path)} alt="" className="h-16 w-14 rounded-lg object-cover ring-1 ring-line" />
+                    <img src={sizedImage(publicImageUrl(item.image_path), 160)} alt="" className="h-16 w-14 rounded-lg object-cover ring-1 ring-line" />
                   ) : (
                     <div className="h-16 w-14 rounded-lg bg-snow ring-1 ring-line" />
                   )}

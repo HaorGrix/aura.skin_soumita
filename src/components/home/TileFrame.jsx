@@ -9,6 +9,7 @@
  * either way line up in the grid.
  * =================================================================== */
 import { useId } from "react";
+import { sizedImage } from "../../lib/image-size.js";
 
 const W = 750;
 const H = 885;
@@ -52,7 +53,7 @@ export default function TileFrame({ label, sticker }) {
       </g>
       {sticker && (
         <image
-          href={sticker}
+          href={sizedImage(sticker, 600)}
           x={ARCH.left + 20}
           y={ARCH.top + 20}
           width={ARCH.right - ARCH.left - 40}

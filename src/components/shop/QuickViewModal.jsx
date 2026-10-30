@@ -7,6 +7,7 @@ import { useCart } from "../../context/CartContext.jsx";
 import { useToast } from "../ui/Toast.jsx";
 import { formatPrice } from "../../lib/format.js";
 import { useBodyScrollLock } from "../../lib/scrollLock.js";
+import { sizedImage } from "../../lib/image-size.js";
 
 /** QuickViewModal — lightweight peek at a product without leaving the grid. */
 export default function QuickViewModal({ product, onClose }) {
@@ -81,7 +82,7 @@ export default function QuickViewModal({ product, onClose }) {
               />
               {product.image && (
                 <img
-                  src={product.image}
+                  src={sizedImage(product.image, 800)}
                   alt={`${product.brand} ${product.name}`}
                   className="absolute inset-0 h-full w-full object-contain"
                 />

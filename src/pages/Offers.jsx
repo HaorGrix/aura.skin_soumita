@@ -5,6 +5,7 @@ import { ArrowRight, Flame, Home } from "lucide-react";
 import BackButton from "../components/ui/BackButton.jsx";
 import { listActiveSales } from "../lib/api/sales.js";
 import EmptyState from "../components/ui/EmptyState.jsx";
+import { sizedImage } from "../lib/image-size.js";
 
 // Fallback banners for a campaign with no uploaded image yet — bundled at
 // build, cycled by index. Mirrors components/home/Offers.jsx's own fallback;
@@ -44,7 +45,7 @@ function OfferCard({ offer, index }) {
         style={{ background: `radial-gradient(120% 120% at 30% 0%, #fff 0%, ${offer.tone} 90%)` }}
       >
         <img
-          src={offer.img}
+          src={sizedImage(offer.img, 900)}
           alt={`${offer.badge} — ${offer.title}`}
           loading="lazy"
           decoding="async"

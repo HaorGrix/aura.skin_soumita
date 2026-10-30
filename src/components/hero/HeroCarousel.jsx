@@ -156,7 +156,7 @@ function useTilt(enabled) {
   return { ref, onMove, onLeave, on };
 }
 
-function SlideMedia({ slide, active }) {
+function SlideMedia({ slide, active, show, onLoad }) {
   const { storeName } = useStoreSettings();
   const videoRef = useRef(null);
   const src = contentMedia(slide.media, slide.fallback);
@@ -224,12 +224,14 @@ function SlideMedia({ slide, active }) {
           loop
           playsInline
           preload="metadata"
+          onLoadedData={onLoad}
+          onError={onLoad}
           // translateZ(0) promotes the video to its own compositor layer, so
           // the rail's transform animation never re-rasterises video frames.
           style={{ transform: "translateZ(0)" }}
           className="relative h-full w-full object-cover"
         />
-      ) : (
+      ) : show && (
         <img
           src={sizedImage(src, 1400, 80)}
           srcSet={imageSrcSet(src, [700, 1000, 1400, 1920])}
@@ -242,6 +244,8 @@ function SlideMedia({ slide, active }) {
           loading={active ? "eager" : "lazy"}
           fetchPriority={active ? "high" : "low"}
           decoding="async"
+          onLoad={onLoad}
+          onError={onLoad}
           className="relative h-full w-full object-contain"
         />
       )}
@@ -249,7 +253,7 @@ function SlideMedia({ slide, active }) {
   );
 }
 
-function Slide({ slide, active, reserveCaption, tilt }) {
+function Slide({ slide, active, showMedia, onMediaLoad, reserveCaption, tilt }) {
   const { href, external } = resolveHref(slide.ctaHref);
   const { ref, onMove, onLeave } = useTilt(tilt && active);
 
@@ -279,7 +283,7 @@ function Slide({ slide, active, reserveCaption, tilt }) {
           onMouseLeave={onLeave}
           className="relative will-change-transform transition-transform duration-300 ease-out"
         >
-          <SlideMedia slide={slide} active={active} />
+          <SlideMedia slide={slide} active={active} show={showMedia} onLoad={onMediaLoad} />
         </div>
       </div>
 
@@ -364,6 +368,13 @@ export default function HeroCarousel() {
   const swiperRef = useRef(null);
   const [active, setActive] = useState(0);
 
+  // The peeking neighbour slides sit inside the viewport, so loading="lazy"
+  // doesn't hold them back — they used to download alongside the focal banner,
+  // the category tiles and the product grid on first paint. Their pictures
+  // start only once the focal banner has finished loading.
+  const [focalLoaded, setFocalLoaded] = useState(false);
+  const onFocalLoad = useCallback(() => setFocalLoaded(true), []);
+
   const goTo = useCallback((i) => swiperRef.current?.slideToLoop(i), []);
   const prev = useCallback(() => swiperRef.current?.slidePrev(), []);
   const next = useCallback(() => swiperRef.current?.slideNext(), []);
@@ -407,6 +418,8 @@ export default function HeroCarousel() {
               tilt={!reduce}
               slide={slide}
               active={i % slides.length === active}
+              showMedia={focalLoaded || i % slides.length === active}
+              onMediaLoad={i % slides.length === active ? onFocalLoad : undefined}
               reserveCaption={reserveCaption}
             />
           </SwiperSlide>

@@ -4,14 +4,14 @@ import { ChevronLeft, ChevronRight, ArrowRight } from "lucide-react";
 import { SKIN_TYPES } from "../../data/products.js";
 import { useContent, contentImage } from "../../lib/api/content.js";
 import { useConcerns } from "../../lib/api/concerns.js";
-import hydrationImg from "../../../assests/hydration.jpg";
-import barrierRepairImg from "../../../assests/barrier repair.jpg";
-import brighteningImg from "../../../assests/brightening.jpg";
-import acneImg from "../../../assests/acne.jfif";
-import poresImg from "../../../assests/open pores.jfif";
-import soothingImg from "../../../assests/soothing.webp";
-import antiAgingImg from "../../../assests/anti aging.jfif";
-import sunProtectionImg from "../../../assests/sun protection.jfif";
+import hydrationImg from "../../../assests/hydration.jpg?w=700&format=webp&quality=75";
+import barrierRepairImg from "../../../assests/barrier repair.jpg?w=700&format=webp&quality=75";
+import brighteningImg from "../../../assests/brightening.jpg?w=700&format=webp&quality=75";
+import acneImg from "../../../assests/acne.jfif?w=700&format=webp&quality=75";
+import poresImg from "../../../assests/open pores.jfif?w=700&format=webp&quality=75";
+import soothingImg from "../../../assests/soothing.webp?w=700&format=webp&quality=75";
+import antiAgingImg from "../../../assests/anti aging.jfif?w=700&format=webp&quality=75";
+import sunProtectionImg from "../../../assests/sun protection.jfif?w=700&format=webp&quality=75";
 import { sizedImage } from "../../lib/image-size.js";
 
 /* ------------------------------------------------------------------ *
